@@ -193,20 +193,21 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [equipmentId, amount, category, operationDate]
+              required: [equipmentId, amount, operationDate]
               properties:
                 equipmentId: {type: string, format: uuid}
+                entryType: {type: string, enum: [EXPENSE, INCOME], default: EXPENSE}
                 amount: {$ref: '#/components/schemas/Money'}
-                category: {type: string, enum: [FUEL, MAINTENANCE, OTHER]}
+                category: {type: string, enum: [FUEL, MAINTENANCE, OTHER], description: Required for expenses; omitted for income}
                 operationDate: {type: string, format: date}
-                paidOn: {type: string, format: date}
+                paidOn: {type: string, format: date, description: Date of first payment or receipt; legacy field name retained for compatibility}
                 paymentStatus: {type: string, enum: [FULL, PARTIAL, UNPAID], default: FULL}
                 initialPaid: {$ref: '#/components/schemas/Money'}
                 partyName: {type: string, maxLength: 100, description: Required when an amount remains}
                 dueDate: {type: string, format: date, description: Optional when an amount remains}
                 note: {type: [string, 'null'], maxLength: 1000}
       responses:
-        '200': {description: Atomic posted expense plus full initial settlement, or authorized replay, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '200': {description: One posted expense or income with optional initial settlement, or authorized replay, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '400': {$ref: '#/components/responses/Error'}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
@@ -232,7 +233,7 @@ paths:
               required: [amount, paidOn]
               properties:
                 amount: {$ref: '#/components/schemas/Money'}
-                paidOn: {type: string, format: date}
+                paidOn: {type: string, format: date, description: Payment or receipt date; legacy field name retained for compatibility}
       responses:
         '200': {description: Updated original with its dated settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '400': {$ref: '#/components/responses/Error'}
@@ -340,18 +341,19 @@ components:
         createdAt: {type: string, format: date-time}
     Entry:
       type: object
-      required: [id, equipmentId, equipmentName, amount, currency, category, operationDate, note, lifecycle, paid, remaining, settlementStatus, partyName, dueDate, createdAt, settlements]
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, remaining, settlementStatus, partyName, dueDate, createdAt, settlements]
       properties:
         id: {type: string, format: uuid}
         equipmentId: {type: string, format: uuid}
         equipmentName: {type: string}
+        entryType: {type: string, enum: [EXPENSE, INCOME]}
         amount: {$ref: '#/components/schemas/Money'}
         currency: {const: SAR}
         category: {type: string, enum: [FUEL, MAINTENANCE, OTHER]}
         operationDate: {type: string, format: date}
         note: {type: string}
         lifecycle: {const: POSTED}
-        paid: {$ref: '#/components/schemas/Money'}
+        paid: {$ref: '#/components/schemas/Money', description: Sum of payments or receipts; field name retained for compatibility}
         remaining: {$ref: '#/components/schemas/Money'}
         settlementStatus: {type: string, enum: [PAID, PARTIAL, UNPAID], description: Derived from settlements}
         partyName: {type: [string, 'null']}

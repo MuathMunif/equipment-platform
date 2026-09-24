@@ -178,6 +178,61 @@ void main() {
       expect(afterSettlement['paid'], '350.00');
       expect(afterSettlement['remaining'], '0.00');
       expect(afterSettlement['settlements'].length, 2);
+      Navigator.of(tester.element(find.text('تفاصيل المصروف'))).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('addIncome')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('expenseAmount')), '3000');
+      await tester.tap(find.byKey(const Key('paymentStatus')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('استلمت جزءًا').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('initialPaid')), '1000');
+      await tester.enterText(
+        find.byKey(const Key('partyName')),
+        'عميل اختبار iOS',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('saveIncome')),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('saveIncome')));
+      await tester.pumpAndSettle();
+      expect(find.text('مستلم جزئيًا'), findsOneWidget);
+      final afterIncome = await restored.json(
+        'GET',
+        restored.scoped('/entries?equipmentId=${equipment['id']}'),
+      );
+      expect(afterIncome['total'], 3);
+      final income = afterIncome['items'].first;
+      expect(income['entryType'], 'INCOME');
+      expect(income['paid'], '1000.00');
+      expect(income['remaining'], '2000.00');
+      await tester.scrollUntilVisible(
+        find.text('إضافة تحصيل'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('إضافة تحصيل'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'مبلغ التحصيل'),
+        '2000',
+      );
+      await tester.tap(find.text('حفظ التحصيل'));
+      await tester.pumpAndSettle();
+      expect(find.text('مستلم كاملًا'), findsOneWidget);
+      final received = await restored.json(
+        'GET',
+        restored.scoped('/entries/${income['id']}'),
+      );
+      expect(received['amount'], '3000.00');
+      expect(received['paid'], '3000.00');
+      expect(received['remaining'], '0.00');
+      expect(received['settlements'].length, 2);
     },
   );
 }

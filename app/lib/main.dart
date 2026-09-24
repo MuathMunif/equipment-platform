@@ -555,7 +555,7 @@ class _EquipmentListState extends State<EquipmentList> {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
-        const Text('كل معدة وسجلها، من أول مصروف'),
+        const Text('كل معدة وسجلها، من أول عملية'),
         const SizedBox(height: 24),
         Row(
           children: [
@@ -674,7 +674,7 @@ class _EquipmentListState extends State<EquipmentList> {
                                 ),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'عرض السجل والمصروفات ←',
+                                  'عرض السجل والعمليات ←',
                                   style: TextStyle(color: brand),
                                 ),
                               ],
@@ -928,11 +928,14 @@ class _LedgerPageState extends State<LedgerPage> {
     }
   }
 
-  Future<void> add() async {
+  Future<void> add({bool income = false}) async {
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
-        builder: (_) =>
-            ExpenseForm(api: widget.api, equipment: widget.equipment!),
+        builder: (_) => ExpenseForm(
+          api: widget.api,
+          equipment: widget.equipment!,
+          income: income,
+        ),
       ),
     );
     if (result != null && mounted) {
@@ -972,9 +975,16 @@ class _LedgerPageState extends State<LedgerPage> {
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     key: const Key('addExpense'),
-                    onPressed: add,
+                    onPressed: () => add(),
                     icon: const Icon(Icons.add),
                     label: const Text('إضافة مصروف'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('addIncome'),
+                    onPressed: () => add(income: true),
+                    icon: const Icon(Icons.add),
+                    label: const Text('إضافة إيراد'),
                   ),
                 ],
               ),
@@ -997,7 +1007,7 @@ class _LedgerPageState extends State<LedgerPage> {
           ],
         ),
         const SizedBox(height: 8),
-        const Text('المصروف والدفعة والمرفقات في عملية واحدة'),
+        const Text('كل عملية ودفعاتها ومرفقاتها في سجل واحد'),
         const SizedBox(height: 20),
         if (items.isEmpty)
           const Card(
@@ -1017,10 +1027,10 @@ class _LedgerPageState extends State<LedgerPage> {
                 child: Icon(Icons.receipt_long_outlined),
               ),
               title: Text(
-                '${categories[entry['category']]} • ${entry['equipmentName']}',
+                '${entry['entryType'] == 'INCOME' ? 'إيراد' : categories[entry['category']]} • ${entry['equipmentName']}',
               ),
               subtitle: Text(
-                '${entry['operationDate']} ميلادي\n${{'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'}[entry['settlementStatus']] ?? 'حالة الدفع'}',
+                '${entry['operationDate']} ميلادي\n${(entry['entryType'] == 'INCOME' ? {'PAID': 'مستلم كاملًا', 'PARTIAL': 'مستلم جزئيًا', 'UNPAID': 'غير مستلم'} : {'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'})[entry['settlementStatus']] ?? 'حالة التسوية'}',
               ),
               isThreeLine: true,
               trailing: Text(
@@ -1055,7 +1065,13 @@ class _LedgerPageState extends State<LedgerPage> {
 class ExpenseForm extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> equipment;
-  const ExpenseForm({super.key, required this.api, required this.equipment});
+  final bool income;
+  const ExpenseForm({
+    super.key,
+    required this.api,
+    required this.equipment,
+    this.income = false,
+  });
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
 }
@@ -1127,8 +1143,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
         key: key,
         body: {
           'equipmentId': widget.equipment['id'],
+          if (widget.income) 'entryType': 'INCOME',
           'amount': exactMoney(amount.text),
-          'category': category,
+          if (!widget.income) 'category': category,
           'operationDate': date,
           if (paymentStatus != 'UNPAID') 'paidOn': paidOn,
           'paymentStatus': paymentStatus,
@@ -1166,7 +1183,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
       }
     },
     child: Scaffold(
-      appBar: AppBar(title: const Text('إضافة مصروف')),
+      appBar: AppBar(
+        title: Text(widget.income ? 'إضافة إيراد' : 'إضافة مصروف'),
+      ),
       body: Form(
         key: form,
         child: FormBody(
@@ -1176,7 +1195,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            const Text('يُسجّل هذا المصروف على هذه المعدة'),
+            Text(
+              widget.income
+                  ? 'يُسجّل هذا الإيراد على هذه المعدة'
+                  : 'يُسجّل هذا المصروف على هذه المعدة',
+            ),
             const SizedBox(height: 24),
             TextFormField(
               key: const Key('expenseAmount'),
@@ -1196,18 +1219,20 @@ class _ExpenseFormState extends State<ExpenseForm> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              initialValue: category,
-              decoration: const InputDecoration(labelText: 'نوع المصروف'),
-              items: categories.entries
-                  .map(
-                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
-                  )
-                  .toList(),
-              onChanged: busy || uncertain
-                  ? null
-                  : (v) => setState(() => category = v!),
-            ),
+            if (!widget.income)
+              DropdownButtonFormField<String>(
+                initialValue: category,
+                decoration: const InputDecoration(labelText: 'نوع المصروف'),
+                items: categories.entries
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
+                    .toList(),
+                onChanged: busy || uncertain
+                    ? null
+                    : (v) => setState(() => category = v!),
+              ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: busy || uncertain ? null : () => pickDate(false),
@@ -1218,12 +1243,38 @@ class _ExpenseFormState extends State<ExpenseForm> {
             DropdownButtonFormField<String>(
               key: const Key('paymentStatus'),
               initialValue: paymentStatus,
-              decoration: const InputDecoration(labelText: 'حالة الدفع'),
-              items: const [
-                DropdownMenuItem(value: 'FULL', child: Text('دفعته كاملًا')),
-                DropdownMenuItem(value: 'PARTIAL', child: Text('دفعت جزءًا')),
-                DropdownMenuItem(value: 'UNPAID', child: Text('لم أدفعه')),
-              ],
+              decoration: InputDecoration(
+                labelText: widget.income ? 'حالة الاستلام' : 'حالة الدفع',
+              ),
+              items: widget.income
+                  ? const [
+                      DropdownMenuItem(
+                        value: 'FULL',
+                        child: Text('استلمته كاملًا'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'PARTIAL',
+                        child: Text('استلمت جزءًا'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'UNPAID',
+                        child: Text('لم أستلمه'),
+                      ),
+                    ]
+                  : const [
+                      DropdownMenuItem(
+                        value: 'FULL',
+                        child: Text('دفعته كاملًا'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'PARTIAL',
+                        child: Text('دفعت جزءًا'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'UNPAID',
+                        child: Text('لم أدفعه'),
+                      ),
+                    ],
               onChanged: busy || uncertain
                   ? null
                   : (v) => setState(() => paymentStatus = v!),
@@ -1238,8 +1289,10 @@ class _ExpenseFormState extends State<ExpenseForm> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'المبلغ المدفوع أولًا',
+                decoration: InputDecoration(
+                  labelText: widget.income
+                      ? 'المبلغ المستلم أولًا'
+                      : 'المبلغ المدفوع أولًا',
                 ),
                 validator: (v) {
                   final first = exactMoney(v ?? '');
@@ -1259,7 +1312,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
               OutlinedButton.icon(
                 onPressed: busy || uncertain ? null : () => pickDate(true),
                 icon: const Icon(Icons.calendar_today_outlined),
-                label: Text('تاريخ الدفع: $paidOn ميلادي'),
+                label: Text(
+                  '${widget.income ? 'تاريخ الاستلام' : 'تاريخ الدفع'}: $paidOn ميلادي',
+                ),
               ),
             ],
             if (paymentStatus != 'FULL') ...[
@@ -1269,8 +1324,10 @@ class _ExpenseFormState extends State<ExpenseForm> {
                 controller: party,
                 enabled: !busy && !uncertain,
                 maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'اسم الطرف المستحق',
+                decoration: InputDecoration(
+                  labelText: widget.income
+                      ? 'اسم الطرف الذي سيدفع'
+                      : 'اسم الطرف المستحق',
                 ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'اكتب اسم الطرف' : null,
@@ -1296,18 +1353,20 @@ class _ExpenseFormState extends State<ExpenseForm> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 8),
-            const Text('يمكنك إرفاق صورة الفاتورة أو PDF بعد حفظ المصروف.'),
+            Text(
+              'يمكنك إرفاق صورة أو PDF بعد حفظ ${widget.income ? 'الإيراد' : 'المصروف'}.',
+            ),
             InlineError(error),
             const SizedBox(height: 16),
             FilledButton(
-              key: const Key('saveExpense'),
+              key: Key(widget.income ? 'saveIncome' : 'saveExpense'),
               onPressed: busy ? null : save,
               child: Text(
                 busy
-                    ? 'جارٍ حفظ المصروف…'
+                    ? 'جارٍ حفظ ${widget.income ? 'الإيراد' : 'المصروف'}…'
                     : uncertain
                     ? 'إعادة محاولة الحفظ نفسه'
-                    : 'حفظ المصروف',
+                    : 'حفظ ${widget.income ? 'الإيراد' : 'المصروف'}',
               ),
             ),
           ],
@@ -1333,6 +1392,7 @@ class EntryDetail extends StatefulWidget {
 
 class _EntryDetailState extends State<EntryDetail> {
   Map<String, dynamic>? entry;
+  bool get income => entry?['entryType'] == 'INCOME';
   List<dynamic> attachments = [];
   String? error, uploadError, uploadId;
   bool loading = true, uploading = false;
@@ -1350,11 +1410,13 @@ class _EntryDetailState extends State<EntryDetail> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) => AlertDialog(
           scrollable: true,
-          title: const Text('إضافة دفعة'),
+          title: Text(income ? 'إضافة تحصيل' : 'إضافة دفعة'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('المتبقي عليك: ${entry!['remaining']} ريال سعودي'),
+              Text(
+                '${income ? 'المتبقي لك' : 'المتبقي عليك'}: ${entry!['remaining']} ريال سعودي',
+              ),
               TextField(
                 onChanged: (value) => paymentAmount = value,
                 enabled: !saving,
@@ -1362,7 +1424,9 @@ class _EntryDetailState extends State<EntryDetail> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(labelText: 'مبلغ الدفعة'),
+                decoration: InputDecoration(
+                  labelText: income ? 'مبلغ التحصيل' : 'مبلغ الدفعة',
+                ),
               ),
               OutlinedButton(
                 onPressed: saving
@@ -1383,7 +1447,9 @@ class _EntryDetailState extends State<EntryDetail> {
                           );
                         }
                       },
-                child: Text('تاريخ الدفع: $paidOn ميلادي'),
+                child: Text(
+                  '${income ? 'تاريخ التحصيل' : 'تاريخ الدفع'}: $paidOn ميلادي',
+                ),
               ),
               InlineError(paymentError),
             ],
@@ -1423,7 +1489,13 @@ class _EntryDetailState extends State<EntryDetail> {
                         if (dialogContext.mounted) update(() => saving = false);
                       }
                     },
-              child: Text(saving ? 'جارٍ الحفظ…' : 'حفظ الدفعة'),
+              child: Text(
+                saving
+                    ? 'جارٍ الحفظ…'
+                    : income
+                    ? 'حفظ التحصيل'
+                    : 'حفظ الدفعة',
+              ),
             ),
           ],
         ),
@@ -1544,13 +1616,13 @@ class _EntryDetailState extends State<EntryDetail> {
       uploadId = null;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حُفظ المرفق داخل المصروف')),
+          const SnackBar(content: Text('حُفظ المرفق داخل العملية')),
         );
         await load();
       }
     } catch (e) {
       if (mounted) {
-        setState(() => uploadError = 'حُفظ المصروف، وتعذر رفع المرفق. $e');
+        setState(() => uploadError = 'حُفظت العملية، وتعذر رفع المرفق. $e');
       }
     } finally {
       if (mounted) setState(() => uploading = false);
@@ -1588,7 +1660,7 @@ class _EntryDetailState extends State<EntryDetail> {
                     child: InteractiveViewer(
                       child: Image.memory(
                         response.bodyBytes,
-                        semanticLabel: 'مرفق المصروف: ${file['filename']}',
+                        semanticLabel: 'مرفق العملية: ${file['filename']}',
                       ),
                     ),
                   ),
@@ -1615,10 +1687,10 @@ class _EntryDetailState extends State<EntryDetail> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('تفاصيل المصروف'),
+      title: Text(income ? 'تفاصيل الإيراد' : 'تفاصيل المصروف'),
       actions: [
         IconButton(
-          tooltip: 'تحديث المصروف',
+          tooltip: income ? 'تحديث الإيراد' : 'تحديث المصروف',
           onPressed: uploading ? null : load,
           icon: const Icon(Icons.refresh),
         ),
@@ -1631,7 +1703,7 @@ class _EntryDetailState extends State<EntryDetail> {
         : FormBody(
             children: [
               Text(
-                '${categories[entry!['category']]} • ${entry!['equipmentName']}',
+                '${income ? 'إيراد' : categories[entry!['category']]} • ${entry!['equipmentName']}',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -1642,11 +1714,17 @@ class _EntryDetailState extends State<EntryDetail> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      moneyRow('إجمالي المصروف', entry!['amount']),
+                      moneyRow(
+                        income ? 'إجمالي الإيراد' : 'إجمالي المصروف',
+                        entry!['amount'],
+                      ),
                       const Divider(height: 32),
-                      moneyRow('المدفوع', entry!['paid']),
+                      moneyRow(income ? 'المستلم' : 'المدفوع', entry!['paid']),
                       const SizedBox(height: 16),
-                      moneyRow('المتبقي عليك', entry!['remaining']),
+                      moneyRow(
+                        income ? 'المتبقي لك' : 'المتبقي عليك',
+                        entry!['remaining'],
+                      ),
                       const SizedBox(height: 20),
                       Align(
                         alignment: AlignmentDirectional.centerStart,
@@ -1656,12 +1734,18 @@ class _EntryDetailState extends State<EntryDetail> {
                             color: brand,
                           ),
                           label: Text(
-                            {
-                                  'PAID': 'مدفوع كاملًا',
-                                  'PARTIAL': 'مدفوع جزئيًا',
-                                  'UNPAID': 'غير مدفوع',
-                                }[entry!['settlementStatus']] ??
-                                'حالة الدفع',
+                            (income
+                                    ? {
+                                        'PAID': 'مستلم كاملًا',
+                                        'PARTIAL': 'مستلم جزئيًا',
+                                        'UNPAID': 'غير مستلم',
+                                      }
+                                    : {
+                                        'PAID': 'مدفوع كاملًا',
+                                        'PARTIAL': 'مدفوع جزئيًا',
+                                        'UNPAID': 'غير مدفوع',
+                                      })[entry!['settlementStatus']] ??
+                                'حالة التسوية',
                           ),
                         ),
                       ),
@@ -1679,16 +1763,21 @@ class _EntryDetailState extends State<EntryDetail> {
                 FilledButton.icon(
                   onPressed: addPayment,
                   icon: const Icon(Icons.add),
-                  label: const Text('إضافة دفعة'),
+                  label: Text(income ? 'إضافة تحصيل' : 'إضافة دفعة'),
                 ),
               ],
               const SizedBox(height: 24),
-              Text('الدفعات', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                income ? 'التحصيلات' : 'الدفعات',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               ...((entry!['settlements'] as List).map(
                 (s) => ListTile(
                   leading: const Icon(Icons.payments_outlined),
                   title: Text('${s['amount']} ريال سعودي'),
-                  subtitle: Text('دُفعت في ${s['paidOn']} ميلادي'),
+                  subtitle: Text(
+                    '${income ? 'استُلمت' : 'دُفعت'} في ${s['paidOn']} ميلادي',
+                  ),
                 ),
               )),
               if (entry!['note'] != '') ...[
@@ -1701,7 +1790,7 @@ class _EntryDetailState extends State<EntryDetail> {
               const Text('صورة PNG أو JPEG، أو PDF • حتى 10 ميغابايت للملف'),
               const SizedBox(height: 12),
               if (attachments.isEmpty)
-                const Text('لم تُضف مرفقات بعد؛ المصروف محفوظ.'),
+                const Text('لم تُضف مرفقات بعد؛ العملية محفوظة.'),
               ...attachments.map(
                 (file) => Card(
                   child: Padding(

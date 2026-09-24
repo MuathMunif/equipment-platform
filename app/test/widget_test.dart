@@ -26,6 +26,7 @@ final sampleEntry = {
   'id': 'entry',
   'equipmentId': 'eq',
   'equipmentName': 'قلاب ١',
+  'entryType': 'EXPENSE',
   'amount': '350.00',
   'currency': 'SAR',
   'category': 'FUEL',
@@ -222,6 +223,53 @@ void main() {
     expect(body['initialPaid'], '100.00');
     expect(body['partyName'], 'ورشة المعدات');
   });
+  testWidgets('partial income uses receipt wording and sends one original', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    http.Request? created;
+    final api = Api(
+      client: MockClient((r) async {
+        created = r;
+        return json({
+          ...sampleEntry,
+          'entryType': 'INCOME',
+          'settlementStatus': 'PARTIAL',
+        });
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(
+      host(
+        ExpenseForm(
+          api: api,
+          equipment: {'id': 'eq', 'name': 'قلاب ١'},
+          income: true,
+        ),
+      ),
+    );
+    expect(find.text('إضافة إيراد'), findsOneWidget);
+    expect(find.text('حالة الاستلام'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('expenseAmount')), '3000');
+    await tester.tap(find.byKey(const Key('paymentStatus')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('استلمت جزءًا').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('initialPaid')), '1000');
+    await tester.enterText(find.byKey(const Key('partyName')), 'عميل اختبار');
+    await tester.ensureVisible(find.byKey(const Key('saveIncome')));
+    await tester.tap(find.byKey(const Key('saveIncome')));
+    await tester.pumpAndSettle();
+    final body = jsonDecode(created!.body) as Map<String, dynamic>;
+    expect(body['entryType'], 'INCOME');
+    expect(body['amount'], '3000.00');
+    expect(body['initialPaid'], '1000.00');
+    expect(body['partyName'], 'عميل اختبار');
+    expect(body.containsKey('category'), false);
+  });
   testWidgets(
     'rejected attachment can be replaced without creating another expense',
     (tester) async {
@@ -277,7 +325,7 @@ void main() {
       expect(initializations, 2);
       expect(uploads, 2);
       expect(expenseCreates, 0);
-      expect(find.text('حُفظ المرفق داخل المصروف'), findsOneWidget);
+      expect(find.text('حُفظ المرفق داخل العملية'), findsOneWidget);
     },
   );
 }

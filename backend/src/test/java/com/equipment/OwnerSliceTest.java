@@ -114,6 +114,28 @@ class OwnerSliceTest {
   assertEquals(1,db.queryForObject("select count(*) from settlement",Integer.class));
   User other=login("0500000002");assertEquals(404,request("POST",path(other,"/entries/"+id+"/settlements"),body,other.token,key()).status);
  }
+ @Test void incomePartialAndLaterReceiptRemainOneOriginalAcrossDates()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);String createKey=key();
+  var income=new HashMap<String,Object>();income.put("equipmentId",eq);income.put("entryType","INCOME");income.put("amount","3000.00");income.put("operationDate","2026-09-01");income.put("paymentStatus","PARTIAL");income.put("initialPaid","1000.00");income.put("paidOn","2026-09-20");income.put("partyName","عميل اختبار");
+  var created=request("POST",path(user,"/entries"),income,user.token,createKey);assertEquals(200,created.status);String id=created.json.get("id").asString();
+  assertEquals("INCOME",created.json.get("entryType").asString());assertEquals("3000.00",created.json.get("amount").asString());assertEquals("1000.00",created.json.get("paid").asString());assertEquals("2000.00",created.json.get("remaining").asString());
+  assertEquals(id,request("POST",path(user,"/entries"),income,user.token,createKey).json.get("id").asString());
+  var changed=new HashMap<>(income);changed.put("amount","3001.00");assertEquals(409,request("POST",path(user,"/entries"),changed,user.token,createKey).status);
+  String url=path(user,"/entries/"+id+"/settlements");String receiptKey=key();var receipt=Map.of("amount","2000.00","paidOn","2026-10-02");
+  var settled=request("POST",url,receipt,user.token,receiptKey);assertEquals(200,settled.status);assertEquals("0.00",settled.json.get("remaining").asString());assertEquals("PAID",settled.json.get("settlementStatus").asString());
+  assertEquals(2,request("POST",url,receipt,user.token,receiptKey).json.get("settlements").size());
+  assertEquals("2026-09-01",settled.json.get("operationDate").asString());assertEquals("2026-10-02",settled.json.get("settlements").get(1).get("paidOn").asString());
+  assertEquals(1,db.queryForObject("select count(*) from financial_entry where entry_type='INCOME'",Integer.class));assertEquals(2,db.queryForObject("select count(*) from settlement",Integer.class));
+  assertEquals(0,db.queryForObject("select count(*) from financial_entry where entry_type='EXPENSE'",Integer.class));
+ }
+ @Test void unpaidIncomeRequiresPartyAndRejectsCrossTenantAndExcessReceipts()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner);var income=new HashMap<String,Object>();income.put("equipmentId",eq);income.put("entryType","INCOME");income.put("amount","200.00");income.put("operationDate","2026-09-01");income.put("paymentStatus","UNPAID");
+  assertEquals(400,request("POST",path(owner,"/entries"),income,owner.token,key()).status);
+  income.put("partyName","عميل اختبار");var created=request("POST",path(owner,"/entries"),income,owner.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString();assertEquals("UNPAID",created.json.get("settlementStatus").asString());assertEquals(0,created.json.get("settlements").size());
+  String url=path(owner,"/entries/"+id+"/settlements");assertEquals(400,request("POST",url,Map.of("amount","200.01","paidOn","2026-09-02"),owner.token,key()).status);
+  User other=login("0500000002");assertEquals(404,request("POST",path(other,"/entries/"+id+"/settlements"),Map.of("amount","1.00","paidOn","2026-09-02"),other.token,key()).status);
+  assertEquals(0,db.queryForObject("select count(*) from settlement",Integer.class));
+ }
  @Test void equipmentNeedsOnlyNameAndModelAndRejectsSystemFields()throws Exception{
   User user=login("0500000001");String key=key();var body=Map.of("name","قلاب ١","model","FH16");var first=request("POST",path(user,"/equipment"),body,user.token,key);var replay=request("POST",path(user,"/equipment"),body,user.token,key);
   assertEquals(first.json.get("id"),replay.json.get("id"));assertTrue(first.json.get("reference").asString().startsWith("EQ-"));assertEquals("FH16",first.json.get("model").asString());
