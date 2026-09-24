@@ -1340,7 +1340,7 @@ class _EntryDetailState extends State<EntryDetail> {
   String? pendingName, pendingType;
   String uploadKey = requestKey();
   Future<void> addPayment() async {
-    final payment = TextEditingController();
+    String paymentAmount = '';
     String paidOn = todayRiyadh();
     String? paymentError;
     bool saving = false;
@@ -1349,13 +1349,14 @@ class _EntryDetailState extends State<EntryDetail> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) => AlertDialog(
+          scrollable: true,
           title: const Text('إضافة دفعة'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('المتبقي عليك: ${entry!['remaining']} ريال سعودي'),
               TextField(
-                controller: payment,
+                onChanged: (value) => paymentAmount = value,
                 enabled: !saving,
                 textDirection: TextDirection.ltr,
                 keyboardType: const TextInputType.numberWithOptions(
@@ -1396,7 +1397,7 @@ class _EntryDetailState extends State<EntryDetail> {
               onPressed: saving
                   ? null
                   : () async {
-                      final value = exactMoney(payment.text);
+                      final value = exactMoney(paymentAmount);
                       if (value == null) {
                         update(() => paymentError = 'اكتب مبلغًا صحيحًا');
                         return;
@@ -1428,7 +1429,6 @@ class _EntryDetailState extends State<EntryDetail> {
         ),
       ),
     );
-    payment.dispose();
   }
 
   @override
