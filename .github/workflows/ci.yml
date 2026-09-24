@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Cache Maven downloads
+        uses: actions/cache@v5
+        with:
+          path: |
+            .local/m2
+            .local/maven-user/wrapper/dists
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml', 'backend/.mvn/wrapper/maven-wrapper.properties') }}
+      - name: Start isolated PostgreSQL test database
+        run: docker compose -f infra/compose.yaml --profile test up -d --wait postgres-test
+      - name: Run backend tests
+        run: ./scripts/backend-test.sh
+
+  flutter:
+    name: Flutter checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Flutter 3.47.2
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.2'
+          cache: true
+      - name: Restore dependencies
+        run: flutter pub get
+      - name: Run Flutter tests
+        run: flutter test
+      - name: Analyze Flutter code
+        run: flutter analyze
+      - name: Build web release
+        run: flutter build web --release
