@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 import javax.imageio.ImageIO;
 import org.apache.pdfbox.pdmodel.*;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
@@ -290,4 +292,88 @@ class OwnerSliceTest {
    for(String action:List.of("Launch","SubmitForm","JavaScript")){var link=new PDAnnotationLink();var nested=new COSDictionary();nested.setName(COSName.S,action);nested.setString(COSName.F,"test-only");link.getCOSObject().setItem(COSName.A,nested);document.getPage(0).getAnnotations().add(link);output.reset();document.save(output);byte[] active=output.toByteArray();assertThrows(RuntimeException.class,()->validator.validate(active,"application/pdf"));document.getPage(0).getAnnotations().clear();}}
  }
  @Test void productionAndMixedProfilesFailClosed(){assertThrows(IllegalStateException.class,()->new DevelopmentBoundary(new MockEnvironment().withProperty("spring.profiles.active","prod"),true));var env=new MockEnvironment();env.setActiveProfiles("dev","prod");assertThrows(IllegalStateException.class,()->new DevelopmentBoundary(env,true));env.setActiveProfiles("dev");assertThrows(IllegalStateException.class,()->new DevelopmentBoundary(env,false));assertDoesNotThrow(()->new DevelopmentBoundary(env,true));}
+ @Test void sharedExpenseIsOneOriginalWithExactSharesAndEntryLevelMovements()throws Exception{
+  User user=login("0500000001"),other=login("0500000002");String a=equipment(user),b=equipment(user),foreign=equipment(other);
+  var body=new HashMap<String,Object>();body.put("expenseScope","SHARED");body.put("amount","1200.00");body.put("category","FUEL");body.put("operationDate","2026-09-01");body.put("paymentStatus","UNPAID");body.put("partyName","مورد");body.put("allocations",List.of(Map.of("equipmentId",a,"amount","700.00"),Map.of("equipmentId",b,"amount","500.00")));
+  var badSum=new HashMap<>(body);badSum.put("allocations",List.of(Map.of("equipmentId",a,"amount","600.00"),Map.of("equipmentId",b,"amount","500.00")));assertEquals(400,request("POST",path(user,"/entries"),badSum,user.token,key()).status);
+  var foreignAllocation=new HashMap<>(body);foreignAllocation.put("allocations",List.of(Map.of("equipmentId",a,"amount","700.00"),Map.of("equipmentId",foreign,"amount","500.00")));assertEquals(404,request("POST",path(user,"/entries"),foreignAllocation,user.token,key()).status);
+  var created=request("POST",path(user,"/entries"),body,user.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString();assertEquals(1,db.queryForObject("select count(*) from financial_entry",Integer.class));assertEquals(2,db.queryForObject("select count(*) from expense_allocation",Integer.class));
+  assertEquals("1200.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals("700.00",request("GET",path(user,"/entries/totals?equipmentId="+a),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals("500.00",request("GET",path(user,"/entries/totals?equipmentId="+b),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(1,request("GET",path(user,"/entries?equipmentId="+a),null,user.token,null).json.get("total").asInt());
+  assertEquals(404,request("GET",path(other,"/entries/"+id),null,other.token,null).status);
+  assertEquals(404,request("GET",path(other,"/entries/totals?equipmentId="+a),null,other.token,null).status);
+  assertEquals(200,request("POST",path(user,"/entries/"+id+"/settlements"),Map.of("amount","600.00","paidOn","2026-09-02"),user.token,key()).status);
+  var refunded=request("POST",path(user,"/entries/"+id+"/refunds"),Map.of("amount","200.00","refundedOn","2026-09-03","reason","عودة جزء"),user.token,key());assertEquals(200,refunded.status);assertEquals("400.00",refunded.json.get("netPaid").asString());assertEquals("800.00",refunded.json.get("remaining").asString());
+  var byEquipment=new HashMap<String,JsonNode>();for(var part:refunded.json.get("allocations"))byEquipment.put(part.get("equipmentId").asString(),part);
+  assertEquals("350.00",byEquipment.get(a).get("paidShare").asString());assertEquals("250.00",byEquipment.get(b).get("paidShare").asString());
+  assertEquals("116.67",byEquipment.get(a).get("refundedShare").asString());assertEquals("83.33",byEquipment.get(b).get("refundedShare").asString());
+  assertEquals("233.33",byEquipment.get(a).get("netPaidShare").asString());assertEquals("166.67",byEquipment.get(b).get("netPaidShare").asString());
+  assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));assertEquals(1,db.queryForObject("select count(*) from financial_refund where entry_id=?",Integer.class,UUID.fromString(id)));
+  assertEquals(200,request("POST",path(user,"/entries/"+id+"/cancellation"),Map.of("reason","قيد خاطئ"),user.token,null).status);
+  assertEquals("0.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals("0.00",request("GET",path(user,"/entries/totals?equipmentId="+a),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(2,request("GET",path(user,"/entries/"+id),null,user.token,null).json.get("allocations").size());
+ }
+ @Test void generalExpenseAndLegacySingleStaySeparatedFromEquipmentTotals()throws Exception{
+  User user=login("0500000001");String eq=equipment(user),single=entry(user,eq);
+  var existing=request("GET",path(user,"/entries/"+single),null,user.token,null);assertEquals("SINGLE",existing.json.get("expenseScope").asString());assertEquals("350.00",existing.json.get("allocations").get(0).get("amount").asString());
+  var general=request("POST",path(user,"/entries"),Map.of("expenseScope","GENERAL","amount","100.00","category","OTHER","operationDate","2026-09-01","paidOn","2026-09-01"),user.token,key());assertEquals(200,general.status);assertTrue(general.json.get("equipmentId").isNull());assertEquals(0,general.json.get("allocations").size());
+  assertEquals("450.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());assertEquals("100.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("generalExpenseTotal").asString());assertEquals("350.00",request("GET",path(user,"/entries/totals?equipmentId="+eq),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(200,request("POST",path(user,"/entries/"+general.json.get("id").asString()+"/cancellation"),Map.of("reason","قيد مكرر"),user.token,null).status);
+  assertEquals("350.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
+ }
+ @Test void sharedAllocationEditFreezesAfterCashWithoutBlockingNotes()throws Exception{
+  User user=login("0500000001");String a=equipment(user),b=equipment(user);
+  var body=Map.of("expenseScope","SHARED","amount","100.00","category","OTHER","operationDate","2026-09-01","paymentStatus","UNPAID","partyName","مورد","allocations",List.of(Map.of("equipmentId",a,"amount","60.00"),Map.of("equipmentId",b,"amount","40.00")));
+  String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();
+  var edit=Map.of("amount","120.00","category","OTHER","operationDate","2026-09-02","partyName","مورد","expenseScope","SHARED","allocations",List.of(Map.of("equipmentId",a,"amount","70.00"),Map.of("equipmentId",b,"amount","50.00")));
+  assertEquals(200,request("PUT",path(user,"/entries/"+id),edit,user.token,null).status);
+  assertEquals("70.00",request("GET",path(user,"/entries/totals?equipmentId="+a),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(200,request("POST",path(user,"/entries/"+id+"/settlements"),Map.of("amount","30.00","paidOn","2026-09-03"),user.token,key()).status);
+  var changed=new HashMap<>(edit);changed.put("amount","130.00");assertEquals(400,request("PUT",path(user,"/entries/"+id),changed,user.token,null).status);
+  var noteOnly=Map.of("amount","120.00","category","OTHER","operationDate","2026-09-02","partyName","مورد","note","تصحيح الوصف");
+  var updated=request("PUT",path(user,"/entries/"+id),noteOnly,user.token,null);assertEquals(200,updated.status);assertEquals("30.00",updated.json.get("paid").asString());assertEquals(1,updated.json.get("settlements").size());
+ }
+ @Test void tinySharedSharesReconcileDeterministicallyAcrossPaymentsAndRefund()throws Exception{
+  User user=login("0500000001");String a=equipment(user),b=equipment(user),c=equipment(user);
+  var body=Map.of("expenseScope","SHARED","amount","0.03","category","OTHER","operationDate","2026-09-01","paymentStatus","UNPAID","partyName","مورد","allocations",List.of(Map.of("equipmentId",a,"amount","0.01"),Map.of("equipmentId",b,"amount","0.01"),Map.of("equipmentId",c,"amount","0.01")));
+  String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();String url=path(user,"/entries/"+id);
+  assertEquals(200,request("POST",url+"/settlements",Map.of("amount","0.02","paidOn","2026-09-02"),user.token,key()).status);
+  var afterRefund=request("POST",url+"/refunds",Map.of("amount","0.01","refundedOn","2026-09-03","reason","عودة جزء"),user.token,key());assertEquals(200,afterRefund.status);
+  int paid=0,refund=0,net=0,remaining=0;for(var part:afterRefund.json.get("allocations")){paid+=Integer.parseInt(part.get("paidShare").asString().replace(".",""));refund+=Integer.parseInt(part.get("refundedShare").asString().replace(".",""));net+=Integer.parseInt(part.get("netPaidShare").asString().replace(".",""));remaining+=Integer.parseInt(part.get("remainingShare").asString().replace(".",""));}
+  assertEquals(2,paid);assertEquals(1,refund);assertEquals(1,net);assertEquals(2,remaining);
+  var again=request("GET",url,null,user.token,null);assertEquals(afterRefund.json.get("allocations"),again.json.get("allocations"));
+  assertEquals(200,request("POST",url+"/settlements",Map.of("amount","0.02","paidOn","2026-09-04"),user.token,key()).status);
+  var complete=request("GET",url,null,user.token,null);for(var part:complete.json.get("allocations"))assertEquals(part.get("amount").asString(),part.get("netPaidShare").asString());
+ }
+ @Test void v6MigrationBackfillsExistingExpenseWithoutChangingIncome()throws Exception{
+  String schema="allocation_migration_"+UUID.randomUUID().toString().replace("-","");
+  db.execute("create schema "+schema);
+  try {
+   var source=Objects.requireNonNull(db.getDataSource());
+   Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).locations("classpath:db/migration").target(MigrationVersion.fromVersion("5")).load().migrate();
+   UUID user=UUID.randomUUID(),workspace=UUID.randomUUID(),equipment=UUID.randomUUID(),expense=UUID.randomUUID(),income=UUID.randomUUID();
+   db.update("insert into "+schema+".app_user(id,phone,name) values(?,?,?)",user,"0501111111","مالك اختبار");
+   db.update("insert into "+schema+".workspace(id,name,owner_id) values(?,?,?)",workspace,"اختبار",user);
+   db.update("insert into "+schema+".equipment(id,workspace_id,name,model,created_by) values(?,?,?,?,?)",equipment,workspace,"قلاب","موديل",user);
+   for(var pair:List.of(Map.entry(expense,"EXPENSE"),Map.entry(income,"INCOME")))
+    db.update("insert into "+schema+".financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,lifecycle,created_by,entry_type) values(?,?,?,?,'SAR','OTHER',current_date,'POSTED',?,?)",pair.getKey(),workspace,equipment,new java.math.BigDecimal("350.00"),user,pair.getValue());
+   Flyway.configure().dataSource(source).schemas(schema).defaultSchema(schema).locations("classpath:db/migration").load().migrate();
+   assertEquals(1,db.queryForObject("select count(*) from "+schema+".expense_allocation where entry_id=?",Integer.class,expense));
+   assertEquals("350.00",db.queryForObject("select amount::text from "+schema+".expense_allocation where entry_id=?",String.class,expense));
+   assertEquals(0,db.queryForObject("select count(*) from "+schema+".expense_allocation where entry_id=?",Integer.class,income));
+   assertEquals(2,db.queryForObject("select count(*) from "+schema+".financial_entry",Integer.class));
+  } finally { db.execute("drop schema "+schema+" cascade"); }
+ }
+ @Test void proportionalRefundSharesNeverBecomeNegativeUnderRoundingParadox()throws Exception{
+  User user=login("0500000001");String a=equipment(user),b=equipment(user),c=equipment(user);
+  var body=Map.of("expenseScope","SHARED","amount","0.07","category","OTHER","operationDate","2026-09-01","paymentStatus","UNPAID","partyName","مورد","allocations",List.of(Map.of("equipmentId",a,"amount","0.01"),Map.of("equipmentId",b,"amount","0.03"),Map.of("equipmentId",c,"amount","0.03")));
+  String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();String url=path(user,"/entries/"+id);
+  assertEquals(200,request("POST",url+"/settlements",Map.of("amount","0.04","paidOn","2026-09-02"),user.token,key()).status);
+  var after=request("POST",url+"/refunds",Map.of("amount","0.03","refundedOn","2026-09-03","reason","عودة جزء"),user.token,key());assertEquals(200,after.status);
+  int refunds=0,net=0;for(var part:after.json.get("allocations")){int partRefund=Integer.parseInt(part.get("refundedShare").asString().replace(".",""));int partNet=Integer.parseInt(part.get("netPaidShare").asString().replace(".",""));assertTrue(partRefund>=0);assertTrue(partNet>=0);refunds+=partRefund;net+=partNet;}
+  assertEquals(3,refunds);assertEquals(1,net);
+ }
 }

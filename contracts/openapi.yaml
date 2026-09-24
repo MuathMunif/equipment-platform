@@ -193,9 +193,14 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [equipmentId, amount, operationDate]
+              required: [amount, operationDate]
               properties:
-                equipmentId: {type: string, format: uuid}
+                equipmentId: {type: string, format: uuid, description: Required for single equipment expense and income; omitted for shared/general expense}
+                expenseScope: {type: string, enum: [SINGLE, SHARED, GENERAL], default: SINGLE, description: Expenses only; income stays single-equipment}
+                allocations:
+                  type: array
+                  description: Required for SHARED expense; distinct same-workspace equipment and explicit amounts summing exactly to entry total
+                  items: {$ref: '#/components/schemas/AllocationInput'}
                 entryType: {type: string, enum: [EXPENSE, INCOME], default: EXPENSE}
                 amount: {$ref: '#/components/schemas/Money'}
                 category: {type: string, enum: [FUEL, MAINTENANCE, OTHER], description: Required for expenses; omitted for income}
@@ -212,6 +217,26 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
         '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/entries/totals:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Active original totals only. Shared expense counted once for workspace, by explicit allocation for equipment; general expense belongs only to workspace.
+      parameters:
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Active totals in SAR
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expenseTotal, incomeTotal, generalExpenseTotal]
+                properties:
+                  expenseTotal: {$ref: '#/components/schemas/Money'}
+                  incomeTotal: {$ref: '#/components/schemas/Money'}
+                  generalExpenseTotal: {$ref: '#/components/schemas/Money'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
   /workspaces/{workspace}/entries/{id}:
     parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
     get:
@@ -237,6 +262,9 @@ paths:
                 note: {type: [string, 'null'], maxLength: 1000}
                 partyName: {type: [string, 'null'], maxLength: 100, description: Required if an amount remains}
                 dueDate: {type: [string, 'null'], format: date, description: Allowed only while an amount remains}
+                equipmentId: {type: string, format: uuid, description: Required when changing expense to SINGLE scope}
+                expenseScope: {type: string, enum: [SINGLE, SHARED, GENERAL], description: Expense only. Changing a shared allocation after settlements/refunds is blocked until Q-02 is resolved}
+                allocations: {type: array, items: {$ref: '#/components/schemas/AllocationInput'}}
       responses:
         '200': {description: Updated entry with unchanged settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '400': {$ref: '#/components/responses/Error'}
@@ -405,13 +433,33 @@ components:
         name: {type: string}
         model: {type: string}
         createdAt: {type: string, format: date-time}
-    Entry:
+    AllocationInput:
       type: object
-      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds]
+      required: [equipmentId, amount]
       properties:
-        id: {type: string, format: uuid}
+        equipmentId: {type: string, format: uuid}
+        amount: {$ref: '#/components/schemas/Money'}
+    Allocation:
+      type: object
+      required: [equipmentId, equipmentName, amount, paidShare, refundedShare, netPaidShare, remainingShare]
+      description: Calculated equipment shares; payment/refund history remains on original entry. Minor-unit largest remainder, tie by equipment UUID.
+      properties:
         equipmentId: {type: string, format: uuid}
         equipmentName: {type: string}
+        amount: {$ref: '#/components/schemas/Money'}
+        paidShare: {$ref: '#/components/schemas/Money'}
+        refundedShare: {$ref: '#/components/schemas/Money'}
+        netPaidShare: {$ref: '#/components/schemas/Money'}
+        remainingShare: {$ref: '#/components/schemas/Money'}
+    Entry:
+      type: object
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations]
+      properties:
+        id: {type: string, format: uuid}
+        equipmentId: {type: [string, 'null'], format: uuid, description: Null for shared/general expenses}
+        equipmentName: {type: [string, 'null']}
+        expenseScope: {type: string, enum: [SINGLE, SHARED, GENERAL]}
+        allocations: {type: array, items: {$ref: '#/components/schemas/Allocation'}}
         entryType: {type: string, enum: [EXPENSE, INCOME]}
         amount: {$ref: '#/components/schemas/Money'}
         currency: {const: SAR}

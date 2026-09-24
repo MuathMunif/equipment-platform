@@ -228,6 +228,275 @@ void main() {
     expect(body['initialPaid'], '100.00');
     expect(body['partyName'], 'ورشة المعدات');
   });
+  testWidgets('expense defaults to one equipment without allocation inputs', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final posts = <Map<String, dynamic>>[];
+    final api = Api(
+      client: MockClient((r) async {
+        if (r.method == 'POST') {
+          posts.add(jsonDecode(r.body) as Map<String, dynamic>);
+        }
+        return json(sampleEntry);
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(
+      host(ExpenseForm(api: api, equipment: {'id': 'eq', 'name': 'قلاب ١'})),
+    );
+    expect(find.byKey(const Key('allocationAmount0')), findsNothing);
+    await tester.enterText(find.byKey(const Key('expenseAmount')), '100');
+    await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+    await tester.tap(find.byKey(const Key('saveExpense')));
+    await tester.pumpAndSettle();
+    expect(posts.single['expenseScope'], 'SINGLE');
+    expect(posts.single['equipmentId'], 'eq');
+    expect(posts.single.containsKey('allocations'), isFalse);
+  });
+  testWidgets('general expense omits equipment and shares', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    Map<String, dynamic>? posted;
+    final api = Api(
+      client: MockClient((r) async {
+        if (r.method == 'POST') {
+          posted = jsonDecode(r.body) as Map<String, dynamic>;
+        }
+        return json(sampleEntry);
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(
+      host(ExpenseForm(api: api, equipment: {'id': 'eq', 'name': 'قلاب ١'})),
+    );
+    await tester.tap(find.byKey(const Key('expenseScope')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('مصروف عام').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmount')), '100');
+    await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+    await tester.tap(find.byKey(const Key('saveExpense')));
+    await tester.pumpAndSettle();
+    expect(posted!['expenseScope'], 'GENERAL');
+    expect(posted!.containsKey('equipmentId'), isFalse);
+    expect(posted!.containsKey('allocations'), isFalse);
+  });
+  testWidgets(
+    'shared expense adds removes and validates explicit equipment amounts',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      Map<String, dynamic>? posted;
+      final api = Api(
+        client: MockClient((r) async {
+          if (r.method == 'GET') {
+            return json({
+              'items': [
+                {'id': 'eq', 'name': 'قلاب ١'},
+                {'id': 'eq2', 'name': 'قلاب ٢'},
+              ],
+              'total': 2,
+            });
+          }
+          posted = jsonDecode(r.body) as Map<String, dynamic>;
+          return json({...sampleEntry, 'expenseScope': 'SHARED'});
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(ExpenseForm(api: api, equipment: {'id': 'eq', 'name': 'قلاب ١'})),
+      );
+      await tester.tap(find.byKey(const Key('expenseScope')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('أكثر من معدة').last);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('allocationAmount0')), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('expenseAmount')), '100');
+      await tester.enterText(find.byKey(const Key('allocationAmount0')), '70');
+      await tester.enterText(find.byKey(const Key('allocationAmount1')), '20');
+      await tester.tap(find.byKey(const Key('allocationEquipment1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('قلاب ٢').last);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('addAllocation')));
+      await tester.tap(find.byKey(const Key('addAllocation')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('removeAllocation2')));
+      await tester.tap(find.byKey(const Key('removeAllocation2')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('مجموع مبالغها يساوي'), findsOneWidget);
+      expect(posted, isNull);
+      await tester.enterText(find.byKey(const Key('allocationAmount1')), '30');
+      await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      expect(posted!['expenseScope'], 'SHARED');
+      expect(posted!.containsKey('equipmentId'), isFalse);
+      expect(
+        (posted!['allocations'] as List).map((part) => part['amount']).toList(),
+        ['70.00', '30.00'],
+      );
+    },
+  );
+  testWidgets(
+    'shared detail shows calculated shares separately from original movements',
+    (tester) async {
+      final api = Api(
+        client: MockClient((r) async {
+          if (r.url.path.endsWith('/attachments')) return json([]);
+          return json({
+            ...sampleEntry,
+            'equipmentId': null,
+            'equipmentName': null,
+            'expenseScope': 'SHARED',
+            'allocations': [
+              {
+                'equipmentId': 'eq',
+                'equipmentName': 'قلاب ١',
+                'amount': '200.00',
+                'paidShare': '100.00',
+                'refundedShare': '20.00',
+                'netPaidShare': '80.00',
+                'remainingShare': '120.00',
+              },
+              {
+                'equipmentId': 'eq2',
+                'equipmentName': 'قلاب ٢',
+                'amount': '150.00',
+                'paidShare': '75.00',
+                'refundedShare': '15.00',
+                'netPaidShare': '60.00',
+                'remainingShare': '90.00',
+              },
+            ],
+          });
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+      await tester.pumpAndSettle();
+      expect(find.text('نصيب كل معدة'), findsOneWidget);
+      expect(
+        find.textContaining('حصة محسوبة من صافي المدفوع: 80.00'),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.textContaining('حصة محسوبة من صافي المدفوع: 60.00'),
+        200,
+      );
+      expect(
+        find.textContaining('حصة محسوبة من صافي المدفوع: 60.00'),
+        findsOneWidget,
+      );
+    },
+  );
+  testWidgets('shared expense edit submits changed shares before payment', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    Map<String, dynamic>? updated;
+    final entry = {
+      ...sampleEntry,
+      'expenseScope': 'SHARED',
+      'paid': '0.00',
+      'remaining': '100.00',
+      'amount': '100.00',
+      'settlements': [],
+      'allocations': [
+        {'equipmentId': 'eq', 'equipmentName': 'قلاب ١', 'amount': '60.00'},
+        {'equipmentId': 'eq2', 'equipmentName': 'قلاب ٢', 'amount': '40.00'},
+      ],
+    };
+    final api = Api(
+      client: MockClient((r) async {
+        if (r.method == 'GET') {
+          return json({
+            'items': [
+              {'id': 'eq', 'name': 'قلاب ١'},
+              {'id': 'eq2', 'name': 'قلاب ٢'},
+            ],
+            'total': 2,
+          });
+        }
+        updated = jsonDecode(r.body) as Map<String, dynamic>;
+        return json(entry);
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(EntryEditForm(api: api, entry: entry)));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('editAmount')), '120');
+    await tester.enterText(
+      find.byKey(const Key('editAllocationAmount0')),
+      '70',
+    );
+    await tester.enterText(
+      find.byKey(const Key('editAllocationAmount1')),
+      '50',
+    );
+    await tester.enterText(find.byKey(const Key('editParty')), 'مورد');
+    await tester.ensureVisible(find.byKey(const Key('saveEntryEdit')));
+    await tester.tap(find.byKey(const Key('saveEntryEdit')));
+    await tester.pumpAndSettle();
+    expect(updated!['amount'], '120.00');
+    expect(
+      (updated!['allocations'] as List).map((item) => item['amount']).toList(),
+      ['70.00', '50.00'],
+    );
+  });
+  testWidgets('shared expense locks financial amounts after payment', (
+    tester,
+  ) async {
+    final entry = {
+      ...sampleEntry,
+      'expenseScope': 'SHARED',
+      'allocations': [
+        {'equipmentId': 'eq', 'equipmentName': 'قلاب ١', 'amount': '200.00'},
+        {'equipmentId': 'eq2', 'equipmentName': 'قلاب ٢', 'amount': '150.00'},
+      ],
+    };
+    final api = Api(
+      client: MockClient((r) async => json({'items': [], 'total': 0})),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(EntryEditForm(api: api, entry: entry)));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(find.byKey(const Key('editAmount'))).enabled,
+      isFalse,
+    );
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('editAllocationAmount0')))
+          .enabled,
+      isFalse,
+    );
+  });
+  testWidgets('workspace ledger offers general expense without equipment', (
+    tester,
+  ) async {
+    final api = Api(
+      client: MockClient((r) async => json({'items': [], 'total': 0})),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(LedgerPage(api: api)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('addGeneralExpense')), findsOneWidget);
+  });
   testWidgets('partial income uses receipt wording and sends one original', (
     tester,
   ) async {
@@ -446,83 +715,118 @@ void main() {
       expect(find.byKey(const Key('addAttachment')), findsOneWidget);
     },
   );
-  testWidgets('expense refund validates form and shows dated history and net values', (tester) async {
-    tester.view.physicalSize = const Size(800, 1700);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    Map<String, dynamic> current = {...sampleEntry, 'settlementStatus': 'PAID'};
-    http.Request? posted;
-    final api = Api(client: MockClient((r) async {
-      if (r.url.path.endsWith('/attachments')) return json([]);
-      if (r.method == 'POST' && r.url.path.endsWith('/refunds')) {
-        posted = r;
-        current = {
-          ...current,
-          'refunded': '100.00', 'netPaid': '250.00', 'refundable': '250.00',
-          'remaining': '100.00', 'settlementStatus': 'PARTIAL',
-          'refunds': [{'id': 'refund', 'amount': '100.00', 'refundedOn': '2026-10-02', 'reason': 'مرتجع من المورد'}],
-        };
-        return json(current);
-      }
-      return json(current);
-    }), persistNative: false)..workspace = 'w';
-    await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('addRefund')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('addRefund')));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('مبلغ عاد إليك'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('saveRefund')));
-    await tester.pumpAndSettle();
-    expect(find.text('اكتب مبلغ استرداد صحيحًا'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('refundAmount')), '400');
-    await tester.tap(find.byKey(const Key('saveRefund')));
-    await tester.pumpAndSettle();
-    expect(find.text('مبلغ الاسترداد أكبر من المتاح'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('refundAmount')), '100');
-    await tester.tap(find.byKey(const Key('saveRefund')));
-    await tester.pumpAndSettle();
-    expect(find.text('اكتب سبب الاسترداد'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('refundReason')), 'مرتجع من المورد');
-    await tester.tap(find.byKey(const Key('saveRefund')));
-    await tester.pumpAndSettle();
-    expect(posted, isNotNull);
-    final body = jsonDecode(posted!.body) as Map<String, dynamic>;
-    expect(body['amount'], '100.00');
-    expect(body['reason'], 'مرتجع من المورد');
-    expect(body['refundedOn'], isNotNull);
-    expect(posted!.headers['Idempotency-Key'], isNotNull);
-    expect(find.text('المسترد'), findsOneWidget);
-    expect(find.text('صافي المدفوع'), findsOneWidget);
-    expect(find.text('الاستردادات'), findsOneWidget);
-    expect(find.textContaining('السبب: مرتجع من المورد'), findsOneWidget);
-    expect(find.text('إضافة دفعة'), findsOneWidget);
-  });
-  testWidgets('income refund wording and no refund action after full return or cancellation', (tester) async {
-    tester.view.physicalSize = const Size(800, 1700);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final current = {...sampleEntry, 'entryType': 'INCOME', 'paid': '350.00', 'refundable': '350.00'};
-    final api = Api(client: MockClient((r) async => json(r.url.path.endsWith('/attachments') ? [] : current)), persistNative: false)..workspace = 'w';
-    await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('addRefund')));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('أُعيد إلى العميل'), findsOneWidget);
-    await tester.tap(find.text('رجوع'));
-    await tester.pumpAndSettle();
-    current['refundable'] = '0.00';
-    await tester.tap(find.byTooltip('تحديث الإيراد'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('addRefund')), findsNothing);
-    current['refundable'] = '350.00';
-    current['lifecycle'] = 'CANCELLED';
-    current['cancellationReason'] = 'قيد خطأ';
-    current['cancelledAt'] = '2026-09-24T10:00:00Z';
-    await tester.tap(find.byTooltip('تحديث الإيراد'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('addRefund')), findsNothing);
-  });
+  testWidgets(
+    'expense refund validates form and shows dated history and net values',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      Map<String, dynamic> current = {
+        ...sampleEntry,
+        'settlementStatus': 'PAID',
+      };
+      http.Request? posted;
+      final api = Api(
+        client: MockClient((r) async {
+          if (r.url.path.endsWith('/attachments')) return json([]);
+          if (r.method == 'POST' && r.url.path.endsWith('/refunds')) {
+            posted = r;
+            current = {
+              ...current,
+              'refunded': '100.00',
+              'netPaid': '250.00',
+              'refundable': '250.00',
+              'remaining': '100.00',
+              'settlementStatus': 'PARTIAL',
+              'refunds': [
+                {
+                  'id': 'refund',
+                  'amount': '100.00',
+                  'refundedOn': '2026-10-02',
+                  'reason': 'مرتجع من المورد',
+                },
+              ],
+            };
+            return json(current);
+          }
+          return json(current);
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('addRefund')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('addRefund')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('مبلغ عاد إليك'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('saveRefund')));
+      await tester.pumpAndSettle();
+      expect(find.text('اكتب مبلغ استرداد صحيحًا'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('refundAmount')), '400');
+      await tester.tap(find.byKey(const Key('saveRefund')));
+      await tester.pumpAndSettle();
+      expect(find.text('مبلغ الاسترداد أكبر من المتاح'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('refundAmount')), '100');
+      await tester.tap(find.byKey(const Key('saveRefund')));
+      await tester.pumpAndSettle();
+      expect(find.text('اكتب سبب الاسترداد'), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('refundReason')),
+        'مرتجع من المورد',
+      );
+      await tester.tap(find.byKey(const Key('saveRefund')));
+      await tester.pumpAndSettle();
+      expect(posted, isNotNull);
+      final body = jsonDecode(posted!.body) as Map<String, dynamic>;
+      expect(body['amount'], '100.00');
+      expect(body['reason'], 'مرتجع من المورد');
+      expect(body['refundedOn'], isNotNull);
+      expect(posted!.headers['Idempotency-Key'], isNotNull);
+      expect(find.text('المسترد'), findsOneWidget);
+      expect(find.text('صافي المدفوع'), findsOneWidget);
+      expect(find.text('الاستردادات'), findsOneWidget);
+      expect(find.textContaining('السبب: مرتجع من المورد'), findsOneWidget);
+      expect(find.text('إضافة دفعة'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'income refund wording and no refund action after full return or cancellation',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final current = {
+        ...sampleEntry,
+        'entryType': 'INCOME',
+        'paid': '350.00',
+        'refundable': '350.00',
+      };
+      final api = Api(
+        client: MockClient(
+          (r) async => json(r.url.path.endsWith('/attachments') ? [] : current),
+        ),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('addRefund')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('أُعيد إلى العميل'), findsOneWidget);
+      await tester.tap(find.text('رجوع'));
+      await tester.pumpAndSettle();
+      current['refundable'] = '0.00';
+      await tester.tap(find.byTooltip('تحديث الإيراد'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('addRefund')), findsNothing);
+      current['refundable'] = '350.00';
+      current['lifecycle'] = 'CANCELLED';
+      current['cancellationReason'] = 'قيد خطأ';
+      current['cancelledAt'] = '2026-09-24T10:00:00Z';
+      await tester.tap(find.byTooltip('تحديث الإيراد'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('addRefund')), findsNothing);
+    },
+  );
 }

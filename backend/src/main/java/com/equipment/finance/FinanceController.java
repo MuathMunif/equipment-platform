@@ -10,6 +10,7 @@ public class FinanceController {
     private final FinanceService service;
     public FinanceController(FinanceService service) { this.service=service; }
     @GetMapping Map<String,Object> list(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestParam(required=false) UUID equipmentId,@RequestParam(defaultValue="0") int page) { return service.list(actor,workspace,equipmentId,page); }
+    @GetMapping("/totals") Map<String,String> totals(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestParam(required=false) UUID equipmentId) { return service.totals(actor,workspace,equipmentId); }
     @GetMapping("/{id}") FinanceService.Entry get(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id) { return service.get(actor,workspace,id); }
     @PostMapping FinanceService.Entry create(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestHeader("Idempotency-Key") String key,@RequestBody FinanceService.Create request) { return service.create(actor,workspace,key,request); }
     @PostMapping("/{id}/settlements") FinanceService.Entry settle(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id,@RequestHeader("Idempotency-Key") String key,@RequestBody FinanceService.AddSettlement request) { return service.settle(actor,workspace,id,key,request); }

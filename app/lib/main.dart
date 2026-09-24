@@ -939,8 +939,9 @@ class _LedgerPageState extends State<LedgerPage> {
       MaterialPageRoute(
         builder: (_) => ExpenseForm(
           api: widget.api,
-          equipment: widget.equipment!,
+          equipment: widget.equipment ?? {'id': null, 'name': 'مساحة العمل'},
           income: income,
+          initialScope: widget.equipment == null ? 'GENERAL' : 'SINGLE',
         ),
       ),
     );
@@ -961,6 +962,15 @@ class _LedgerPageState extends State<LedgerPage> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        if (widget.equipment == null) ...[
+          FilledButton.icon(
+            key: const Key('addGeneralExpense'),
+            onPressed: () => add(),
+            icon: const Icon(Icons.add),
+            label: const Text('إضافة مصروف عام'),
+          ),
+          const SizedBox(height: 16),
+        ],
         if (widget.equipment != null)
           Card(
             child: Padding(
@@ -1033,7 +1043,11 @@ class _LedgerPageState extends State<LedgerPage> {
                 child: Icon(Icons.receipt_long_outlined),
               ),
               title: Text(
-                '${entry['entryType'] == 'INCOME' ? 'إيراد' : categories[entry['category']]} • ${entry['equipmentName']}',
+                '${entry['entryType'] == 'INCOME' ? 'إيراد' : categories[entry['category']]} • ${entry['expenseScope'] == 'GENERAL'
+                    ? 'مصروف عام'
+                    : entry['expenseScope'] == 'SHARED'
+                    ? 'أكثر من معدة'
+                    : entry['equipmentName']}',
               ),
               subtitle: Text(
                 '${entry['operationDate']} ميلادي\n${entry['lifecycle'] == 'CANCELLED' ? 'عملية ملغاة' : (entry['entryType'] == 'INCOME' ? {'PAID': 'مستلم كاملًا', 'PARTIAL': 'مستلم جزئيًا', 'UNPAID': 'غير مستلم'} : {'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'})[entry['settlementStatus']] ?? 'حالة التسوية'}',
@@ -1072,14 +1086,23 @@ class ExpenseForm extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> equipment;
   final bool income;
+  final String initialScope;
   const ExpenseForm({
     super.key,
     required this.api,
     required this.equipment,
     this.income = false,
+    this.initialScope = 'SINGLE',
   });
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
+}
+
+class _ExpensePart {
+  String? equipmentId;
+  final amount = TextEditingController();
+  _ExpensePart(this.equipmentId);
+  void dispose() => amount.dispose();
 }
 
 class _ExpenseFormState extends State<ExpenseForm> {
@@ -1096,12 +1119,68 @@ class _ExpenseFormState extends State<ExpenseForm> {
   String? dueDate;
   String? error;
   bool busy = false, uncertain = false, saved = false;
+  String expenseScope = 'SINGLE';
+  final parts = <_ExpensePart>[];
+  List<Map<String, dynamic>> equipmentChoices = [];
+  bool loadingEquipment = false;
+  @override
+  void initState() {
+    super.initState();
+    expenseScope = widget.initialScope;
+  }
+
+  Future<void> loadEquipmentChoices() async {
+    if (equipmentChoices.isNotEmpty || loadingEquipment) return;
+    setState(() => loadingEquipment = true);
+    try {
+      final choices = <Map<String, dynamic>>[];
+      var page = 0;
+      while (true) {
+        final response = await widget.api.json(
+          'GET',
+          widget.api.scoped('/equipment?page=$page'),
+        );
+        choices.addAll(
+          (response['items'] as List).map(
+            (item) => Map<String, dynamic>.from(item),
+          ),
+        );
+        if (choices.length >= (response['total'] as num).toInt()) break;
+        page++;
+      }
+      if (mounted) setState(() => equipmentChoices = choices);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loadingEquipment = false);
+    }
+  }
+
+  void changeScope(String value) {
+    for (final part in parts) {
+      part.dispose();
+    }
+    parts.clear();
+    if (value == 'SHARED') {
+      parts.add(_ExpensePart(widget.equipment['id'] as String));
+      parts.add(_ExpensePart(null));
+      loadEquipmentChoices();
+    }
+    setState(() {
+      expenseScope = value;
+      error = null;
+    });
+  }
+
   @override
   void dispose() {
     amount.dispose();
     note.dispose();
     initialPaid.dispose();
     party.dispose();
+    for (final part in parts) {
+      part.dispose();
+    }
     super.dispose();
   }
 
@@ -1138,6 +1217,28 @@ class _ExpenseFormState extends State<ExpenseForm> {
 
   Future<void> save() async {
     if (!form.currentState!.validate()) return;
+    if (!widget.income && expenseScope == 'SHARED') {
+      final total = exactMoney(amount.text);
+      final amounts = parts
+          .map((part) => exactMoney(part.amount.text))
+          .toList();
+      final ids = parts.map((part) => part.equipmentId).toList();
+      if (total == null ||
+          amounts.any((value) => value == null) ||
+          ids.any((id) => id == null) ||
+          ids.toSet().length != ids.length ||
+          amounts.fold<BigInt>(
+                BigInt.zero,
+                (sum, value) => sum + BigInt.parse(value!.replaceAll('.', '')),
+              ) !=
+              BigInt.parse(total.replaceAll('.', ''))) {
+        setState(
+          () => error =
+              'حدد معدات مختلفة واجعل مجموع مبالغها يساوي إجمالي المصروف',
+        );
+        return;
+      }
+    }
     setState(() {
       busy = true;
       error = null;
@@ -1148,7 +1249,18 @@ class _ExpenseFormState extends State<ExpenseForm> {
         widget.api.scoped('/entries'),
         key: key,
         body: {
-          'equipmentId': widget.equipment['id'],
+          if (widget.income || expenseScope == 'SINGLE')
+            'equipmentId': widget.equipment['id'],
+          if (!widget.income) 'expenseScope': expenseScope,
+          if (!widget.income && expenseScope == 'SHARED')
+            'allocations': parts
+                .map(
+                  (part) => {
+                    'equipmentId': part.equipmentId,
+                    'amount': exactMoney(part.amount.text),
+                  },
+                )
+                .toList(),
           if (widget.income) 'entryType': 'INCOME',
           'amount': exactMoney(amount.text),
           if (!widget.income) 'category': category,
@@ -1201,11 +1313,32 @@ class _ExpenseFormState extends State<ExpenseForm> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text(
-              widget.income
-                  ? 'يُسجّل هذا الإيراد على هذه المعدة'
-                  : 'يُسجّل هذا المصروف على هذه المعدة',
-            ),
+            if (widget.income)
+              const Text('يُسجّل هذا الإيراد على هذه المعدة')
+            else if (widget.equipment['id'] == null)
+              const Text('مصروف عام لمساحة العمل؛ لا يُحمّل على معدة')
+            else ...[
+              const Text('اختر المعدات التي يخصها المصروف'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                key: const Key('expenseScope'),
+                initialValue: expenseScope,
+                decoration: const InputDecoration(labelText: 'يخص المصروف'),
+                items: const [
+                  DropdownMenuItem(value: 'SINGLE', child: Text('معدة واحدة')),
+                  DropdownMenuItem(
+                    value: 'SHARED',
+                    child: Text('أكثر من معدة'),
+                  ),
+                  DropdownMenuItem(value: 'GENERAL', child: Text('مصروف عام')),
+                ],
+                onChanged: busy || uncertain
+                    ? null
+                    : (value) {
+                        if (value != null) changeScope(value);
+                      },
+              ),
+            ],
             const SizedBox(height: 24),
             TextFormField(
               key: const Key('expenseAmount'),
@@ -1224,6 +1357,96 @@ class _ExpenseFormState extends State<ExpenseForm> {
                   : null,
               onChanged: (_) => setState(() {}),
             ),
+            if (!widget.income && expenseScope == 'SHARED') ...[
+              const SizedBox(height: 16),
+              Text(
+                'مبلغ كل معدة',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (loadingEquipment) const LinearProgressIndicator(),
+              ...parts.asMap().entries.map(
+                (item) => Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        key: Key('allocationEquipment${item.key}'),
+                        initialValue: item.value.equipmentId,
+                        decoration: const InputDecoration(labelText: 'المعدة'),
+                        items: [
+                          if (!equipmentChoices.any(
+                            (e) => e['id'] == widget.equipment['id'],
+                          ))
+                            DropdownMenuItem(
+                              value: widget.equipment['id'] as String,
+                              child: Text(widget.equipment['name'] as String),
+                            ),
+                          ...equipmentChoices.map(
+                            (e) => DropdownMenuItem(
+                              value: e['id'] as String,
+                              child: Text(e['name'] as String),
+                            ),
+                          ),
+                        ],
+                        onChanged: busy || uncertain
+                            ? null
+                            : (value) => setState(
+                                () => item.value.equipmentId = value,
+                              ),
+                        validator: (value) =>
+                            value == null ? 'اختر معدة' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        key: Key('allocationAmount${item.key}'),
+                        controller: item.value.amount,
+                        textDirection: TextDirection.ltr,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(labelText: 'المبلغ'),
+                        validator: (value) => exactMoney(value ?? '') == null
+                            ? 'اكتب مبلغًا صحيحًا'
+                            : null,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    if (parts.length > 2)
+                      IconButton(
+                        key: Key('removeAllocation${item.key}'),
+                        tooltip: 'إزالة المعدة',
+                        onPressed: busy || uncertain
+                            ? null
+                            : () => setState(() {
+                                final removed = parts.removeAt(item.key);
+                                removed.dispose();
+                              }),
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                key: const Key('addAllocation'),
+                onPressed: busy || uncertain
+                    ? null
+                    : () => setState(() => parts.add(_ExpensePart(null))),
+                icon: const Icon(Icons.add),
+                label: const Text('إضافة معدة'),
+              ),
+              Text(
+                'المتبقي للتوزيع: ${(() {
+                  final total = exactMoney(amount.text);
+                  if (total == null) return '—';
+                  final assigned = parts.map((p) => exactMoney(p.amount.text)).whereType<String>().fold<BigInt>(BigInt.zero, (s, v) => s + BigInt.parse(v.replaceAll('.', '')));
+                  final difference = BigInt.parse(total.replaceAll('.', '')) - assigned;
+                  final absolute = difference.abs().toString().padLeft(3, '0');
+                  return '${difference.isNegative ? '-' : ''}${absolute.substring(0, absolute.length - 2)}.${absolute.substring(absolute.length - 2)}';
+                })()} ريال سعودي',
+                key: const Key('allocationRemaining'),
+              ),
+            ],
             const SizedBox(height: 20),
             if (!widget.income)
               DropdownButtonFormField<String>(
@@ -1397,6 +1620,11 @@ class _EntryEditFormState extends State<EntryEditForm> {
   String? dueDate, error;
   bool busy = false;
   bool get income => widget.entry['entryType'] == 'INCOME';
+  bool get shared => widget.entry['expenseScope'] == 'SHARED';
+  bool get hasCash =>
+      widget.entry['paid'] != '0.00' || widget.entry['refunded'] != '0.00';
+  final parts = <_ExpensePart>[];
+  List<Map<String, dynamic>> equipmentChoices = [];
   @override
   void initState() {
     super.initState();
@@ -1406,6 +1634,37 @@ class _EntryEditFormState extends State<EntryEditForm> {
     category = widget.entry['category'];
     date = widget.entry['operationDate'];
     dueDate = widget.entry['dueDate'];
+    if (shared) {
+      for (final allocation in widget.entry['allocations'] as List) {
+        final part = _ExpensePart(allocation['equipmentId'] as String);
+        part.amount.text = allocation['amount'] as String;
+        parts.add(part);
+      }
+      loadEquipmentChoices();
+    }
+  }
+
+  Future<void> loadEquipmentChoices() async {
+    try {
+      final choices = <Map<String, dynamic>>[];
+      var page = 0;
+      while (true) {
+        final response = await widget.api.json(
+          'GET',
+          widget.api.scoped('/equipment?page=$page'),
+        );
+        choices.addAll(
+          (response['items'] as List).map(
+            (item) => Map<String, dynamic>.from(item),
+          ),
+        );
+        if (choices.length >= (response['total'] as num).toInt()) break;
+        page++;
+      }
+      if (mounted) setState(() => equipmentChoices = choices);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    }
   }
 
   @override
@@ -1413,6 +1672,9 @@ class _EntryEditFormState extends State<EntryEditForm> {
     amount.dispose();
     note.dispose();
     party.dispose();
+    for (final part in parts) {
+      part.dispose();
+    }
     super.dispose();
   }
 
@@ -1436,6 +1698,29 @@ class _EntryEditFormState extends State<EntryEditForm> {
 
   Future<void> save() async {
     if (!form.currentState!.validate()) return;
+    if (shared && !hasCash) {
+      final totalAmount = exactMoney(amount.text);
+      final assigned = parts
+          .map((part) => exactMoney(part.amount.text))
+          .toList();
+      final ids = parts.map((part) => part.equipmentId).toList();
+      if (parts.length < 2 ||
+          totalAmount == null ||
+          assigned.any((value) => value == null) ||
+          ids.any((id) => id == null) ||
+          ids.toSet().length != ids.length ||
+          assigned.fold<BigInt>(
+                BigInt.zero,
+                (sum, value) => sum + BigInt.parse(value!.replaceAll('.', '')),
+              ) !=
+              BigInt.parse(totalAmount.replaceAll('.', ''))) {
+        setState(
+          () => error =
+              'حدد معدات مختلفة واجعل مجموع مبالغها يساوي إجمالي المصروف',
+        );
+        return;
+      }
+    }
     final settled = BigInt.parse(
       (widget.entry['paid'] as String).replaceAll('.', ''),
     );
@@ -1463,6 +1748,15 @@ class _EntryEditFormState extends State<EntryEditForm> {
           'note': note.text.trim(),
           'partyName': party.text.trim(),
           'dueDate': dueDate,
+          if (shared && !hasCash)
+            'allocations': parts
+                .map(
+                  (part) => {
+                    'equipmentId': part.equipmentId,
+                    'amount': exactMoney(part.amount.text),
+                  },
+                )
+                .toList(),
         },
       );
       if (mounted) Navigator.pop(context, Map<String, dynamic>.from(updated));
@@ -1488,7 +1782,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
           TextFormField(
             key: const Key('editAmount'),
             controller: amount,
-            enabled: !busy,
+            enabled: !busy && !(shared && hasCash),
             textDirection: TextDirection.ltr,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
@@ -1497,6 +1791,95 @@ class _EntryEditFormState extends State<EntryEditForm> {
             validator: (v) =>
                 exactMoney(v ?? '') == null ? 'اكتب مبلغًا صحيحًا' : null,
           ),
+          if (shared) ...[
+            const SizedBox(height: 12),
+            Text(
+              hasCash
+                  ? 'توزيع هذا المصروف محفوظ بعد تسجيل دفعة أو استرداد. يمكنك تعديل الوصف والبيانات الأخرى.'
+                  : 'عدّل مبلغ كل معدة بحيث يساوي الإجمالي.',
+            ),
+            ...parts.asMap().entries.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        key: Key('editAllocationEquipment${item.key}'),
+                        initialValue: item.value.equipmentId,
+                        decoration: const InputDecoration(labelText: 'المعدة'),
+                        items: [
+                          if (item.value.equipmentId != null &&
+                              !equipmentChoices.any(
+                                (e) => e['id'] == item.value.equipmentId,
+                              ))
+                            DropdownMenuItem(
+                              value: item.value.equipmentId,
+                              child: Text(
+                                (widget.entry['allocations'] as List)
+                                        .firstWhere(
+                                          (part) =>
+                                              part['equipmentId'] ==
+                                              item.value.equipmentId,
+                                        )['equipmentName']
+                                    as String,
+                              ),
+                            ),
+                          ...equipmentChoices.map(
+                            (e) => DropdownMenuItem(
+                              value: e['id'] as String,
+                              child: Text(e['name'] as String),
+                            ),
+                          ),
+                        ],
+                        onChanged: busy || hasCash
+                            ? null
+                            : (value) => setState(
+                                () => item.value.equipmentId = value,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        key: Key('editAllocationAmount${item.key}'),
+                        controller: item.value.amount,
+                        enabled: !busy && !hasCash,
+                        textDirection: TextDirection.ltr,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(labelText: 'المبلغ'),
+                        validator: (value) => exactMoney(value ?? '') == null
+                            ? 'اكتب مبلغًا صحيحًا'
+                            : null,
+                      ),
+                    ),
+                    if (!hasCash && parts.length > 2)
+                      IconButton(
+                        key: Key('removeEditAllocation${item.key}'),
+                        onPressed: busy
+                            ? null
+                            : () => setState(() {
+                                final removed = parts.removeAt(item.key);
+                                removed.dispose();
+                              }),
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (!hasCash)
+              TextButton.icon(
+                key: const Key('addEditAllocation'),
+                onPressed: busy
+                    ? null
+                    : () => setState(() => parts.add(_ExpensePart(null))),
+                icon: const Icon(Icons.add),
+                label: const Text('إضافة معدة'),
+              ),
+          ],
           if (!income) ...[
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -1591,7 +1974,8 @@ class _EntryDetailState extends State<EntryDetail> {
   Map<String, dynamic>? entry;
   bool get income => entry?['entryType'] == 'INCOME';
   bool get cancelled => entry?['lifecycle'] == 'CANCELLED';
-  bool get canRefund => !cancelled &&
+  bool get canRefund =>
+      !cancelled &&
       entry?['refundable'] is String &&
       entry!['refundable'] != '0.00';
   List<dynamic> attachments = [];
@@ -1801,28 +2185,41 @@ class _EntryDetailState extends State<EntryDetail> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(income
-                  ? 'مبلغ أُعيد إلى العميل أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي'
-                  : 'مبلغ عاد إليك من المورد أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي'),
+              Text(
+                income
+                    ? 'مبلغ أُعيد إلى العميل أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي'
+                    : 'مبلغ عاد إليك من المورد أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي',
+              ),
               TextField(
                 key: const Key('refundAmount'),
                 onChanged: (value) => refundAmount = value,
                 enabled: !saving,
                 textDirection: TextDirection.ltr,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(labelText: 'مبلغ الاسترداد'),
               ),
               OutlinedButton(
                 key: const Key('refundDate'),
-                onPressed: saving ? null : () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.parse(refundedOn),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime(2100),
-                  );
-                  if (date != null) update(() => refundedOn = date.toIso8601String().split('T').first);
-                },
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.parse(refundedOn),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) {
+                          update(
+                            () => refundedOn = date
+                                .toIso8601String()
+                                .split('T')
+                                .first,
+                          );
+                        }
+                      },
                 child: Text('تاريخ عودة المال: $refundedOn ميلادي'),
               ),
               TextField(
@@ -1843,37 +2240,55 @@ class _EntryDetailState extends State<EntryDetail> {
             ),
             FilledButton(
               key: const Key('saveRefund'),
-              onPressed: saving ? null : () async {
-                final value = exactMoney(refundAmount);
-                if (value == null) {
-                  update(() => refundError = 'اكتب مبلغ استرداد صحيحًا');
-                  return;
-                }
-                if (BigInt.parse(value.replaceAll('.', '')) >
-                    BigInt.parse((entry!['refundable'] as String).replaceAll('.', ''))) {
-                  update(() => refundError = 'مبلغ الاسترداد أكبر من المتاح');
-                  return;
-                }
-                if (reason.trim().isEmpty) {
-                  update(() => refundError = 'اكتب سبب الاسترداد');
-                  return;
-                }
-                update(() { saving = true; refundError = null; });
-                try {
-                  await widget.api.json(
-                    'POST',
-                    widget.api.scoped('/entries/${widget.id}/refunds'),
-                    key: refundKey,
-                    body: {'amount': value, 'refundedOn': refundedOn, 'reason': reason.trim()},
-                  );
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                  if (mounted) await load();
-                } on ApiError catch (e) {
-                  if (dialogContext.mounted) update(() => refundError = e.message);
-                } finally {
-                  if (dialogContext.mounted) update(() => saving = false);
-                }
-              },
+              onPressed: saving
+                  ? null
+                  : () async {
+                      final value = exactMoney(refundAmount);
+                      if (value == null) {
+                        update(() => refundError = 'اكتب مبلغ استرداد صحيحًا');
+                        return;
+                      }
+                      if (BigInt.parse(value.replaceAll('.', '')) >
+                          BigInt.parse(
+                            (entry!['refundable'] as String).replaceAll(
+                              '.',
+                              '',
+                            ),
+                          )) {
+                        update(
+                          () => refundError = 'مبلغ الاسترداد أكبر من المتاح',
+                        );
+                        return;
+                      }
+                      if (reason.trim().isEmpty) {
+                        update(() => refundError = 'اكتب سبب الاسترداد');
+                        return;
+                      }
+                      update(() {
+                        saving = true;
+                        refundError = null;
+                      });
+                      try {
+                        await widget.api.json(
+                          'POST',
+                          widget.api.scoped('/entries/${widget.id}/refunds'),
+                          key: refundKey,
+                          body: {
+                            'amount': value,
+                            'refundedOn': refundedOn,
+                            'reason': reason.trim(),
+                          },
+                        );
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                        if (mounted) await load();
+                      } on ApiError catch (e) {
+                        if (dialogContext.mounted) {
+                          update(() => refundError = e.message);
+                        }
+                      } finally {
+                        if (dialogContext.mounted) update(() => saving = false);
+                      }
+                    },
               child: Text(saving ? 'جارٍ الحفظ…' : 'حفظ الاسترداد'),
             ),
           ],
@@ -2082,7 +2497,11 @@ class _EntryDetailState extends State<EntryDetail> {
         : FormBody(
             children: [
               Text(
-                '${income ? 'إيراد' : categories[entry!['category']]} • ${entry!['equipmentName']}',
+                '${income ? 'إيراد' : categories[entry!['category']]} • ${entry!['expenseScope'] == 'GENERAL'
+                    ? 'مصروف عام'
+                    : entry!['expenseScope'] == 'SHARED'
+                    ? 'أكثر من معدة'
+                    : entry!['equipmentName']}',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -2142,12 +2561,19 @@ class _EntryDetailState extends State<EntryDetail> {
                         entry!['amount'],
                       ),
                       const Divider(height: 32),
-                      moneyRow(income ? 'المستلم إجمالًا' : 'المدفوع إجمالًا', entry!['paid']),
-                      if (entry!['refunded'] != null && entry!['refunded'] != '0.00') ...[
+                      moneyRow(
+                        income ? 'المستلم إجمالًا' : 'المدفوع إجمالًا',
+                        entry!['paid'],
+                      ),
+                      if (entry!['refunded'] != null &&
+                          entry!['refunded'] != '0.00') ...[
                         const SizedBox(height: 16),
                         moneyRow('المسترد', entry!['refunded']),
                         const SizedBox(height: 16),
-                        moneyRow(income ? 'صافي المستلم' : 'صافي المدفوع', entry!['netPaid']),
+                        moneyRow(
+                          income ? 'صافي المستلم' : 'صافي المدفوع',
+                          entry!['netPaid'],
+                        ),
                       ],
                       const SizedBox(height: 16),
                       moneyRow(
@@ -2183,6 +2609,28 @@ class _EntryDetailState extends State<EntryDetail> {
                 ),
               ),
               const SizedBox(height: 24),
+              if (!income && entry!['expenseScope'] == 'SHARED') ...[
+                Text(
+                  'نصيب كل معدة',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const Text(
+                  'المدفوع والمسترد أدناه حصص محسوبة؛ الدفعات والاستردادات الأصلية مسجلة مرة واحدة على المصروف.',
+                ),
+                ...((entry!['allocations'] as List).map(
+                  (part) => Card(
+                    child: ListTile(
+                      title: Text(
+                        '${part['equipmentName']}: ${part['amount']} ريال سعودي',
+                      ),
+                      subtitle: Text(
+                        'حصة محسوبة من صافي المدفوع: ${part['netPaidShare']} • المتبقي: ${part['remainingShare']} ريال سعودي',
+                      ),
+                    ),
+                  ),
+                )),
+                const SizedBox(height: 16),
+              ],
               if (entry!['partyName'] != null)
                 Text('الطرف: ${entry!['partyName']}'),
               if (entry!['dueDate'] != null)
@@ -2220,12 +2668,17 @@ class _EntryDetailState extends State<EntryDetail> {
               )),
               if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 24),
-                Text('الاستردادات', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'الاستردادات',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 ...((entry!['refunds'] as List).map(
                   (r) => ListTile(
                     leading: const Icon(Icons.undo_outlined),
                     title: Text('${r['amount']} ريال سعودي'),
-                    subtitle: Text('${income ? 'أُعيد إلى العميل أو الطرف الآخر' : 'عاد إليك من الطرف الآخر'} في ${r['refundedOn']} ميلادي\nالسبب: ${r['reason']}'),
+                    subtitle: Text(
+                      '${income ? 'أُعيد إلى العميل أو الطرف الآخر' : 'عاد إليك من الطرف الآخر'} في ${r['refundedOn']} ميلادي\nالسبب: ${r['reason']}',
+                    ),
                   ),
                 )),
               ],
