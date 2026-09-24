@@ -8,7 +8,7 @@ At initial inspection the folder contained specifications only. It now contains 
 | Git / repository / user author config | Git 2.50.1; initial folder not a repository; author already configured | `git status`, `git --version`, author config presence | Initialized local `work/m0-m1`; original package commit `8aae033`; no remote |
 | Java / Maven or wrapper | Host default Java 24.0.1 at latest check; Microsoft Java 21.0.7 installed; Maven Wrapper uses Maven 3.9.11 | `java -version`, JDK 21 `java -version`, backend test command | Set `JAVA_HOME` to Java 21 per command; no global configuration change; wrapper 3.3.4 / Maven 3.9.11 tested |
 | Flutter / Dart | Flutter 3.47.2 stable (d3b14c8769), Dart 3.13.2 | `flutter --version`, `flutter doctor -v` | Existing SDK at `/opt/homebrew/share/flutter`; no upgrade |
-| PostgreSQL / test database | PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2), aarch64; dev/test containers healthy at latest check | `docker compose -f infra/compose.yaml ps`, `psql ... select version()`, backend tests | Isolated databases on loopback 55432/55433; Flyway V1, V2 and V3 created and validated; HTTP/PostgreSQL tests passed |
+| PostgreSQL / test database | PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2), aarch64; dev/test containers healthy at latest check | `docker compose -f infra/compose.yaml ps`, `psql ... select version()`, backend tests | Isolated databases on loopback 55432/55433; Flyway V1–V9 created and validated; HTTP/PostgreSQL tests passed |
 | Docker / test runtime | Docker 28.0.4, Compose 2.34.0; initially stopped, now running linux/aarch64 | `docker --version`, `docker compose version`, `docker info` | Docker started via approved `open -a Docker`; do not touch unrelated services |
 | S3-compatible local test storage | NOT CONFIGURED / NOT TESTED | No provider provisioned | Explicit dev filesystem adapter under project; S3 integration remains open for M2 |
 | File type validation / scanning | PNG/JPEG via ImageIO; PDFBox 3.0.8; real content/size checks tested | Backend regression and live HTTP tests | Malware scanner NOT CONFIGURED; DEV_NOT_SCANNED explicit |
@@ -50,8 +50,8 @@ Dependency resolution, Flyway V1–V3, backend tests, Flutter analysis/tests/web
 - Simulator listing initially failed on sandbox CoreSimulator/log access; approved retry succeeded. Listing is not an app build/device validation.
 
 ## Current validation checkpoint — 2026-09-24
-- Backend: Java 21, Boot 4.1.1, real PostgreSQL 17.11; Flyway V1–V3 validated; 16 tests / 0 failures / 0 errors / 0 skipped in the latest wrapper run.
-- Flutter: analyze PASS at latest implementation check; 9 unit/widget tests PASS at latest status check; release web build PASS and iOS simulator integration 1 PASS at latest M2 implementation check. The iOS test was not rerun during the documentation status check.
+- Backend: Boot 4.1.1 targets Java 21 (tests in this run used installed Java 24), real PostgreSQL 17.11; Flyway V1–V9 validated; 41 tests / 0 failures / 0 errors / 0 skipped in the latest run.
+- Flutter: analyze PASS; 28 unit/widget tests PASS; release web build PASS; iOS simulator integration 2/2 PASS with local API/PostgreSQL. Flutter integration on Chrome is unsupported by the installed toolchain; Android not run.
 - Native build warning: open_filex currently falls back to CocoaPods rather than Swift Package Manager. Build succeeded; future Flutter migration is untested. No SDK upgrades were performed.
 - Web build warning about unused CupertinoIcons font was non-fatal; current app uses Material icons.
 - Exact earlier setup/restart evidence: evidence/M1_ACCEPTANCE.md; current M2 test and flow evidence: evidence/M2_EXPENSE_SETTLEMENTS.md and evidence/M2_INCOME_SETTLEMENTS.md.

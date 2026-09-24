@@ -1,5 +1,7 @@
 # Technical implementation baseline
-Status: BASELINE / engineering proposal for the execution handoff, not a claim that a running system exists.
+Status: BASELINE for broader architecture; current M0/M1/M2 local implementation is described below and in HANDOFF.
+
+# تنفيذ M2 المحلي بتاريخ 2026-09-24: PostgreSQL/Flyway V1–V9، تطبيق Flutter، وتخزين ملفات تطويري محلي خلف ObjectStorageService. V6 expense_allocation يحفظ أصل المصروف الواحد، وV7 DRAFT/DISCARDED تستكمل الصف نفسه مع مرفقاته، وV8 ينظف الملفات المحلية المؤقتة القديمة في dev فقط، وV9 يقوي شكل السجل المنشور. بحث السجل محدود الصفحات (30). التخزين S3 الخاص والفحص الإنتاجي المذكوران أدناه خط أساس معماري ولم يُنفّذا بعد.
 Use the owner's confirmed business rules unchanged. Record reversible implementation choices in ADRs;
 escalate changes to business meaning, authorization, paid providers, or data handling.
 

@@ -1,5 +1,7 @@
 # Acceptance and regression test catalog
-Status: SPECIFICATION ONLY. These cases have not been executed against an implementation.
+Status: broader acceptance catalog; a tested local M2 subset is documented below.
+
+# تنفيذ قبول M2 المحلي بتاريخ 2026-09-24: اختبارات Backend HTTP/PostgreSQL ‏41/41، Flutter unit/widget ‏28/28، وiOS simulator integration ‏2/2 تغطي رحلات A–J المذكورة في HANDOFF؛ بعضها عبر API حي داخل اختبار Flutter. Web release وفحص سجل/مرشحات حي بعرضين نجحا. Web E2E آلي وAndroid والإنتاج غير متحققين. حالات القبول التالية تبقى مواصفات للمنتج الأشمل؛ وجود اختبار مرتبط لا يعني اكتمال كل المسارات الإنتاجية.
 Automate progressively and map each ID to actual test names/evidence. Passing mocks is not proof of live integrations.
 
 ## Authentication and onboarding

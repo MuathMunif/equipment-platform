@@ -3,7 +3,7 @@
 ## Mission
 Build a simple Arabic-first equipment-management application for an owner who may run four trucks alone.
 A team is optional. Equipment is the operational center. Deliver working, tested vertical slices, not a static demo.
-This repository now contains a working local M0/M1 slice and two bounded M2 finance slices; see `docs/HANDOFF.md` for the current implementation and limits.
+This repository contains working local M0/M1 and bounded M2 finance, allocation, draft, search, and attachment slices; see `docs/HANDOFF.md` for current evidence and limits.
 
 ## Read before changing code
 Read `docs/HANDOFF.md`, `docs/04_DECISIONS_AR.md`, and the active task first.
