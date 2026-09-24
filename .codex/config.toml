@@ -1,5 +1,9 @@
 # Project-local, non-secret settings. Validate support in the installed Codex version.
 # Do not replace user/global settings or weaken sandbox/approval policy.
-# Model and reasoning inherit the user's active session choice.
+# Project defaults; an existing conversation may retain explicit session overrides.
+model = "gpt-6-sol"
+model_reasoning_effort = "low"
+
 [agents]
-max_concurrent_threads_per_session = 2
+max_concurrent_threads_per_session = 1
+default_subagent_reasoning_effort = "low"

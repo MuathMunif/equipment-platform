@@ -3,7 +3,7 @@
 ## Mission
 Build a simple Arabic-first equipment-management application for an owner who may run four trucks alone.
 A team is optional. Equipment is the operational center. Deliver working, tested vertical slices, not a static demo.
-This repository initially contains a handoff specification, not an implemented application.
+This repository now contains a working local M0/M1 slice and two bounded M2 finance slices; see `docs/HANDOFF.md` for the current implementation and limits.
 
 ## Read before changing code
 Read `docs/HANDOFF.md`, `docs/04_DECISIONS_AR.md`, and the active task first.
@@ -53,13 +53,38 @@ An unavailable production integration must be honestly labeled and locally repla
 1. Choose a bounded task and identify its requirements/tests/dependencies.
 2. State the plan briefly, then implement. Do not stop after writing a plan when coding is authorized and unblocked.
 3. Run actual applicable checks; record commands, environment, pass/fail/not-run and evidence.
-4. Request a separate reviewer when available. Fix findings and rerun affected checks.
+4. After implementation is complete, request a separate reviewer only when independent review provides clear value. Never run the reviewer concurrently with the implementer. Fix findings and rerun affected checks.
 5. Preserve the diff and update task status, decisions, and HANDOFF.
-Use one code writer for the first vertical slice. Later, isolate independent writers in separate branches/worktrees
-and separate test databases/object namespaces. API contracts and migrations have one coordinator.
+Use one coding agent at a time throughout the project. API contracts and migrations have one coordinator.
 Never claim an independent review when it was only the original author reviewing its own work.
 Do not edit acceptance requirements just to make failing tests pass.
 After three unsuccessful attempts at the same blocker, record the evidence and escalate that blocker, not the whole project.
+
+## Conservative agent and compute policy — owner approved 2026-09-24
+This policy supersedes earlier workflow suggestions about automatic reviews or parallel agents.
+It changes project-level settings only; never modify global/user Codex configuration for this project.
+
+- The main agent is the project lead and remains `gpt-6-sol` / `low` unless the owner explicitly approves a temporary increase.
+- The lead handles planning, file inspection, task decomposition, documentation, and simple changes itself.
+- Maximum concurrent subagents: 1, excluding the lead. Never spawn multiple subagents for the same task.
+- Never run implementer and reviewer concurrently. One coding agent at a time, including the lead.
+- Do not spawn a Product Owner agent. Do not spawn a separate Architect agent by default.
+- Do not spawn Documentation, Database, Security, UX, QA and Developer agents simultaneously.
+- Do not delegate simple file reading, summarization, formatting, searching, or documentation work.
+- Use Implementer only when meaningful implementation work is required. It is the only subagent that normally writes implementation code.
+- After implementation is complete, use Reviewer only when independent review provides clear value. Review completed work and tests.
+- Use UX Reviewer only when a UI flow or screen has materially changed.
+- Give each subagent only the files and context required for its specific task; do not send the full project context to every subagent.
+- Subagents must not spawn additional subagents. The lead owns all delegation decisions.
+- Do not automatically escalate reasoning after a failed attempt. Retry normally before considering escalation.
+- HIGH, ULTRA, XHIGH, MAX, Astra, and equivalent expensive modes are prohibited by default.
+- Astra may only be considered with explicit owner approval or after the lead reports a concrete problem that could not reasonably be solved with `gpt-6-sol` / `medium`. Reporting a problem is not an automatic model switch; the main agent still requires explicit approval for a temporary increase.
+- Normal coding uses Implementer with `gpt-6-sol` / `medium`.
+- Normal review uses Reviewer with `gpt-6-sol` / `low`.
+- Normal UX review uses UX Reviewer with `gpt-6-luna` / `low`.
+- Do not change model or reasoning settings automatically. Preserve sandbox and approval controls.
+- Default sequence: Main Lead -> Implementer if needed -> Reviewer if needed -> stop. Each delegation is a bounded stage; never fan out the same task.
+- The lead reads the required project references. Subagents read only their assigned scope and necessary references, rather than repeating the lead's full project discovery.
 
 ## Git and completion
 Initialize Git only in this new project if absent. Do not invent author identity or change global Git settings.
