@@ -1591,6 +1591,9 @@ class _EntryDetailState extends State<EntryDetail> {
   Map<String, dynamic>? entry;
   bool get income => entry?['entryType'] == 'INCOME';
   bool get cancelled => entry?['lifecycle'] == 'CANCELLED';
+  bool get canRefund => !cancelled &&
+      entry?['refundable'] is String &&
+      entry!['refundable'] != '0.00';
   List<dynamic> attachments = [];
   String? error, uploadError, uploadId;
   bool loading = true, uploading = false;
@@ -1775,6 +1778,103 @@ class _EntryDetailState extends State<EntryDetail> {
                     ? 'حفظ التحصيل'
                     : 'حفظ الدفعة',
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> addRefund() async {
+    String refundAmount = '';
+    String refundedOn = todayRiyadh();
+    String reason = '';
+    String? refundError;
+    bool saving = false;
+    final refundKey = requestKey();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          scrollable: true,
+          title: const Text('تسجيل استرداد'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(income
+                  ? 'مبلغ أُعيد إلى العميل أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي'
+                  : 'مبلغ عاد إليك من المورد أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي'),
+              TextField(
+                key: const Key('refundAmount'),
+                onChanged: (value) => refundAmount = value,
+                enabled: !saving,
+                textDirection: TextDirection.ltr,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'مبلغ الاسترداد'),
+              ),
+              OutlinedButton(
+                key: const Key('refundDate'),
+                onPressed: saving ? null : () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.parse(refundedOn),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime(2100),
+                  );
+                  if (date != null) update(() => refundedOn = date.toIso8601String().split('T').first);
+                },
+                child: Text('تاريخ عودة المال: $refundedOn ميلادي'),
+              ),
+              TextField(
+                key: const Key('refundReason'),
+                onChanged: (value) => reason = value,
+                enabled: !saving,
+                maxLength: 500,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'سبب الاسترداد'),
+              ),
+              InlineError(refundError),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(dialogContext),
+              child: const Text('رجوع'),
+            ),
+            FilledButton(
+              key: const Key('saveRefund'),
+              onPressed: saving ? null : () async {
+                final value = exactMoney(refundAmount);
+                if (value == null) {
+                  update(() => refundError = 'اكتب مبلغ استرداد صحيحًا');
+                  return;
+                }
+                if (BigInt.parse(value.replaceAll('.', '')) >
+                    BigInt.parse((entry!['refundable'] as String).replaceAll('.', ''))) {
+                  update(() => refundError = 'مبلغ الاسترداد أكبر من المتاح');
+                  return;
+                }
+                if (reason.trim().isEmpty) {
+                  update(() => refundError = 'اكتب سبب الاسترداد');
+                  return;
+                }
+                update(() { saving = true; refundError = null; });
+                try {
+                  await widget.api.json(
+                    'POST',
+                    widget.api.scoped('/entries/${widget.id}/refunds'),
+                    key: refundKey,
+                    body: {'amount': value, 'refundedOn': refundedOn, 'reason': reason.trim()},
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  if (mounted) await load();
+                } on ApiError catch (e) {
+                  if (dialogContext.mounted) update(() => refundError = e.message);
+                } finally {
+                  if (dialogContext.mounted) update(() => saving = false);
+                }
+              },
+              child: Text(saving ? 'جارٍ الحفظ…' : 'حفظ الاسترداد'),
             ),
           ],
         ),
@@ -2042,7 +2142,13 @@ class _EntryDetailState extends State<EntryDetail> {
                         entry!['amount'],
                       ),
                       const Divider(height: 32),
-                      moneyRow(income ? 'المستلم' : 'المدفوع', entry!['paid']),
+                      moneyRow(income ? 'المستلم إجمالًا' : 'المدفوع إجمالًا', entry!['paid']),
+                      if (entry!['refunded'] != null && entry!['refunded'] != '0.00') ...[
+                        const SizedBox(height: 16),
+                        moneyRow('المسترد', entry!['refunded']),
+                        const SizedBox(height: 16),
+                        moneyRow(income ? 'صافي المستلم' : 'صافي المدفوع', entry!['netPaid']),
+                      ],
                       const SizedBox(height: 16),
                       moneyRow(
                         income ? 'المتبقي لك' : 'المتبقي عليك',
@@ -2089,6 +2195,15 @@ class _EntryDetailState extends State<EntryDetail> {
                   label: Text(income ? 'إضافة تحصيل' : 'إضافة دفعة'),
                 ),
               ],
+              if (canRefund) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  key: const Key('addRefund'),
+                  onPressed: addRefund,
+                  icon: const Icon(Icons.undo_outlined),
+                  label: const Text('تسجيل استرداد'),
+                ),
+              ],
               const SizedBox(height: 24),
               Text(
                 income ? 'التحصيلات' : 'الدفعات',
@@ -2103,6 +2218,17 @@ class _EntryDetailState extends State<EntryDetail> {
                   ),
                 ),
               )),
+              if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
+                const SizedBox(height: 24),
+                Text('الاستردادات', style: Theme.of(context).textTheme.titleLarge),
+                ...((entry!['refunds'] as List).map(
+                  (r) => ListTile(
+                    leading: const Icon(Icons.undo_outlined),
+                    title: Text('${r['amount']} ريال سعودي'),
+                    subtitle: Text('${income ? 'أُعيد إلى العميل أو الطرف الآخر' : 'عاد إليك من الطرف الآخر'} في ${r['refundedOn']} ميلادي\nالسبب: ${r['reason']}'),
+                  ),
+                )),
+              ],
               if (entry!['note'] != '') ...[
                 const Divider(),
                 Text('ملاحظة: ${entry!['note']}'),

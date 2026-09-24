@@ -38,8 +38,9 @@ FIN-13: Tiny-cent equal/non-equal allocations over many settlements reconcile ev
 FIN-14: Operation 2026-09-01 entered 2026-09-24 and paid 2026-09-20 stays in the correct operation/cash/audit dates.
 FIN-15: Operation in September settled in October appears in September operation totals and October cash; same money is not doubled.
 FIN-16: Draft, incomplete image-only submission, pending-review and error-cancelled records do not enter recognized totals.
-FIN-17: Original real expense with actual returned money retains paid and refund history; cash return appears on actual return date.
-        Obligation effect must match Q-01's approved resolution, never an invented reopen/write-off rule.
+FIN-17: Original real expense or income with actual returned money retains settlement and refund history; each cash return has its own date.
+        Per D-19, net settled = original settlements - refunds; remaining = original total - net settled.
+        Expense 1000.00 / paid 600.00 / refunded 200.00 => net paid 400.00 / remaining payable 600.00.
 FIN-18: Shared allocations cannot rewrite historical settlement shares through an unapproved edit path.
 FIN-19: Financial record mistaken/duplicate cancellation keeps actor/time/reason and excludes erroneous totals; actual refund is not simulated by it.
 FIN-20: Editing a note or adding an attachment creates no payment, changes no original amount and preserves audit evidence.

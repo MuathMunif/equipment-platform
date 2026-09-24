@@ -216,7 +216,7 @@ paths:
     parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
     get:
       responses:
-        '200': {description: Original and its settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '200': {description: Original with dated settlements and refunds, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
     put:
@@ -279,6 +279,29 @@ paths:
                 paidOn: {type: string, format: date, description: Payment or receipt date; legacy field name retained for compatibility}
       responses:
         '200': {description: Updated original with its dated settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/entries/{id}/refunds:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: Record a dated return of previously settled money on an active entry. Original settlements remain immutable. Requires an available refundable amount.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [amount, refundedOn, reason]
+              properties:
+                amount: {$ref: '#/components/schemas/Money'}
+                refundedOn: {type: string, format: date}
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200': {description: Updated entry with its original settlements and dated refund history, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '400': {$ref: '#/components/responses/Error'}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
@@ -384,7 +407,7 @@ components:
         createdAt: {type: string, format: date-time}
     Entry:
       type: object
-      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements]
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds]
       properties:
         id: {type: string, format: uuid}
         equipmentId: {type: string, format: uuid}
@@ -400,8 +423,11 @@ components:
         cancelledAt: {type: [string, 'null'], format: date-time}
         cancelledBy: {type: [string, 'null'], format: uuid}
         paid: {$ref: '#/components/schemas/Money', description: Sum of payments or receipts; field name retained for compatibility}
-        remaining: {$ref: '#/components/schemas/Money'}
-        settlementStatus: {type: string, enum: [PAID, PARTIAL, UNPAID], description: Derived from settlements}
+        refunded: {$ref: '#/components/schemas/Money', description: Sum of linked refunds}
+        netPaid: {$ref: '#/components/schemas/Money', description: Gross settled minus refunded; field name retained for expense and income}
+        refundable: {$ref: '#/components/schemas/Money', description: Gross settled minus refunded; maximum additional refund}
+        remaining: {$ref: '#/components/schemas/Money', description: Original total minus netPaid; refunds reopen the outstanding amount}
+        settlementStatus: {type: string, enum: [PAID, PARTIAL, UNPAID], description: Derived from netPaid and remaining}
         partyName: {type: [string, 'null']}
         dueDate: {type: [string, 'null'], format: date}
         createdAt: {type: string, format: date-time}
@@ -413,6 +439,18 @@ components:
               id: {type: string, format: uuid}
               amount: {$ref: '#/components/schemas/Money'}
               paidOn: {type: string, format: date}
+        refunds:
+          type: array
+          items:
+            type: object
+            required: [id, amount, refundedOn, reason, createdBy, createdAt]
+            properties:
+              id: {type: string, format: uuid}
+              amount: {$ref: '#/components/schemas/Money'}
+              refundedOn: {type: string, format: date}
+              reason: {type: string, minLength: 1, maxLength: 500}
+              createdBy: {type: string, format: uuid}
+              createdAt: {type: string, format: date-time}
     Attachment:
       type: object
       required: [id, entryId, filename, mediaType, size, state, scanStatus]

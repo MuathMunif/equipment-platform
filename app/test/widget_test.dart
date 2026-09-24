@@ -33,7 +33,11 @@ final sampleEntry = {
   'operationDate': '2026-09-24',
   'lifecycle': 'POSTED',
   'paid': '350.00',
+  'refunded': '0.00',
+  'netPaid': '350.00',
+  'refundable': '350.00',
   'remaining': '0.00',
+  'refunds': [],
   'note': '',
   'settlements': [
     {'id': 'settlement', 'amount': '350.00', 'paidOn': '2026-09-24'},
@@ -442,4 +446,83 @@ void main() {
       expect(find.byKey(const Key('addAttachment')), findsOneWidget);
     },
   );
+  testWidgets('expense refund validates form and shows dated history and net values', (tester) async {
+    tester.view.physicalSize = const Size(800, 1700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    Map<String, dynamic> current = {...sampleEntry, 'settlementStatus': 'PAID'};
+    http.Request? posted;
+    final api = Api(client: MockClient((r) async {
+      if (r.url.path.endsWith('/attachments')) return json([]);
+      if (r.method == 'POST' && r.url.path.endsWith('/refunds')) {
+        posted = r;
+        current = {
+          ...current,
+          'refunded': '100.00', 'netPaid': '250.00', 'refundable': '250.00',
+          'remaining': '100.00', 'settlementStatus': 'PARTIAL',
+          'refunds': [{'id': 'refund', 'amount': '100.00', 'refundedOn': '2026-10-02', 'reason': 'مرتجع من المورد'}],
+        };
+        return json(current);
+      }
+      return json(current);
+    }), persistNative: false)..workspace = 'w';
+    await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('addRefund')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('addRefund')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('مبلغ عاد إليك'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('saveRefund')));
+    await tester.pumpAndSettle();
+    expect(find.text('اكتب مبلغ استرداد صحيحًا'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('refundAmount')), '400');
+    await tester.tap(find.byKey(const Key('saveRefund')));
+    await tester.pumpAndSettle();
+    expect(find.text('مبلغ الاسترداد أكبر من المتاح'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('refundAmount')), '100');
+    await tester.tap(find.byKey(const Key('saveRefund')));
+    await tester.pumpAndSettle();
+    expect(find.text('اكتب سبب الاسترداد'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('refundReason')), 'مرتجع من المورد');
+    await tester.tap(find.byKey(const Key('saveRefund')));
+    await tester.pumpAndSettle();
+    expect(posted, isNotNull);
+    final body = jsonDecode(posted!.body) as Map<String, dynamic>;
+    expect(body['amount'], '100.00');
+    expect(body['reason'], 'مرتجع من المورد');
+    expect(body['refundedOn'], isNotNull);
+    expect(posted!.headers['Idempotency-Key'], isNotNull);
+    expect(find.text('المسترد'), findsOneWidget);
+    expect(find.text('صافي المدفوع'), findsOneWidget);
+    expect(find.text('الاستردادات'), findsOneWidget);
+    expect(find.textContaining('السبب: مرتجع من المورد'), findsOneWidget);
+    expect(find.text('إضافة دفعة'), findsOneWidget);
+  });
+  testWidgets('income refund wording and no refund action after full return or cancellation', (tester) async {
+    tester.view.physicalSize = const Size(800, 1700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final current = {...sampleEntry, 'entryType': 'INCOME', 'paid': '350.00', 'refundable': '350.00'};
+    final api = Api(client: MockClient((r) async => json(r.url.path.endsWith('/attachments') ? [] : current)), persistNative: false)..workspace = 'w';
+    await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('addRefund')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('أُعيد إلى العميل'), findsOneWidget);
+    await tester.tap(find.text('رجوع'));
+    await tester.pumpAndSettle();
+    current['refundable'] = '0.00';
+    await tester.tap(find.byTooltip('تحديث الإيراد'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('addRefund')), findsNothing);
+    current['refundable'] = '350.00';
+    current['lifecycle'] = 'CANCELLED';
+    current['cancellationReason'] = 'قيد خطأ';
+    current['cancelledAt'] = '2026-09-24T10:00:00Z';
+    await tester.tap(find.byTooltip('تحديث الإيراد'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('addRefund')), findsNothing);
+  });
 }

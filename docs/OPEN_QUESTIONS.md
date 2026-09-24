@@ -4,7 +4,7 @@ Never relabel an unresolved business rule as approved. Present concise options a
 
 | ID | Question | Due before | Safe interim behavior |
 |---|---|---|---|
-| Q-01 | Does a returned payment reduce the original obligation, reopen it, or represent only return of excess/error? How are partial returns represented? | Refund functionality / milestone M4 | Keep genuine cash history; do not silently reopen/write off debts; implement unrelated finance tasks |
+| Q-01 RESOLVED 2026-09-24 | Owner chose: refunds reduce net settled and increase remaining against unchanged original total, for both expense and income; preserve original settlements | M2 refund slice | Decision D-19 in `04_DECISIONS_AR.md`; test 1000 total / 600 paid / 200 refunded => 400 net paid / 600 remaining |
 | Q-02 | How may a posted shared allocation or total change after real settlements exist? | Enabling these edit paths in M4 | Block the ambiguous edit with explanation; allow non-financial note/attachment corrections |
 | Q-03 | Rejection reason, requester re-submission, and editing an already approved driver-origin entry | Team review in M6 | Preserve history; no silent self-approval or changing recognized money through pending edits |
 | Q-04 | If equipment moves between organizations, who sees historical finance/documents? | Organization reassignment in M7 | Do not silently reassign historical ownership/visibility; no mass permissions rewrite |

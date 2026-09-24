@@ -183,6 +183,58 @@ class OwnerSliceTest {
   assertEquals(400,request("POST",url+"/settlements",Map.of("amount","100.00","paidOn","2026-09-21"),user.token,key()).status);
   assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));
  }
+ @Test void expenseRefundsPreserveSettlementsReopenOutstandingAndAudit()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);var body=new HashMap<>(expense(eq));body.put("amount","1000.00");body.put("initialPaid","600.00");body.put("paymentStatus","PARTIAL");body.put("partyName","مورد");
+  var created=request("POST",path(user,"/entries"),body,user.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString(),url=path(user,"/entries/"+id+"/refunds"),originalSettlement=created.json.get("settlements").get(0).get("id").asString();
+  var refund=Map.of("amount","200.00","refundedOn","2026-10-02","reason","مرتجع من المورد");String refundKey=key();
+  var first=request("POST",url,refund,user.token,refundKey);assertEquals(200,first.status);assertEquals("600.00",first.json.get("paid").asString());assertEquals("200.00",first.json.get("refunded").asString());assertEquals("400.00",first.json.get("netPaid").asString());assertEquals("400.00",first.json.get("refundable").asString());assertEquals("600.00",first.json.get("remaining").asString());assertEquals("PARTIAL",first.json.get("settlementStatus").asString());assertEquals(originalSettlement,first.json.get("settlements").get(0).get("id").asString());assertEquals("2026-09-20",first.json.get("settlements").get(0).get("paidOn").asString());
+  assertEquals(1,request("POST",url,refund,user.token,refundKey).json.get("refunds").size());assertEquals(409,request("POST",url,Map.of("amount","201.00","refundedOn","2026-10-02","reason","مرتجع من المورد"),user.token,refundKey).status);
+  assertEquals(400,request("POST",url,Map.of("amount","400.01","refundedOn","2026-10-03","reason","زيادة"),user.token,key()).status);
+  var second=request("POST",url,Map.of("amount","400.00","refundedOn","2026-10-03","reason","باقي المرتجع"),user.token,key());assertEquals(200,second.status);assertEquals("600.00",second.json.get("refunded").asString());assertEquals("0.00",second.json.get("netPaid").asString());assertEquals("1000.00",second.json.get("remaining").asString());assertEquals("UNPAID",second.json.get("settlementStatus").asString());assertEquals(2,second.json.get("refunds").size());assertEquals(1,second.json.get("settlements").size());
+  assertEquals(400,request("POST",url,Map.of("amount","0.00","refundedOn","2026-10-04","reason","صفر"),user.token,key()).status);
+  assertEquals(400,request("POST",url,Map.of("amount","1.00","refundedOn","2026-10-04","reason","زيادة"),user.token,key()).status);
+  assertEquals(400,request("POST",url,Map.of("amount","1.00","refundedOn","2026-10-04","reason","  "),user.token,key()).status);
+  assertEquals(2,db.queryForObject("select count(*) from financial_refund where entry_id=?",Integer.class,UUID.fromString(id)));
+  assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));
+  var audit=db.queryForMap("select actor_id,metadata from audit_event where resource_id=? and action='FINANCIAL_REFUND_CREATED' order by created_at limit 1",UUID.fromString(id));assertEquals(UUID.fromString(user.user),audit.get("actor_id"));assertTrue(audit.get("metadata").toString().contains("200.00"));assertTrue(audit.get("metadata").toString().contains("مرتجع من المورد"));
+ }
+ @Test void incomeRefundIsLinkedAndCanBeResettledWithoutChangingOriginalReceipt()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);var body=Map.of("equipmentId",eq,"entryType","INCOME","amount","3000.00","operationDate","2026-09-01","paidOn","2026-09-20");
+  var created=request("POST",path(user,"/entries"),body,user.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString(),url=path(user,"/entries/"+id);
+  var refunded=request("POST",url+"/refunds",Map.of("amount","500.00","refundedOn","2026-10-02","reason","إعادة جزء للعميل"),user.token,key());assertEquals(200,refunded.status);assertEquals("3000.00",refunded.json.get("paid").asString());assertEquals("500.00",refunded.json.get("refunded").asString());assertEquals("2500.00",refunded.json.get("netPaid").asString());assertEquals("500.00",refunded.json.get("remaining").asString());assertEquals("PARTIAL",refunded.json.get("settlementStatus").asString());assertEquals(1,refunded.json.get("settlements").size());assertEquals("2026-09-20",refunded.json.get("settlements").get(0).get("paidOn").asString());
+  var collected=request("POST",url+"/settlements",Map.of("amount","500.00","paidOn","2026-10-10"),user.token,key());assertEquals(200,collected.status);assertEquals("3000.00",collected.json.get("netPaid").asString());assertEquals("0.00",collected.json.get("remaining").asString());assertEquals("PAID",collected.json.get("settlementStatus").asString());assertEquals(2,collected.json.get("settlements").size());assertEquals(1,collected.json.get("refunds").size());
+  assertEquals(400,request("POST",url+"/settlements",Map.of("amount","0.01","paidOn","2026-10-11"),user.token,key()).status);
+ }
+ @Test void refundRejectsCancellationAndOtherWorkspace()throws Exception{
+  User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id),otherUrl;User other=login("0500000002");otherUrl=path(other,"/entries/"+id);
+  var body=Map.of("amount","100.00","refundedOn","2026-10-02","reason","عودة مال");
+  assertEquals(404,request("POST",otherUrl+"/refunds",body,other.token,key()).status);assertEquals(404,request("GET",otherUrl,null,other.token,null).status);
+  assertEquals(200,request("POST",url+"/cancellation",Map.of("reason","قيد خطأ"),owner.token,null).status);
+  assertEquals(400,request("POST",url+"/refunds",body,owner.token,key()).status);
+  assertEquals(0,db.queryForObject("select count(*) from financial_refund",Integer.class));
+ }
+ @Test void concurrentRefundsCannotExceedGrossSettled()throws Exception{
+  User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id+"/refunds");var body=Map.of("amount","300.00","refundedOn","2026-10-02","reason","عودة مال");
+  try(var pool=Executors.newVirtualThreadPerTaskExecutor()){var a=pool.submit(()->request("POST",url,body,owner.token,key()));var b=pool.submit(()->request("POST",url,body,owner.token,key()));assertEquals(Set.of(200,400),Set.of(a.get().status,b.get().status));}
+  assertEquals("300.00",request("GET",path(owner,"/entries/"+id),null,owner.token,null).json.get("refunded").asString());
+  assertEquals(1,db.queryForObject("select count(*) from financial_refund",Integer.class));
+ }
+ @Test void refundDateCannotPrecedeAvailableMoneyEvenWhenFinalTotalAllowsIt()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner);var body=new HashMap<>(expense(eq));body.put("amount","200.00");body.put("initialPaid","100.00");body.put("paymentStatus","PARTIAL");body.put("partyName","مورد");
+  String id=request("POST",path(owner,"/entries"),body,owner.token,key()).json.get("id").asString(),url=path(owner,"/entries/"+id);
+  assertEquals(400,request("POST",url+"/refunds",Map.of("amount","50.00","refundedOn","2026-09-19","reason","قبل الدفع"),owner.token,key()).status);
+  assertEquals(200,request("POST",url+"/settlements",Map.of("amount","100.00","paidOn","2026-10-20"),owner.token,key()).status);
+  assertEquals(200,request("POST",url+"/refunds",Map.of("amount","100.00","refundedOn","2026-10-10","reason","مرتجع أول"),owner.token,key()).status);
+  // Gross settled is 200 and only 100 is refunded, but at 10 October only 100 had been paid.
+  assertEquals(400,request("POST",url+"/refunds",Map.of("amount","100.00","refundedOn","2026-09-25","reason","مرتجع مؤرخ سابقًا"),owner.token,key()).status);
+  assertEquals(1,db.queryForObject("select count(*) from financial_refund",Integer.class));
+ }
+ @Test void oneFullExpenseRefundReopensEntireAmountWithoutCancellingEntry()throws Exception{
+  User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id);
+  var result=request("POST",url+"/refunds",Map.of("amount","350.00","refundedOn","2026-09-21","reason","أُعيد كامل المبلغ"),owner.token,key());
+  assertEquals(200,result.status);assertEquals("POSTED",result.json.get("lifecycle").asString());assertEquals("350.00",result.json.get("paid").asString());assertEquals("350.00",result.json.get("refunded").asString());assertEquals("0.00",result.json.get("netPaid").asString());assertEquals("350.00",result.json.get("remaining").asString());assertEquals("UNPAID",result.json.get("settlementStatus").asString());assertEquals("0.00",result.json.get("refundable").asString());
+  assertEquals(1,result.json.get("settlements").size());assertEquals(1,result.json.get("refunds").size());
+ }
  @Test void equipmentNeedsOnlyNameAndModelAndRejectsSystemFields()throws Exception{
   User user=login("0500000001");String key=key();var body=Map.of("name","قلاب ١","model","FH16");var first=request("POST",path(user,"/equipment"),body,user.token,key);var replay=request("POST",path(user,"/equipment"),body,user.token,key);
   assertEquals(first.json.get("id"),replay.json.get("id"));assertTrue(first.json.get("reference").asString().startsWith("EQ-"));assertEquals("FH16",first.json.get("model").asString());

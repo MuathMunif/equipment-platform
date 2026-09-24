@@ -22,15 +22,20 @@ public class FinanceService {
     public record Edit(tools.jackson.databind.JsonNode amount,String category,String operationDate,String note,String partyName,String dueDate) {}
     public record Cancel(String reason) {}
     public record Settlement(UUID id,String amount,String paidOn) {}
-    public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements) {}
+    public record CreateRefund(tools.jackson.databind.JsonNode amount,String refundedOn,String reason) {}
+    public record Refund(UUID id,String amount,String refundedOn,String reason,UUID createdBy,String createdAt) {}
+    public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds) {}
     private static final JsonMapper JSON=JsonMapper.builder().build();
     public Entry get(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return require(workspace,id); }
     public Entry require(UUID workspace,UUID id) {
         var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.id=?",workspace,id);
         if(rows.isEmpty()) throw ApiException.missing(); var row=rows.getFirst();
         var settlements=db.query("select * from settlement where workspace_id=? and entry_id=? order by paid_on,created_at",(rs,n)->new Settlement(rs.getObject("id",UUID.class),rs.getBigDecimal("amount").toPlainString(),rs.getDate("paid_on").toLocalDate().toString()),workspace,id);
-        BigDecimal paid=settlements.stream().map(s->new BigDecimal(s.amount())).reduce(new BigDecimal("0.00"),BigDecimal::add),amount=(BigDecimal)row.get("amount"),remaining=amount.subtract(paid);
-        return new Entry(id,(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("entry_type"),amount.toPlainString(),"SAR",(String)row.get("category"),row.get("operation_date").toString(),(String)row.get("note"),(String)row.get("lifecycle"),paid.toPlainString(),remaining.toPlainString(),remaining.signum()==0?"PAID":paid.signum()==0?"UNPAID":"PARTIAL",(String)row.get("party_name"),row.get("due_date")==null?null:row.get("due_date").toString(),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(String)row.get("cancellation_reason"),row.get("cancelled_at")==null?null:((java.sql.Timestamp)row.get("cancelled_at")).toInstant().toString(),(UUID)row.get("cancelled_by"),settlements);
+        var refunds=db.query("select * from financial_refund where workspace_id=? and entry_id=? order by refunded_on,created_at,id",(rs,n)->new Refund(rs.getObject("id",UUID.class),rs.getBigDecimal("amount").toPlainString(),rs.getDate("refunded_on").toLocalDate().toString(),rs.getString("reason"),rs.getObject("created_by",UUID.class),rs.getTimestamp("created_at").toInstant().toString()),workspace,id);
+        BigDecimal paid=settlements.stream().map(s->new BigDecimal(s.amount())).reduce(new BigDecimal("0.00"),BigDecimal::add),amount=(BigDecimal)row.get("amount");
+        BigDecimal refunded=refunds.stream().map(r->new BigDecimal(r.amount())).reduce(new BigDecimal("0.00"),BigDecimal::add),netPaid=paid.subtract(refunded);
+        BigDecimal remaining=amount.subtract(netPaid);
+        return new Entry(id,(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("entry_type"),amount.toPlainString(),"SAR",(String)row.get("category"),row.get("operation_date").toString(),(String)row.get("note"),(String)row.get("lifecycle"),paid.toPlainString(),refunded.toPlainString(),netPaid.toPlainString(),netPaid.toPlainString(),remaining.toPlainString(),remaining.signum()==0?"PAID":netPaid.signum()==0?"UNPAID":"PARTIAL",(String)row.get("party_name"),row.get("due_date")==null?null:row.get("due_date").toString(),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(String)row.get("cancellation_reason"),row.get("cancelled_at")==null?null:((java.sql.Timestamp)row.get("cancelled_at")).toInstant().toString(),(UUID)row.get("cancelled_by"),settlements,refunds);
     }
     public Map<String,Object> list(Actor actor,UUID workspace,UUID equipmentId,int page) {
         access.owner(actor,workspace); if(page<0 || page>100000) throw ApiException.invalid("رقم الصفحة غير صالح");
@@ -94,11 +99,44 @@ public class FinanceService {
             if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("لا يمكن إضافة تسوية لعملية ملغاة");
             BigDecimal total=(BigDecimal)rows.getFirst().get("amount");
             BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
-            if(amount.compareTo(total.subtract(paid))>0) throw ApiException.invalid(type.equals("INCOME")?"التحصيل أكبر من المتبقي":"الدفعة أكبر من المتبقي");
+            BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
+            if(amount.compareTo(total.subtract(paid.subtract(refunded)))>0) throw ApiException.invalid(type.equals("INCOME")?"التحصيل أكبر من المتبقي":"الدفعة أكبر من المتبقي");
             UUID settlementId=UUID.randomUUID();
             db.update("insert into settlement(id,workspace_id,entry_id,amount,paid_on,created_by) values(?,?,?,?,?,?)",settlementId,workspace,entryId,amount,java.sql.Date.valueOf(paidOn),actor.userId());
             audit.record(workspace,actor.userId(),type.equals("INCOME")?"INCOME_SETTLED":"EXPENSE_SETTLED",entryId);
             return settlementId;
+        });
+        return require(workspace,entryId);
+    }
+    @Transactional
+    public Entry refund(Actor actor,UUID workspace,UUID entryId,String key,CreateRefund request) {
+        access.owner(actor,workspace); require(workspace,entryId);
+        if(request.amount()==null || !request.amount().isString()) throw ApiException.invalid("أرسل مبلغ الاسترداد كنص عشري");
+        BigDecimal amount=Values.money(request.amount().asString());
+        LocalDate refundedOn=Values.date(request.refundedOn());
+        String reason=Values.text(request.reason(),500,"سبب الاسترداد");
+        retries.execute(workspace,actor.userId(),"finance.refund",key,Values.payload(entryId,amount,refundedOn,reason),()->{
+            var rows=db.queryForList("select lifecycle from financial_entry where workspace_id=? and id=? for update",workspace,entryId);
+            if(rows.isEmpty()) throw ApiException.missing();
+            if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("لا يمكن استرداد مبلغ من عملية ملغاة");
+            BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
+            BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
+            if(amount.compareTo(paid.subtract(refunded))>0) throw ApiException.invalid("مبلغ الاسترداد أكبر من المبلغ المتاح");
+            // A backdated refund must leave nonnegative cash movements at every date, not only today.
+            BigDecimal available=BigDecimal.ZERO;
+            var movements=db.queryForList("select movement_date,sum(delta) as delta from ("+
+                "select paid_on as movement_date,amount as delta from settlement where workspace_id=? and entry_id=? " +
+                "union all select refunded_on as movement_date,-amount as delta from financial_refund where workspace_id=? and entry_id=? " +
+                "union all select cast(? as date) as movement_date,-cast(? as numeric) as delta"+
+                ") movements group by movement_date order by movement_date",workspace,entryId,workspace,entryId,java.sql.Date.valueOf(refundedOn),amount);
+            for(var movement:movements) {
+                available=available.add((BigDecimal)movement.get("delta"));
+                if(available.signum()<0) throw ApiException.invalid("تاريخ الاسترداد أو مبلغه يسبق المال المتاح في ذلك التاريخ");
+            }
+            UUID refundId=UUID.randomUUID();
+            db.update("insert into financial_refund(id,workspace_id,entry_id,amount,refunded_on,reason,created_by) values(?,?,?,?,?,?,?)",refundId,workspace,entryId,amount,java.sql.Date.valueOf(refundedOn),reason,actor.userId());
+            audit.record(workspace,actor.userId(),"FINANCIAL_REFUND_CREATED",entryId,JSON.writeValueAsString(Map.of("refundId",refundId,"amount",amount.toPlainString(),"refundedOn",refundedOn.toString(),"reason",reason)));
+            return refundId;
         });
         return require(workspace,entryId);
     }
