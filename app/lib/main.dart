@@ -1019,7 +1019,9 @@ class _LedgerPageState extends State<LedgerPage> {
               title: Text(
                 '${categories[entry['category']]} • ${entry['equipmentName']}',
               ),
-              subtitle: Text('${entry['operationDate']} ميلادي\nمدفوع كاملًا'),
+              subtitle: Text(
+                '${entry['operationDate']} ميلادي\n${{'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'}[entry['settlementStatus']] ?? 'حالة الدفع'}',
+              ),
               isThreeLine: true,
               trailing: Text(
                 '${entry['amount']}\nريال سعودي',
@@ -1060,18 +1062,37 @@ class ExpenseForm extends StatefulWidget {
 
 class _ExpenseFormState extends State<ExpenseForm> {
   final form = GlobalKey<FormState>();
-  final amount = TextEditingController(), note = TextEditingController();
+  final amount = TextEditingController(),
+      note = TextEditingController(),
+      initialPaid = TextEditingController(),
+      party = TextEditingController();
   String category = 'FUEL',
       date = todayRiyadh(),
       paidOn = todayRiyadh(),
+      paymentStatus = 'FULL',
       key = requestKey();
+  String? dueDate;
   String? error;
   bool busy = false, uncertain = false, saved = false;
   @override
   void dispose() {
     amount.dispose();
     note.dispose();
+    initialPaid.dispose();
+    party.dispose();
     super.dispose();
+  }
+
+  Future<void> pickDueDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateTime.parse(dueDate ?? todayRiyadh()),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (selected != null) {
+      setState(() => dueDate = selected.toIso8601String().split('T').first);
+    }
   }
 
   Future<void> pickDate(bool payment) async {
@@ -1109,7 +1130,12 @@ class _ExpenseFormState extends State<ExpenseForm> {
           'amount': exactMoney(amount.text),
           'category': category,
           'operationDate': date,
-          'paidOn': paidOn,
+          if (paymentStatus != 'UNPAID') 'paidOn': paidOn,
+          'paymentStatus': paymentStatus,
+          if (paymentStatus == 'PARTIAL')
+            'initialPaid': exactMoney(initialPaid.text),
+          if (paymentStatus != 'FULL') 'partyName': party.text.trim(),
+          if (paymentStatus != 'FULL' && dueDate != null) 'dueDate': dueDate,
           'note': note.text.trim(),
         },
       );
@@ -1189,18 +1215,76 @@ class _ExpenseFormState extends State<ExpenseForm> {
               label: Text('تاريخ العملية: $date ميلادي'),
             ),
             const SizedBox(height: 16),
-            const Card(
-              child: ListTile(
-                leading: Icon(Icons.check_circle_outline, color: brand),
-                title: Text('دفعته كاملًا'),
-                subtitle: Text('تُحفظ دفعة بقيمة المصروف داخل العملية'),
+            DropdownButtonFormField<String>(
+              key: const Key('paymentStatus'),
+              initialValue: paymentStatus,
+              decoration: const InputDecoration(labelText: 'حالة الدفع'),
+              items: const [
+                DropdownMenuItem(value: 'FULL', child: Text('دفعته كاملًا')),
+                DropdownMenuItem(value: 'PARTIAL', child: Text('دفعت جزءًا')),
+                DropdownMenuItem(value: 'UNPAID', child: Text('لم أدفعه')),
+              ],
+              onChanged: busy || uncertain
+                  ? null
+                  : (v) => setState(() => paymentStatus = v!),
+            ),
+            if (paymentStatus == 'PARTIAL') ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('initialPaid'),
+                controller: initialPaid,
+                enabled: !busy && !uncertain,
+                textDirection: TextDirection.ltr,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'المبلغ المدفوع أولًا',
+                ),
+                validator: (v) {
+                  final first = exactMoney(v ?? '');
+                  final total = exactMoney(amount.text);
+                  if (first == null ||
+                      total == null ||
+                      BigInt.parse(first.replaceAll('.', '')) >=
+                          BigInt.parse(total.replaceAll('.', ''))) {
+                    return 'اكتب مبلغًا أكبر من صفر وأقل من الإجمالي';
+                  }
+                  return null;
+                },
               ),
-            ),
-            OutlinedButton.icon(
-              onPressed: busy || uncertain ? null : () => pickDate(true),
-              icon: const Icon(Icons.calendar_today_outlined),
-              label: Text('تاريخ الدفع: $paidOn ميلادي'),
-            ),
+            ],
+            if (paymentStatus != 'UNPAID') ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: busy || uncertain ? null : () => pickDate(true),
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text('تاريخ الدفع: $paidOn ميلادي'),
+              ),
+            ],
+            if (paymentStatus != 'FULL') ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('partyName'),
+                controller: party,
+                enabled: !busy && !uncertain,
+                maxLength: 100,
+                decoration: const InputDecoration(
+                  labelText: 'اسم الطرف المستحق',
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'اكتب اسم الطرف' : null,
+              ),
+              OutlinedButton.icon(
+                onPressed: busy || uncertain ? null : pickDueDate,
+                icon: const Icon(Icons.event_outlined),
+                label: Text(
+                  dueDate == null
+                      ? 'موعد الاستحقاق (اختياري)'
+                      : 'موعد الاستحقاق: $dueDate ميلادي',
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             TextFormField(
               key: const Key('expenseNote'),
@@ -1255,6 +1339,98 @@ class _EntryDetailState extends State<EntryDetail> {
   Uint8List? pendingBytes;
   String? pendingName, pendingType;
   String uploadKey = requestKey();
+  Future<void> addPayment() async {
+    final payment = TextEditingController();
+    String paidOn = todayRiyadh();
+    String? paymentError;
+    bool saving = false;
+    final paymentKey = requestKey();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          title: const Text('إضافة دفعة'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('المتبقي عليك: ${entry!['remaining']} ريال سعودي'),
+              TextField(
+                controller: payment,
+                enabled: !saving,
+                textDirection: TextDirection.ltr,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(labelText: 'مبلغ الدفعة'),
+              ),
+              OutlinedButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.parse(paidOn),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) {
+                          update(
+                            () => paidOn = date
+                                .toIso8601String()
+                                .split('T')
+                                .first,
+                          );
+                        }
+                      },
+                child: Text('تاريخ الدفع: $paidOn ميلادي'),
+              ),
+              InlineError(paymentError),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(dialogContext),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      final value = exactMoney(payment.text);
+                      if (value == null) {
+                        update(() => paymentError = 'اكتب مبلغًا صحيحًا');
+                        return;
+                      }
+                      update(() {
+                        saving = true;
+                        paymentError = null;
+                      });
+                      try {
+                        await widget.api.json(
+                          'POST',
+                          widget.api.scoped(
+                            '/entries/${widget.id}/settlements',
+                          ),
+                          key: paymentKey,
+                          body: {'amount': value, 'paidOn': paidOn},
+                        );
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                        if (mounted) await load();
+                      } on ApiError catch (e) {
+                        update(() => paymentError = e.message);
+                      } finally {
+                        if (dialogContext.mounted) update(() => saving = false);
+                      }
+                    },
+              child: Text(saving ? 'جارٍ الحفظ…' : 'حفظ الدفعة'),
+            ),
+          ],
+        ),
+      ),
+    );
+    payment.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1472,20 +1648,40 @@ class _EntryDetailState extends State<EntryDetail> {
                       const SizedBox(height: 16),
                       moneyRow('المتبقي عليك', entry!['remaining']),
                       const SizedBox(height: 20),
-                      const Align(
+                      Align(
                         alignment: AlignmentDirectional.centerStart,
                         child: Chip(
-                          avatar: Icon(
-                            Icons.check_circle_outline,
+                          avatar: const Icon(
+                            Icons.payments_outlined,
                             color: brand,
                           ),
-                          label: Text('مدفوع كاملًا'),
+                          label: Text(
+                            {
+                                  'PAID': 'مدفوع كاملًا',
+                                  'PARTIAL': 'مدفوع جزئيًا',
+                                  'UNPAID': 'غير مدفوع',
+                                }[entry!['settlementStatus']] ??
+                                'حالة الدفع',
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+              if (entry!['partyName'] != null)
+                Text('الطرف: ${entry!['partyName']}'),
+              if (entry!['dueDate'] != null)
+                Text('موعد الاستحقاق: ${entry!['dueDate']} ميلادي'),
+              if (entry!['settlementStatus'] != 'PAID') ...[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: addPayment,
+                  icon: const Icon(Icons.add),
+                  label: const Text('إضافة دفعة'),
+                ),
+              ],
               const SizedBox(height: 24),
               Text('الدفعات', style: Theme.of(context).textTheme.titleLarge),
               ...((entry!['settlements'] as List).map(

@@ -185,6 +185,43 @@ void main() {
       expect(requests[0].body, requests[2].body);
     },
   );
+  testWidgets('partial expense requires party and sends one initial payment', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    http.Request? created;
+    final api = Api(
+      client: MockClient((r) async {
+        created = r;
+        return json({...sampleEntry, 'settlementStatus': 'PARTIAL'});
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(
+      host(ExpenseForm(api: api, equipment: {'id': 'eq', 'name': 'قلاب ١'})),
+    );
+    await tester.enterText(find.byKey(const Key('expenseAmount')), '350');
+    await tester.tap(find.byKey(const Key('paymentStatus')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('دفعت جزءًا').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('initialPaid')), '100');
+    await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+    await tester.tap(find.byKey(const Key('saveExpense')));
+    await tester.pumpAndSettle();
+    expect(find.text('اكتب اسم الطرف'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('partyName')), 'ورشة المعدات');
+    await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+    await tester.tap(find.byKey(const Key('saveExpense')));
+    await tester.pumpAndSettle();
+    final body = jsonDecode(created!.body) as Map<String, dynamic>;
+    expect(body['paymentStatus'], 'PARTIAL');
+    expect(body['initialPaid'], '100.00');
+    expect(body['partyName'], 'ورشة المعدات');
+  });
   testWidgets(
     'rejected attachment can be replaced without creating another expense',
     (tester) async {

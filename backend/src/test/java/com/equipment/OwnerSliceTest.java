@@ -89,6 +89,31 @@ class OwnerSliceTest {
   var changed=new HashMap<>(body);changed.put("amount","351.00");assertEquals(409,request("POST",path(user,"/entries"),changed,user.token,key).status);
   assertEquals(1,request("GET",path(user,"/entries?equipmentId="+eq),null,user.token,null).json.get("total").asInt());
  }
+ @Test void partialAndUnpaidExpensesKeepOneOriginalAndDatedSettlements()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);
+  var partial=new HashMap<>(expense(eq));partial.put("paymentStatus","PARTIAL");partial.put("initialPaid","100.00");partial.put("partyName","ورشة المعدات");partial.put("dueDate","2026-10-15");
+  var created=request("POST",path(user,"/entries"),partial,user.token,key());assertEquals(200,created.status);
+  String id=created.json.get("id").asString();assertEquals("PARTIAL",created.json.get("settlementStatus").asString());assertEquals("250.00",created.json.get("remaining").asString());assertEquals("ورشة المعدات",created.json.get("partyName").asString());
+  String url=path(user,"/entries/"+id+"/settlements");String settlementKey=key();var payment=Map.of("amount","150.00","paidOn","2026-10-02");
+  assertEquals(200,request("POST",url,payment,user.token,settlementKey).status);
+  var replay=request("POST",url,payment,user.token,settlementKey);assertEquals("250.00",replay.json.get("paid").asString());assertEquals("100.00",replay.json.get("remaining").asString());assertEquals(2,replay.json.get("settlements").size());
+  assertEquals(409,request("POST",url,Map.of("amount","151.00","paidOn","2026-10-02"),user.token,settlementKey).status);
+  assertEquals(400,request("POST",url,Map.of("amount","100.01","paidOn","2026-10-03"),user.token,key()).status);
+  assertEquals(200,request("POST",url,Map.of("amount","100.00","paidOn","2026-10-03"),user.token,key()).status);
+  var finalEntry=request("GET",path(user,"/entries/"+id),null,user.token,null);assertEquals("PAID",finalEntry.json.get("settlementStatus").asString());assertEquals("0.00",finalEntry.json.get("remaining").asString());
+  var unpaid=new HashMap<>(expense(eq));unpaid.remove("paidOn");unpaid.put("paymentStatus","UNPAID");unpaid.put("partyName","مورد");
+  var open=request("POST",path(user,"/entries"),unpaid,user.token,key());assertEquals(200,open.status);assertEquals("UNPAID",open.json.get("settlementStatus").asString());assertEquals(0,open.json.get("settlements").size());assertTrue(open.json.get("dueDate").isNull());
+  assertEquals(2,db.queryForObject("select count(*) from financial_entry",Integer.class));assertEquals(3,db.queryForObject("select count(*) from settlement",Integer.class));
+ }
+ @Test void invalidOutstandingAndConcurrentFinalPaymentsAreRejected()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);var unpaid=new HashMap<>(expense(eq));unpaid.remove("paidOn");unpaid.put("paymentStatus","UNPAID");unpaid.put("partyName","مورد");
+  var noParty=new HashMap<>(unpaid);noParty.remove("partyName");assertEquals(400,request("POST",path(user,"/entries"),noParty,user.token,key()).status);
+  var tooMuch=new HashMap<>(expense(eq));tooMuch.put("paymentStatus","PARTIAL");tooMuch.put("initialPaid","350.00");tooMuch.put("partyName","مورد");assertEquals(400,request("POST",path(user,"/entries"),tooMuch,user.token,key()).status);
+  String id=request("POST",path(user,"/entries"),unpaid,user.token,key()).json.get("id").asString();String url=path(user,"/entries/"+id+"/settlements");var body=Map.of("amount","350.00","paidOn","2026-09-22");
+  try(var pool=Executors.newVirtualThreadPerTaskExecutor()) {var a=pool.submit(()->request("POST",url,body,user.token,key()));var b=pool.submit(()->request("POST",url,body,user.token,key()));assertEquals(Set.of(200,400),Set.of(a.get().status,b.get().status));}
+  assertEquals(1,db.queryForObject("select count(*) from settlement",Integer.class));
+  User other=login("0500000002");assertEquals(404,request("POST",path(other,"/entries/"+id+"/settlements"),body,other.token,key()).status);
+ }
  @Test void equipmentNeedsOnlyNameAndModelAndRejectsSystemFields()throws Exception{
   User user=login("0500000001");String key=key();var body=Map.of("name","قلاب ١","model","FH16");var first=request("POST",path(user,"/equipment"),body,user.token,key);var replay=request("POST",path(user,"/equipment"),body,user.token,key);
   assertEquals(first.json.get("id"),replay.json.get("id"));assertTrue(first.json.get("reference").asString().startsWith("EQ-"));assertEquals("FH16",first.json.get("model").asString());
