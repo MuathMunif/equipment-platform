@@ -11,4 +11,7 @@ public class Audit {
     public void record(UUID workspace, UUID actor, String action, UUID resource) {
         db.update("insert into audit_event(id,workspace_id,actor_id,action,resource_id) values(?,?,?,?,?)",UUID.randomUUID(),workspace,actor,action,resource);
     }
+    public void record(UUID workspace, UUID actor, String action, UUID resource, String metadata) {
+        db.update("insert into audit_event(id,workspace_id,actor_id,action,resource_id,metadata) values(?,?,?,?,?,?::jsonb)",UUID.randomUUID(),workspace,actor,action,resource,metadata);
+    }
 }

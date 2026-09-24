@@ -1,5 +1,5 @@
 # Delivery backlog
-Status 2026-09-24: M0 and the bounded M1 local slice are complete with evidence in `evidence/M1_ACCEPTANCE.md`. M2 is IN PROGRESS: expense and income full/partial/unpaid creation and dated settlements are implemented locally. Other M2 flows and private object-store integration remain. M3–M7 are NOT STARTED. This is not completion of V1 or production readiness.
+Status 2026-09-24: M0 and the bounded M1 local slice are complete with evidence in `evidence/M1_ACCEPTANCE.md`. M2 is IN PROGRESS: expense and income full/partial/unpaid creation, dated settlements, and audited edit/error cancellation are implemented locally. Other M2 flows and private object-store integration remain. M3–M7 are NOT STARTED. This is not completion of V1 or production readiness.
 Break each milestone into small independently reviewable tasks; this list is not a request for one giant code generation.
 The first session should reach M1 where tooling permits, not stop after documentation.
 

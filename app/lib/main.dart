@@ -14,6 +14,12 @@ void main() {
 const brand = Color(0xff176c66);
 const categories = {'FUEL': 'وقود', 'MAINTENANCE': 'صيانة', 'OTHER': 'أخرى'};
 
+String riyadhDateTime(String value) {
+  final date = DateTime.parse(value).toUtc().add(const Duration(hours: 3));
+  String two(int number) => number.toString().padLeft(2, '0');
+  return '${date.year}-${two(date.month)}-${two(date.day)} ${two(date.hour)}:${two(date.minute)}';
+}
+
 class EquipmentApp extends StatefulWidget {
   final Api api;
   const EquipmentApp({super.key, required this.api});
@@ -1030,7 +1036,7 @@ class _LedgerPageState extends State<LedgerPage> {
                 '${entry['entryType'] == 'INCOME' ? 'إيراد' : categories[entry['category']]} • ${entry['equipmentName']}',
               ),
               subtitle: Text(
-                '${entry['operationDate']} ميلادي\n${(entry['entryType'] == 'INCOME' ? {'PAID': 'مستلم كاملًا', 'PARTIAL': 'مستلم جزئيًا', 'UNPAID': 'غير مستلم'} : {'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'})[entry['settlementStatus']] ?? 'حالة التسوية'}',
+                '${entry['operationDate']} ميلادي\n${entry['lifecycle'] == 'CANCELLED' ? 'عملية ملغاة' : (entry['entryType'] == 'INCOME' ? {'PAID': 'مستلم كاملًا', 'PARTIAL': 'مستلم جزئيًا', 'UNPAID': 'غير مستلم'} : {'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'})[entry['settlementStatus']] ?? 'حالة التسوية'}',
               ),
               isThreeLine: true,
               trailing: Text(
@@ -1376,6 +1382,197 @@ class _ExpenseFormState extends State<ExpenseForm> {
   );
 }
 
+class EntryEditForm extends StatefulWidget {
+  final Api api;
+  final Map<String, dynamic> entry;
+  const EntryEditForm({super.key, required this.api, required this.entry});
+  @override
+  State<EntryEditForm> createState() => _EntryEditFormState();
+}
+
+class _EntryEditFormState extends State<EntryEditForm> {
+  final form = GlobalKey<FormState>();
+  late final TextEditingController amount, note, party;
+  late String category, date;
+  String? dueDate, error;
+  bool busy = false;
+  bool get income => widget.entry['entryType'] == 'INCOME';
+  @override
+  void initState() {
+    super.initState();
+    amount = TextEditingController(text: widget.entry['amount']);
+    note = TextEditingController(text: widget.entry['note']);
+    party = TextEditingController(text: widget.entry['partyName'] ?? '');
+    category = widget.entry['category'];
+    date = widget.entry['operationDate'];
+    dueDate = widget.entry['dueDate'];
+  }
+
+  @override
+  void dispose() {
+    amount.dispose();
+    note.dispose();
+    party.dispose();
+    super.dispose();
+  }
+
+  Future<void> pickDate({bool due = false}) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateTime.parse((due ? dueDate : date) ?? todayRiyadh()),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (selected != null) {
+      setState(() {
+        if (due) {
+          dueDate = selected.toIso8601String().split('T').first;
+        } else {
+          date = selected.toIso8601String().split('T').first;
+        }
+      });
+    }
+  }
+
+  Future<void> save() async {
+    if (!form.currentState!.validate()) return;
+    final settled = BigInt.parse(
+      (widget.entry['paid'] as String).replaceAll('.', ''),
+    );
+    final total = BigInt.parse(exactMoney(amount.text)!.replaceAll('.', ''));
+    if (total < settled) {
+      setState(() => error = 'الإجمالي لا يقل عن مجموع التسويات');
+      return;
+    }
+    if (total == settled && dueDate != null) {
+      setState(() => error = 'أزل موعد الاستحقاق عند سداد الإجمالي');
+      return;
+    }
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final updated = await widget.api.json(
+        'PUT',
+        widget.api.scoped('/entries/${widget.entry['id']}'),
+        body: {
+          'amount': exactMoney(amount.text),
+          if (!income) 'category': category,
+          'operationDate': date,
+          'note': note.text.trim(),
+          'partyName': party.text.trim(),
+          'dueDate': dueDate,
+        },
+      );
+      if (mounted) Navigator.pop(context, Map<String, dynamic>.from(updated));
+    } on ApiError catch (e) {
+      if (mounted) setState(() => error = e.message);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(income ? 'تعديل الإيراد' : 'تعديل المصروف')),
+    body: Form(
+      key: form,
+      child: FormBody(
+        children: [
+          Text(
+            'التسويات السابقة محفوظة ولا تتغير بالتعديل.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            key: const Key('editAmount'),
+            controller: amount,
+            enabled: !busy,
+            textDirection: TextDirection.ltr,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'الإجمالي (ريال سعودي)',
+            ),
+            validator: (v) =>
+                exactMoney(v ?? '') == null ? 'اكتب مبلغًا صحيحًا' : null,
+          ),
+          if (!income) ...[
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: category,
+              decoration: const InputDecoration(labelText: 'نوع المصروف'),
+              items: categories.entries
+                  .map(
+                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  )
+                  .toList(),
+              onChanged: busy ? null : (v) => setState(() => category = v!),
+            ),
+          ],
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: busy ? null : () => pickDate(),
+            icon: const Icon(Icons.calendar_today_outlined),
+            label: Text('تاريخ العملية: $date ميلادي'),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            key: const Key('editParty'),
+            controller: party,
+            enabled: !busy,
+            maxLength: 100,
+            decoration: InputDecoration(
+              labelText: income ? 'اسم الطرف الذي سيدفع' : 'اسم الطرف المستحق',
+            ),
+            validator: (v) {
+              final total = exactMoney(amount.text);
+              if (total == null) return null;
+              final settled = BigInt.parse(
+                (widget.entry['paid'] as String).replaceAll('.', ''),
+              );
+              return BigInt.parse(total.replaceAll('.', '')) > settled &&
+                      (v == null || v.trim().isEmpty)
+                  ? 'اكتب اسم الطرف عند وجود متبقٍ'
+                  : null;
+            },
+          ),
+          OutlinedButton.icon(
+            onPressed: busy ? null : () => pickDate(due: true),
+            icon: const Icon(Icons.event_outlined),
+            label: Text(
+              dueDate == null
+                  ? 'موعد الاستحقاق (اختياري)'
+                  : 'موعد الاستحقاق: $dueDate ميلادي',
+            ),
+          ),
+          if (dueDate != null)
+            TextButton(
+              onPressed: busy ? null : () => setState(() => dueDate = null),
+              child: const Text('إزالة موعد الاستحقاق'),
+            ),
+          const SizedBox(height: 16),
+          TextFormField(
+            key: const Key('editNote'),
+            controller: note,
+            enabled: !busy,
+            maxLength: 1000,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+          ),
+          InlineError(error),
+          const SizedBox(height: 16),
+          FilledButton(
+            key: const Key('saveEntryEdit'),
+            onPressed: busy ? null : save,
+            child: Text(busy ? 'جارٍ حفظ التعديل…' : 'حفظ التعديل'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class EntryDetail extends StatefulWidget {
   final Api api;
   final String id;
@@ -1393,12 +1590,94 @@ class EntryDetail extends StatefulWidget {
 class _EntryDetailState extends State<EntryDetail> {
   Map<String, dynamic>? entry;
   bool get income => entry?['entryType'] == 'INCOME';
+  bool get cancelled => entry?['lifecycle'] == 'CANCELLED';
   List<dynamic> attachments = [];
   String? error, uploadError, uploadId;
   bool loading = true, uploading = false;
   Uint8List? pendingBytes;
   String? pendingName, pendingType;
   String uploadKey = requestKey();
+  Future<void> editEntry() async {
+    final updated = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EntryEditForm(api: widget.api, entry: entry!),
+      ),
+    );
+    if (updated != null && mounted) await load();
+  }
+
+  Future<void> cancelEntry() async {
+    String reason = '';
+    String? validation;
+    bool saving = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          scrollable: true,
+          title: const Text('إلغاء العملية'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'ستبقى الدفعات والمرفقات في السجل. الإلغاء ليس استردادًا للمال.',
+              ),
+              TextField(
+                key: const Key('cancellationReason'),
+                onChanged: (value) => reason = value,
+                maxLength: 500,
+                maxLines: 2,
+                enabled: !saving,
+                decoration: const InputDecoration(labelText: 'سبب الإلغاء'),
+              ),
+              InlineError(validation),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(dialogContext),
+              child: const Text('رجوع'),
+            ),
+            FilledButton(
+              key: const Key('confirmCancellation'),
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (reason.trim().isEmpty) {
+                        update(() => validation = 'اكتب سبب الإلغاء');
+                        return;
+                      }
+                      update(() {
+                        saving = true;
+                        validation = null;
+                      });
+                      try {
+                        await widget.api.json(
+                          'POST',
+                          widget.api.scoped(
+                            '/entries/${widget.id}/cancellation',
+                          ),
+                          body: {'reason': reason.trim()},
+                        );
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                        if (mounted) await load();
+                      } on ApiError catch (e) {
+                        if (dialogContext.mounted) {
+                          update(() => validation = e.message);
+                        }
+                      } finally {
+                        if (dialogContext.mounted) update(() => saving = false);
+                      }
+                    },
+              child: Text(saving ? 'جارٍ الإلغاء…' : 'تأكيد الإلغاء'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> addPayment() async {
     String paymentAmount = '';
     String paidOn = todayRiyadh();
@@ -1708,6 +1987,50 @@ class _EntryDetailState extends State<EntryDetail> {
               ),
               const SizedBox(height: 8),
               Text('${entry!['operationDate']} ميلادي'),
+              if (cancelled) ...[
+                const SizedBox(height: 12),
+                Card(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'عملية ملغاة',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text('السبب: ${entry!['cancellationReason']}'),
+                        Text(
+                          'تاريخ الإلغاء: ${riyadhDateTime(entry!['cancelledAt'])} ميلادي بتوقيت الرياض',
+                        ),
+                        const Text(
+                          'المبالغ والتسويات أدناه محفوظة للسجل، ولا تدخل العملية في المجاميع النشطة.',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      key: const Key('editEntry'),
+                      onPressed: editEntry,
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('تعديل'),
+                    ),
+                    TextButton.icon(
+                      key: const Key('cancelEntry'),
+                      onPressed: cancelEntry,
+                      icon: const Icon(Icons.cancel_outlined),
+                      label: const Text('إلغاء العملية'),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 20),
               Card(
                 child: Padding(
@@ -1758,7 +2081,7 @@ class _EntryDetailState extends State<EntryDetail> {
                 Text('الطرف: ${entry!['partyName']}'),
               if (entry!['dueDate'] != null)
                 Text('موعد الاستحقاق: ${entry!['dueDate']} ميلادي'),
-              if (entry!['settlementStatus'] != 'PAID') ...[
+              if (!cancelled && entry!['settlementStatus'] != 'PAID') ...[
                 const SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: addPayment,

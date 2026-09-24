@@ -219,6 +219,49 @@ paths:
         '200': {description: Original and its settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
+    put:
+      description: Edit a posted entry without changing its existing settlements. The total must be at least their sum.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [amount, operationDate]
+              properties:
+                amount: {$ref: '#/components/schemas/Money'}
+                category: {type: string, enum: [FUEL, MAINTENANCE, OTHER], description: Required for expenses; omitted for income}
+                operationDate: {type: string, format: date}
+                note: {type: [string, 'null'], maxLength: 1000}
+                partyName: {type: [string, 'null'], maxLength: 100, description: Required if an amount remains}
+                dueDate: {type: [string, 'null'], format: date, description: Allowed only while an amount remains}
+      responses:
+        '200': {description: Updated entry with unchanged settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/entries/{id}/cancellation:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: Cancel an erroneous posted entry; existing settlements and attachments remain historical. This is not a refund.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              properties:
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200': {description: Cancelled entry retained for history, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
   /workspaces/{workspace}/entries/{id}/settlements:
     parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
     post:
@@ -341,7 +384,7 @@ components:
         createdAt: {type: string, format: date-time}
     Entry:
       type: object
-      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, remaining, settlementStatus, partyName, dueDate, createdAt, settlements]
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements]
       properties:
         id: {type: string, format: uuid}
         equipmentId: {type: string, format: uuid}
@@ -352,7 +395,10 @@ components:
         category: {type: string, enum: [FUEL, MAINTENANCE, OTHER]}
         operationDate: {type: string, format: date}
         note: {type: string}
-        lifecycle: {const: POSTED}
+        lifecycle: {type: string, enum: [POSTED, CANCELLED]}
+        cancellationReason: {type: [string, 'null'], maxLength: 500}
+        cancelledAt: {type: [string, 'null'], format: date-time}
+        cancelledBy: {type: [string, 'null'], format: uuid}
         paid: {$ref: '#/components/schemas/Money', description: Sum of payments or receipts; field name retained for compatibility}
         remaining: {$ref: '#/components/schemas/Money'}
         settlementStatus: {type: string, enum: [PAID, PARTIAL, UNPAID], description: Derived from settlements}

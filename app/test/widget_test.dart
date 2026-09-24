@@ -31,6 +31,7 @@ final sampleEntry = {
   'currency': 'SAR',
   'category': 'FUEL',
   'operationDate': '2026-09-24',
+  'lifecycle': 'POSTED',
   'paid': '350.00',
   'remaining': '0.00',
   'note': '',
@@ -326,6 +327,119 @@ void main() {
       expect(uploads, 2);
       expect(expenseCreates, 0);
       expect(find.text('حُفظ المرفق داخل العملية'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'income edit sends safe fields and preserves settlement history',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      http.Request? edited;
+      final current = {
+        ...sampleEntry,
+        'entryType': 'INCOME',
+        'amount': '3000.00',
+        'paid': '1000.00',
+        'remaining': '2000.00',
+        'partyName': 'عميل',
+        'dueDate': null,
+      };
+      final api = Api(
+        client: MockClient((r) async {
+          if (r.method == 'PUT') {
+            edited = r;
+            return json({
+              ...current,
+              'amount': '2500.00',
+              'remaining': '1500.00',
+            });
+          }
+          if (r.url.path.endsWith('/attachments')) return json([]);
+          return json(current);
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('editEntry')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('editAmount')), '2500');
+      await tester.ensureVisible(find.byKey(const Key('saveEntryEdit')));
+      await tester.tap(find.byKey(const Key('saveEntryEdit')));
+      await tester.pumpAndSettle();
+      expect(edited, isNotNull);
+      final body = jsonDecode(edited!.body) as Map<String, dynamic>;
+      expect(edited!.method, 'PUT');
+      expect(body['amount'], '2500.00');
+      expect(body.containsKey('settlements'), false);
+      expect(body.containsKey('entryType'), false);
+    },
+  );
+  testWidgets(
+    'cancellation requires reason and cancelled detail is read only',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      bool cancelled = false;
+      int calls = 0;
+      final partial = {
+        ...sampleEntry,
+        'paid': '100.00',
+        'remaining': '250.00',
+        'settlementStatus': 'PARTIAL',
+        'settlements': [
+          {'id': 'settlement', 'amount': '100.00', 'paidOn': '2026-09-24'},
+        ],
+      };
+      final api = Api(
+        client: MockClient((r) async {
+          if (r.method == 'POST') {
+            calls++;
+            cancelled = true;
+            return json({
+              ...partial,
+              'lifecycle': 'CANCELLED',
+              'cancellationReason': 'قيد مكرر',
+            });
+          }
+          if (r.url.path.endsWith('/attachments')) return json([]);
+          return json({
+            ...partial,
+            'lifecycle': cancelled ? 'CANCELLED' : 'POSTED',
+            'cancellationReason': cancelled ? 'قيد مكرر' : null,
+            'cancelledAt': cancelled ? '2026-09-24T10:00:00Z' : null,
+          });
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
+      await tester.pumpAndSettle();
+      expect(find.text('إضافة دفعة'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('cancelEntry')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirmCancellation')));
+      await tester.pumpAndSettle();
+      expect(find.text('اكتب سبب الإلغاء'), findsOneWidget);
+      expect(calls, 0);
+      await tester.enterText(
+        find.byKey(const Key('cancellationReason')),
+        'قيد مكرر',
+      );
+      await tester.tap(find.byKey(const Key('confirmCancellation')));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      expect(find.text('عملية ملغاة'), findsOneWidget);
+      expect(find.text('السبب: قيد مكرر'), findsOneWidget);
+      expect(find.byKey(const Key('editEntry')), findsNothing);
+      expect(find.byKey(const Key('cancelEntry')), findsNothing);
+      expect(find.text('إضافة دفعة'), findsNothing);
+      expect(find.text('350.00 ريال'), findsOneWidget);
+      expect(find.text('100.00 ريال سعودي'), findsOneWidget);
+      expect(find.byKey(const Key('addAttachment')), findsOneWidget);
     },
   );
 }

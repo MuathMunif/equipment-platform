@@ -136,6 +136,53 @@ class OwnerSliceTest {
   User other=login("0500000002");assertEquals(404,request("POST",path(other,"/entries/"+id+"/settlements"),Map.of("amount","1.00","paidOn","2026-09-02"),other.token,key()).status);
   assertEquals(0,db.queryForObject("select count(*) from settlement",Integer.class));
  }
+ @Test void editExpenseAndIncomeRetainsSettlementsAndAuditsBeforeAfter()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);
+  for(String type:List.of("EXPENSE","INCOME")) {
+   var body=new HashMap<String,Object>();body.put("equipmentId",eq);body.put("entryType",type);body.put("amount","3000.00");body.put("operationDate","2026-09-01");body.put("paymentStatus","PARTIAL");body.put("initialPaid","1000.00");body.put("paidOn","2026-09-20");body.put("partyName","طرف أول");if(type.equals("EXPENSE"))body.put("category","FUEL");
+   var created=request("POST",path(user,"/entries"),body,user.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString();String firstSettlement=created.json.get("settlements").get(0).get("id").asString();
+   var edit=new HashMap<String,Object>();edit.put("amount","2500.00");edit.put("operationDate","2026-09-05");edit.put("note","تصحيح موثق");edit.put("partyName","طرف ثان");edit.put("dueDate","2026-10-15");if(type.equals("EXPENSE"))edit.put("category","MAINTENANCE");
+   var updated=request("PUT",path(user,"/entries/"+id),edit,user.token,null);assertEquals(200,updated.status);assertEquals("1500.00",updated.json.get("remaining").asString());assertEquals("PARTIAL",updated.json.get("settlementStatus").asString());assertEquals("2026-09-05",updated.json.get("operationDate").asString());assertEquals(firstSettlement,updated.json.get("settlements").get(0).get("id").asString());
+   assertEquals(400,request("PUT",path(user,"/entries/"+id),Map.of("amount","500.00","operationDate","2026-09-05","partyName","طرف ثان","category",type.equals("EXPENSE")?"MAINTENANCE":"OTHER"),user.token,null).status);
+   assertEquals(400,request("PUT",path(user,"/entries/"+id),Map.of("amount","1000.00","operationDate","2026-09-05","dueDate","2026-10-15","category",type.equals("EXPENSE")?"MAINTENANCE":"OTHER"),user.token,null).status);
+   assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));
+   var audit=db.queryForMap("select metadata,actor_id from audit_event where resource_id=? and action=?",UUID.fromString(id),type.equals("INCOME")?"INCOME_EDITED":"EXPENSE_EDITED");assertEquals(UUID.fromString(user.user),audit.get("actor_id"));String metadata=audit.get("metadata").toString();assertTrue(metadata.contains("3000.00"));assertTrue(metadata.contains("2500.00"));
+  }
+ }
+ @Test void cancellationRetainsHistoryAndFilesButBlocksMutationAndCrossTenantAccess()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner);String id=entry(owner,eq);byte[] png=image("png");String file=initiate(owner,id,png,"image/png");assertEquals(200,raw("PUT",path(owner,"/attachments/"+file+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  String url=path(owner,"/entries/"+id);assertEquals(400,request("POST",url+"/cancellation",Map.of("reason","  "),owner.token,null).status);
+  assertEquals("POSTED",request("GET",url,null,owner.token,null).json.get("lifecycle").asString());
+  User other=login("0500000002");var edit=Map.of("amount","350.00","category","FUEL","operationDate","2026-09-01");
+  assertEquals(404,request("PUT",path(other,"/entries/"+id),edit,other.token,null).status);
+  assertEquals(404,request("POST",path(other,"/entries/"+id+"/cancellation"),Map.of("reason","خطأ"),other.token,null).status);
+  var cancelled=request("POST",url+"/cancellation",Map.of("reason","قيد مكرر بالخطأ"),owner.token,null);assertEquals(200,cancelled.status);assertEquals("CANCELLED",cancelled.json.get("lifecycle").asString());assertEquals("قيد مكرر بالخطأ",cancelled.json.get("cancellationReason").asString());assertEquals(owner.user,cancelled.json.get("cancelledBy").asString());assertFalse(cancelled.json.get("cancelledAt").isNull());assertEquals(1,cancelled.json.get("settlements").size());assertEquals("350.00",cancelled.json.get("paid").asString());
+  assertEquals(400,request("PUT",url,edit,owner.token,null).status);
+  assertEquals(400,request("POST",url+"/settlements",Map.of("amount","1.00","paidOn","2026-10-01"),owner.token,key()).status);
+  assertEquals(400,request("POST",url+"/cancellation",Map.of("reason","مرة ثانية"),owner.token,null).status);
+  assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));
+  assertEquals(200,request("GET",url,null,owner.token,null).status);assertEquals(200,request("GET",path(owner,"/attachments/"+file+"/content"),null,owner.token,null).status);
+  assertEquals(1,request("GET",path(owner,"/entries?equipmentId="+eq),null,owner.token,null).json.get("total").asInt());
+  assertEquals(404,request("GET",path(other,"/entries/"+id),null,other.token,null).status);
+  assertEquals(404,request("GET",path(other,"/attachments/"+file+"/content"),null,other.token,null).status);
+  assertEquals(0,db.queryForObject("select count(*) from financial_entry where workspace_id=? and lifecycle='POSTED'",Integer.class,UUID.fromString(owner.workspace)));
+  var audit=db.queryForMap("select metadata,actor_id from audit_event where resource_id=? and action='FINANCIAL_ENTRY_CANCELLED'",UUID.fromString(id));assertEquals(UUID.fromString(owner.user),audit.get("actor_id"));assertTrue(audit.get("metadata").toString().contains("قيد مكرر"));
+ }
+ @Test void concurrentEditAndReceiptCannotLeaveTotalBelowSettlements()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);var body=new HashMap<String,Object>();body.put("equipmentId",eq);body.put("entryType","INCOME");body.put("amount","3000.00");body.put("operationDate","2026-09-01");body.put("paymentStatus","PARTIAL");body.put("initialPaid","1000.00");body.put("paidOn","2026-09-20");body.put("partyName","عميل");
+  String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();String url=path(user,"/entries/"+id);
+  var edit=Map.of("amount","1000.00","operationDate","2026-09-01","partyName","عميل");var receipt=Map.of("amount","2000.00","paidOn","2026-10-01");
+  try(var pool=Executors.newVirtualThreadPerTaskExecutor()) {var a=pool.submit(()->request("PUT",url,edit,user.token,null));var b=pool.submit(()->request("POST",url+"/settlements",receipt,user.token,key()));assertEquals(Set.of(200,400),Set.of(a.get().status,b.get().status));}
+  var current=request("GET",url,null,user.token,null).json;assertTrue(new java.math.BigDecimal(current.get("amount").asString()).compareTo(new java.math.BigDecimal(current.get("paid").asString()))>=0);
+  assertTrue(current.get("settlements").size()==1 || current.get("settlements").size()==2);
+ }
+ @Test void cancelledIncomeKeepsCollectionHistoryAndRejectsAnotherCollection()throws Exception{
+  User user=login("0500000001");String eq=equipment(user);var body=Map.of("equipmentId",eq,"entryType","INCOME","amount","500.00","operationDate","2026-09-01","paymentStatus","PARTIAL","initialPaid","200.00","paidOn","2026-09-20","partyName","عميل");
+  String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();String url=path(user,"/entries/"+id);
+  var cancelled=request("POST",url+"/cancellation",Map.of("reason","إيراد مسجل بالخطأ"),user.token,null);assertEquals(200,cancelled.status);assertEquals("INCOME",cancelled.json.get("entryType").asString());assertEquals("CANCELLED",cancelled.json.get("lifecycle").asString());assertEquals("200.00",cancelled.json.get("paid").asString());assertEquals(1,cancelled.json.get("settlements").size());
+  assertEquals(400,request("POST",url+"/settlements",Map.of("amount","100.00","paidOn","2026-09-21"),user.token,key()).status);
+  assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));
+ }
  @Test void equipmentNeedsOnlyNameAndModelAndRejectsSystemFields()throws Exception{
   User user=login("0500000001");String key=key();var body=Map.of("name","قلاب ١","model","FH16");var first=request("POST",path(user,"/equipment"),body,user.token,key);var replay=request("POST",path(user,"/equipment"),body,user.token,key);
   assertEquals(first.json.get("id"),replay.json.get("id"));assertTrue(first.json.get("reference").asString().startsWith("EQ-"));assertEquals("FH16",first.json.get("model").asString());
