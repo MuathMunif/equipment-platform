@@ -1,0 +1,35 @@
+# Handoff baseline; adapt carefully to the actual generated app.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+**/key.properties
+**/local.properties
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-service-account*.json
+**/*service-account-key*.json
+.secrets/
+.local/
+.tmp/
+.worktrees/
+data/
+uploads/
+**/target/
+**/build/
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/node_modules/
+**/coverage/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+# Keep .codex/ and AGENTS.md checked in; they contain non-secret project instructions.
+# Do not ignore Maven wrapper, Flutter lockfiles or migrations by blanket file extension.

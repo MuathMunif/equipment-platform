@@ -1,0 +1,165 @@
+{
+  "package": "equipment_codex_handoff",
+  "version": "1.0",
+  "created_date": "2026-09-24",
+  "application_implemented": false,
+  "application_tests_run": false,
+  "description": "Project specifications, execution prompts, scoped agent config and verified existing visual references.",
+  "files": [
+    {
+      "path": ".codex/agents/implementer.toml",
+      "bytes": 674,
+      "sha256": "3aa0306b7a924845b9da33226f0c4d4d120dd21981c74eb3f84c9174107c8dc3"
+    },
+    {
+      "path": ".codex/agents/reviewer.toml",
+      "bytes": 1016,
+      "sha256": "c6edfa76ac9e7e65e23c091accb2a12d638d73e24acb7bc2eb5f0599ba929b4f"
+    },
+    {
+      "path": ".codex/agents/ux_reviewer.toml",
+      "bytes": 873,
+      "sha256": "4bdd2a97a2d29902aba471d04d6425c3afbe865ec8333befdab02d2e2719a08d"
+    },
+    {
+      "path": ".codex/config.toml",
+      "bytes": 272,
+      "sha256": "35decf04568fd1c68c3873995beaffcc859a17a0c304baeea064fd619e936830"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 665,
+      "sha256": "6f9b64fb338ae5dca62d69bb0cdb64401449b2aaff432f4773ac42df252e5e28"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 6073,
+      "sha256": "44e88f4eb736d7c6e9bb4aab64a3deec526ccfce14221b0f06b0c52e3735fb6d"
+    },
+    {
+      "path": "CODEX_MASTER_PROMPT_AR.txt",
+      "bytes": 98251,
+      "sha256": "2e9255bc678a96e3dd94d835136abf1ad7aa071cc59a907f42783a57f69bf59d"
+    },
+    {
+      "path": "README_AR.md",
+      "bytes": 6052,
+      "sha256": "a2f743e9beaaf67924c434147a8c4cf2cda51a5ed239d5321e35a91681e44ecd"
+    },
+    {
+      "path": "RESUME_CODEX_AR.txt",
+      "bytes": 1910,
+      "sha256": "f9a38a8a5d3effa955401bdc6edb9baf878a72330390ae59e9e48a232def419a"
+    },
+    {
+      "path": "START_CODEX_AR.txt",
+      "bytes": 3488,
+      "sha256": "b4e13296898242e10c8bb6b56b1df21e70841d664f2991c7a8763296a2a76e81"
+    },
+    {
+      "path": "contracts/README.md",
+      "bytes": 602,
+      "sha256": "c3ade03cb1a0b69d4030cd374f369d7a14e2ec02e2c8f85e80028e8347a31a39"
+    },
+    {
+      "path": "design/README_AR.md",
+      "bytes": 2598,
+      "sha256": "a92cb7c1b04ab36c0e4838ba04fe6dafb7f9f2965170a7bb3585a53fb8952b01"
+    },
+    {
+      "path": "design/references/equipment_detail_mobile_reference.png",
+      "bytes": 39092,
+      "sha256": "914c0d573c2551fdf4b420de0a6403e7f5919899febf7901236e3b20e248e7df"
+    },
+    {
+      "path": "design/references/equipment_detail_web_reference.png",
+      "bytes": 56468,
+      "sha256": "8a3d72432cd45d05648a9c6ea49418a0c117f69b76a09c7f8151901b53383bb7"
+    },
+    {
+      "path": "design/references/expense_create_mobile_reference.png",
+      "bytes": 37317,
+      "sha256": "cb2b79c77d3856fb251c747a03bcb72f43153d12e7b96811f20dc36e9b056f62"
+    },
+    {
+      "path": "design/references/overview_early_concept_reference.png",
+      "bytes": 1299450,
+      "sha256": "71d0f586bfa3550bdaa624c8f81b5aa480178479c90711e750f6a873d81f926d"
+    },
+    {
+      "path": "docs/01_PRODUCT_AR.md",
+      "bytes": 15654,
+      "sha256": "8907b0c58540b2b827f2a886194c96b6b52831f57bfa6c7ac0850a1998331d03"
+    },
+    {
+      "path": "docs/02_UX_AR.md",
+      "bytes": 12710,
+      "sha256": "fd812c625665ca181da170edae864c0b19a14afa0838540bc2957b33c6098ab6"
+    },
+    {
+      "path": "docs/03_ARCHITECTURE.md",
+      "bytes": 14468,
+      "sha256": "097986554ec302fc129d4b72d782393eac5c7a26ccac3ddeb67c6d65c4f2685d"
+    },
+    {
+      "path": "docs/04_DECISIONS_AR.md",
+      "bytes": 5936,
+      "sha256": "50444aa92446c648b73f81f874ad3efb2dfde33b5945a416be2e0da6eaa7a76c"
+    },
+    {
+      "path": "docs/05_BACKLOG.md",
+      "bytes": 5327,
+      "sha256": "252176cc64b0542b31a0dbe5ff387baa0472b98f8c6e24ec8830410e81299c50"
+    },
+    {
+      "path": "docs/06_ACCEPTANCE_TESTS.md",
+      "bytes": 10619,
+      "sha256": "1f26683746080ae2983bf78ee85736d33251e0a33df33cdf26e9ad15c9f69122"
+    },
+    {
+      "path": "docs/07_AGENT_WORKFLOW.md",
+      "bytes": 4124,
+      "sha256": "6b743363aa15f59fa0a9f1e60e7f6a1c0096a520b1c7f802a2b7f293cc53bb62"
+    },
+    {
+      "path": "docs/ENVIRONMENT.md",
+      "bytes": 1875,
+      "sha256": "d7698c19967360866b6c9cf6406cec2ce63c69015fbe06f6147626e7570f189c"
+    },
+    {
+      "path": "docs/HANDOFF.md",
+      "bytes": 1885,
+      "sha256": "6660f304e9c52e891d07a68ad3f3296074a8e307e968d101459eb2864fc875ed"
+    },
+    {
+      "path": "docs/OPEN_QUESTIONS.md",
+      "bytes": 3901,
+      "sha256": "568e1fb265ecb65767e1c8abadc9c7e2460de3fa4a1e7a28e42db522a58e793d"
+    },
+    {
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "bytes": 2018,
+      "sha256": "68cd3fe5c9314f322518654070da5309cd8f73664b8c70e3fe87bbd9f450580a"
+    },
+    {
+      "path": "docs/SOURCES.md",
+      "bytes": 2265,
+      "sha256": "4d86e6ff1760a14e09ce41c472249eb4a9cbc9ba229d4fba19a380c342a7454f"
+    },
+    {
+      "path": "docs/TASK_TEMPLATE.md",
+      "bytes": 963,
+      "sha256": "295a85b3871031c242cf1e66178f15ea3c218c34b6afd1f4d59c400a923dd16a"
+    },
+    {
+      "path": "docs/reviews/README.md",
+      "bytes": 456,
+      "sha256": "31114e600eaecebe25ad9a27aa88dcba8e1cbd07195db82d471240b432bc9a5f"
+    },
+    {
+      "path": "docs/tasks/001_FIRST_VERTICAL_SLICE.md",
+      "bytes": 3046,
+      "sha256": "85ad76ef442e31b3fe0ba84c621013f572ee653580c15faa961b30e05cb1d174"
+    }
+  ]
+}
