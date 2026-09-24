@@ -54,11 +54,11 @@ public class AttachmentService {
             if(bytes.length!=((Number)row.get("declared_size")).longValue() || !Objects.equals(mediaType,row.get("declared_type"))) throw ApiException.invalid("حجم الملف أو صيغته لا يطابقان الملف المحدد؛ أعد رفع الملف نفسه");
             String actual=validator.validate(bytes,(String)row.get("declared_type"));
             String key=workspace+"/"+id+"/"+checksum; storage.putImmutable(key,bytes);
-            db.update("update attachment set state='READY',verified_type=?,actual_size=?,checksum=?,object_key=? where workspace_id=? and id=?",actual,bytes.length,checksum,key,workspace,id);
+            db.update("update attachment set state='READY',verified_type=?,actual_size=?,checksum=?,object_key=?,updated_at=now() where workspace_id=? and id=?",actual,bytes.length,checksum,key,workspace,id);
             audit.record(workspace,actor.userId(),"ATTACHMENT_READY",id);
             return view(require(workspace,id,false));
-        } catch(ApiException e) { db.update("update attachment set state='FAILED' where workspace_id=? and id=?",workspace,id); throw e; }
-        catch(IOException e) { db.update("update attachment set state='FAILED' where workspace_id=? and id=?",workspace,id); throw new ApiException(503,"UPLOAD_FAILED","حُفظ السجل، وتعذر رفع المرفق؛ أعد محاولة رفع المرفق"); }
+        } catch(ApiException e) { db.update("update attachment set state='FAILED',updated_at=now() where workspace_id=? and id=?",workspace,id); throw e; }
+        catch(IOException e) { db.update("update attachment set state='FAILED',updated_at=now() where workspace_id=? and id=?",workspace,id); throw new ApiException(503,"UPLOAD_FAILED","حُفظ السجل، وتعذر رفع المرفق؛ أعد محاولة رفع المرفق"); }
     }
     public Download download(Actor actor,UUID workspace,UUID id) {
         access.owner(actor,workspace);var row=require(workspace,id,false);

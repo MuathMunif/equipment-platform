@@ -2,12 +2,17 @@ package com.equipment;
 
 import com.equipment.common.DevelopmentBoundary;
 import com.equipment.attachments.ContentValidator;
+import com.equipment.attachments.AttachmentCleanupService;
+import com.equipment.attachments.DevelopmentFileStorage;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.nio.file.attribute.FileTime;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import org.flywaydb.core.Flyway;
@@ -17,6 +22,7 @@ import org.apache.pdfbox.pdmodel.*;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.cos.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,6 +32,7 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -34,7 +41,7 @@ import tools.jackson.databind.json.JsonMapper;
  "spring.datasource.username=equipment_test","spring.datasource.password=isolated-test-only"})
 @ActiveProfiles({"dev","test"})
 class OwnerSliceTest {
- @LocalServerPort int port; @Autowired JdbcTemplate db; @Autowired ContentValidator validator;
+ @LocalServerPort int port; @Autowired JdbcTemplate db; @Autowired ContentValidator validator; @Autowired TransactionTemplate transactions;
  static final JsonMapper JSON=JsonMapper.builder().build();
  final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
  @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {registry.add("app.storage-root",()->"../.local/test-objects/"+UUID.randomUUID());}
@@ -473,5 +480,47 @@ class OwnerSliceTest {
   assertEquals(31,first.get("total").asInt());assertEquals(30,first.get("items").size());assertEquals(1,second.get("items").size());
   assertNotEquals(first.get("items").get(0).get("id").asString(),second.get("items").get(0).get("id").asString());
   assertEquals(400,request("GET",base+"?page=100001",null,user.token,null).status);
+ }
+ @Test void developmentAttachmentCleanupRetainsFinancialHistoryAndIsRepeatSafe(@TempDir Path disk)throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),posted=entry(owner,eq);byte[] png=image("png");
+  String ready=initiate(owner,posted,png,"image/png");assertEquals(200,raw("PUT",path(owner,"/attachments/"+ready+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  String cancelled=entry(owner,eq),cancelledFile=initiate(owner,cancelled,png,"image/png");assertEquals(200,raw("PUT",path(owner,"/attachments/"+cancelledFile+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  assertEquals(200,request("POST",path(owner,"/entries/"+cancelled+"/cancellation"),Map.of("reason","قيد مكرر"),owner.token,null).status);
+  String draft=request("POST",path(owner,"/drafts"),Map.of("equipmentId",eq),owner.token,key()).json.get("id").asString(),draftFile=initiate(owner,draft,png,"image/png");
+  assertEquals(200,raw("PUT",path(owner,"/attachments/"+draftFile+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  assertEquals(200,request("POST",path(owner,"/drafts/"+draft+"/completion"),expense(eq),owner.token,key()).status);
+  String discarded=request("POST",path(owner,"/drafts"),Map.of("equipmentId",eq),owner.token,key()).json.get("id").asString(),discardedFile=initiate(owner,discarded,png,"image/png");
+  assertEquals(200,raw("PUT",path(owner,"/attachments/"+discardedFile+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  assertEquals(200,request("DELETE",path(owner,"/drafts/"+discarded),null,owner.token,null).status);
+  String pending=initiate(owner,posted,png,"image/png"),recent=initiate(owner,posted,png,"image/png"),failed=initiate(owner,posted,png,"image/png"),retry=initiate(owner,posted,png,"image/png");
+  assertEquals(400,raw("PUT",path(owner,"/attachments/"+failed+"/content"),png,"image/jpeg",owner.token,null,Map.of()).status);
+  assertEquals(400,raw("PUT",path(owner,"/attachments/"+retry+"/content"),png,"image/jpeg",owner.token,null,Map.of()).status);
+  assertEquals(200,raw("PUT",path(owner,"/attachments/"+retry+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  assertEquals(404,request("GET",path(other,"/attachments/"+ready+"/content"),null,other.token,null).status);
+  Instant now=Instant.now(),old=now.minus(Duration.ofDays(8));
+  db.update("update attachment set updated_at=? where id in (?,?)",java.sql.Timestamp.from(old),UUID.fromString(pending),UUID.fromString(failed));
+  db.update("update financial_entry set discarded_at=? where id=?",java.sql.Timestamp.from(old),UUID.fromString(discarded));
+  var env=new MockEnvironment();env.setActiveProfiles("dev");var boundary=new DevelopmentBoundary(env,true);
+  var storage=new DevelopmentFileStorage(disk.toString(),boundary);
+  for(String file:List.of(ready,cancelledFile,draftFile,discardedFile)) {
+   String objectKey=db.queryForObject("select object_key from attachment where id=?",String.class,UUID.fromString(file));storage.putImmutable(objectKey,png);Files.setLastModifiedTime(disk.resolve(objectKey),FileTime.from(old));
+  }
+  String orphan=owner.workspace+"/"+failed+"/"+"a".repeat(64);storage.putImmutable(orphan,png);Files.setLastModifiedTime(disk.resolve(orphan),FileTime.from(old));
+  String retryObject=owner.workspace+"/"+recent+"/"+"b".repeat(64);storage.putImmutable(retryObject,png);Files.setLastModifiedTime(disk.resolve(retryObject),FileTime.from(old));
+  Path oldTemp=disk.resolve(owner.workspace).resolve(pending).resolve("pending-123.tmp"),recentTemp=disk.resolve(owner.workspace).resolve(recent).resolve("pending-456.tmp");
+  Files.createDirectories(oldTemp.getParent());Files.write(oldTemp,png);Files.setLastModifiedTime(oldTemp,FileTime.from(old));
+  Files.createDirectories(recentTemp.getParent());Files.write(recentTemp,png);
+  var cleanup=new AttachmentCleanupService(db,transactions,storage,boundary,7);
+  var first=cleanup.clean(now);assertEquals(3,first.recordsRemoved());assertEquals(3,first.objectsRemoved());assertEquals(0,first.failures());
+  assertEquals(0,db.queryForObject("select count(*) from attachment where id in (?,?,?)",Integer.class,UUID.fromString(pending),UUID.fromString(failed),UUID.fromString(discardedFile)));
+  assertEquals(1,db.queryForObject("select count(*) from attachment where id=? and state='PENDING'",Integer.class,UUID.fromString(recent)));
+  assertEquals(1,db.queryForObject("select count(*) from attachment where id=? and state='READY'",Integer.class,UUID.fromString(retry)));
+  for(String file:List.of(ready,cancelledFile,draftFile)) {
+   String objectKey=db.queryForObject("select object_key from attachment where id=?",String.class,UUID.fromString(file));assertArrayEquals(png,storage.read(objectKey));
+  }
+  assertTrue(Files.exists(recentTemp));assertFalse(Files.exists(oldTemp));assertThrows(IOException.class,()->storage.read(orphan));assertArrayEquals(png,storage.read(retryObject));
+  assertEquals(200,request("GET",path(owner,"/attachments/"+draftFile+"/content"),null,owner.token,null).status);
+  assertEquals(200,request("GET",path(owner,"/attachments/"+cancelledFile+"/content"),null,owner.token,null).status);
+  var again=cleanup.clean(now);assertEquals(0,again.recordsRemoved());assertEquals(0,again.objectsRemoved());assertEquals(0,again.failures());
  }
 }

@@ -23,6 +23,10 @@ server:
 app:
   dev-enabled: false
   storage-root: ${OBJECT_ROOT:../.local/objects}
+  # Development disk cleanup only. A recent failed upload remains retryable for 7 days.
+  attachment-cleanup-enabled: ${ATTACHMENT_CLEANUP_ENABLED:true}
+  attachment-retention-days: ${ATTACHMENT_RETENTION_DAYS:7}
+  attachment-cleanup-interval-ms: ${ATTACHMENT_CLEANUP_INTERVAL_MS:86400000}
   allowed-origins: http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://127.0.0.1:8081
   session-hours: 8
 logging:
