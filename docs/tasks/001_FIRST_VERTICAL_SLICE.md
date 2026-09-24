@@ -1,5 +1,17 @@
 # FIRST-001 — owner alone, one equipment, one expense and one attachment
-Status: TODO. Milestones M0 + M1. Break into small subtasks; do not implement in one unreviewed bulk change.
+Status: IN PROGRESS (2026-09-24). Milestones M0 + M1. One implementer writes code; primary coordinates and records evidence; separate read-only reviewers are available.
+
+## Execution checkpoints
+| Task | Status | Evidence / next gate |
+|---|---|---|
+| ENV-001 | DONE | `docs/ENVIRONMENT.md`; original package saved as local commit `8aae033` |
+| BASE-001 | IN PROGRESS | Backend/Flutter/PostgreSQL skeleton; compile and migration gate pending |
+| AUTH-001 | NEXT | Dev challenge/session, default workspace, fail-closed and negative tests |
+| EQ-001 | NEXT | Name/model + internal ref; authorized/idempotent create |
+| FIN-001 | NEXT | Exact paid expense + initial settlement in one DB transaction |
+| FILE-001 | NEXT | Dev storage, actual format checks, separate upload retry and authorized retrieval |
+| UI-001 | NEXT | API-backed Arabic adaptive flow; independent UX review |
+| CHECK-001 | NEXT | Independent code review, browser exercise, restart, screenshots and test evidence |
 
 ## Outcome
 The owner can run the application locally, authenticate via an explicitly isolated development OTP flow,
