@@ -10,6 +10,8 @@ Financial history search/filter is now implemented locally with bounded 30-row p
 Development-only attachment lifecycle cleanup is implemented in V8 for stale PENDING/FAILED, discarded-draft attachments and local orphan files with configurable retention. Production private storage/scanning remains unselected and unverified.
 
 Focused M2 financial hardening is implemented in V9 and API/UI: refunds that reopen an unnamed obligation require and persist the party name, edit after refund keeps party safety, and SQL enforces posted entry type. The historical-gross edit limit is still conservative; Q-02 remains unresolved.
+
+Connected iOS simulator acceptance now covers M2 journeys A–J using live local API/PostgreSQL; some steps are API-driven within the Flutter integration test. Web release build and short responsive live smoke pass; automated Flutter integration on Chrome is unavailable with the installed toolchain. Android remains unverified.
 Break each milestone into small independently reviewable tasks; this list is not a request for one giant code generation.
 The first session should reach M1 where tooling permits, not stop after documentation.
 
