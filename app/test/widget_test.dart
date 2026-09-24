@@ -498,6 +498,119 @@ void main() {
     expect(find.byKey(const Key('addGeneralExpense')), findsOneWidget);
   });
   testWidgets(
+    'history search distinguishes no matches and clear restores entries',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final requests = <Uri>[];
+      final api = Api(
+        client: MockClient((r) async {
+          requests.add(r.url);
+          return json({
+            'items': r.url.queryParameters.containsKey('search')
+                ? []
+                : [sampleEntry],
+            'total': r.url.queryParameters.containsKey('search') ? 0 : 1,
+          });
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(LedgerPage(api: api)));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('historySearch')));
+      await tester.enterText(
+        find.byKey(const Key('historySearch')),
+        'عميل الشرق',
+      );
+      await tester.tap(find.byKey(const Key('applyHistorySearch')));
+      await tester.pumpAndSettle();
+      expect(requests.last.queryParameters['search'], 'عميل الشرق');
+      expect(find.textContaining('لا توجد عمليات تطابق البحث'), findsOneWidget);
+      expect(find.text('لا توجد عمليات مسجلة بعد'), findsNothing);
+      await tester.tap(find.byKey(const Key('historyFilters')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('clearHistoryFilters')));
+      await tester.tap(find.byKey(const Key('clearHistoryFilters')));
+      await tester.pumpAndSettle();
+      expect(requests.last.queryParameters.containsKey('search'), isFalse);
+      expect(find.textContaining('مصروف'), findsWidgets);
+    },
+  );
+  for (final width in [390.0, 1440.0]) {
+    testWidgets('history filters stay usable at width $width', (tester) async {
+      tester.view.physicalSize = Size(width, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final requests = <Uri>[];
+      final api = Api(
+        client: MockClient((r) async {
+          requests.add(r.url);
+          return json({'items': [], 'total': 0});
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(LedgerPage(api: api)));
+      await tester.pumpAndSettle();
+      expect(find.text('لا توجد عمليات مسجلة بعد'), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('historyFilters')));
+      await tester.tap(find.byKey(const Key('historyFilters')));
+      await tester.pumpAndSettle();
+      final dropdown = find.byKey(const Key('filterEntryType:null'));
+      await tester.ensureVisible(dropdown);
+      final fieldWidth = tester.getSize(dropdown).width;
+      expect(fieldWidth, width >= 760 ? lessThan(250) : greaterThan(300));
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('إيراد').last);
+      await tester.pumpAndSettle();
+      expect(requests.last.queryParameters['entryType'], 'INCOME');
+      expect(find.textContaining('لا توجد عمليات تطابق البحث'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets('history equipment filter selects scoped equipment', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final requests = <Uri>[];
+    final api = Api(
+      client: MockClient((r) async {
+        requests.add(r.url);
+        if (r.url.path.endsWith('/equipment')) {
+          return json({
+            'items': [
+              {'id': 'eq', 'name': 'حفار الشرق', 'reference': 'EQ-000001'},
+            ],
+            'total': 1,
+          });
+        }
+        return json({'items': [], 'total': 0});
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(LedgerPage(api: api)));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('historyFilters')));
+    await tester.tap(find.byKey(const Key('historyFilters')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('filterEquipment')));
+    await tester.drag(find.byType(ListView).first, const Offset(0, -350));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('filterEquipment')));
+    await tester.pumpAndSettle();
+    expect(find.text('حفار الشرق'), findsOneWidget);
+    await tester.tap(find.text('حفار الشرق'));
+    await tester.pumpAndSettle();
+    expect(requests.last.queryParameters['equipmentId'], 'eq');
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
     'quick capture saves draft and one attachment without financial amount',
     (tester) async {
       tester.view.physicalSize = const Size(390, 1000);

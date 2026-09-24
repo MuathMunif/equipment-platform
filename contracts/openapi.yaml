@@ -249,9 +249,16 @@ paths:
       parameters:
         - {$ref: '#/components/parameters/Page'}
         - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+        - {in: query, name: search, schema: {type: string, maxLength: 100}, description: Stored equipment name/reference, party name, note, or category; no receipt OCR}
+        - {in: query, name: fromDate, schema: {type: string, format: date}, description: Inclusive operation date lower bound}
+        - {in: query, name: toDate, schema: {type: string, format: date}, description: Inclusive operation date upper bound}
+        - {in: query, name: entryType, schema: {type: string, enum: [EXPENSE, INCOME]}}
+        - {in: query, name: generalExpense, schema: {type: boolean}, description: True selects general expenses; false excludes them}
+        - {in: query, name: lifecycle, schema: {type: string, enum: [POSTED, CANCELLED]}, description: Drafts have a separate endpoint}
+        - {in: query, name: settlementStatus, schema: {type: string, enum: [PAID, PARTIAL, UNPAID]}, description: Derived from original amount minus net settlements after refunds}
       responses:
         '200':
-          description: Authorized global ledger or equipment ledger, newest creation first
+          description: Authorized filtered global or equipment ledger, newest creation first, page size 30; excludes drafts
           content:
             application/json:
               schema:
@@ -259,6 +266,7 @@ paths:
                   - {$ref: '#/components/schemas/Page'}
                   - {type: object, properties: {items: {type: array, items: {$ref: '#/components/schemas/Entry'}}}}
         '401': {$ref: '#/components/responses/Error'}
+        '400': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
     post:
       parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]

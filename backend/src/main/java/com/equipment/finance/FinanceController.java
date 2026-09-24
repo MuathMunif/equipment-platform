@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.*;
 public class FinanceController {
     private final FinanceService service;
     public FinanceController(FinanceService service) { this.service=service; }
-    @GetMapping Map<String,Object> list(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestParam(required=false) UUID equipmentId,@RequestParam(defaultValue="0") int page) { return service.list(actor,workspace,equipmentId,page); }
+    @GetMapping Map<String,Object> list(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestParam(required=false) UUID equipmentId,@RequestParam(defaultValue="0") int page,@RequestParam(required=false) String search,@RequestParam(required=false) String fromDate,@RequestParam(required=false) String toDate,@RequestParam(required=false) String entryType,@RequestParam(required=false) Boolean generalExpense,@RequestParam(required=false) String lifecycle,@RequestParam(required=false) String settlementStatus) {
+        return service.list(actor,workspace,new FinanceService.HistoryFilter(search,fromDate,toDate,entryType,equipmentId,generalExpense,lifecycle,settlementStatus),page);
+    }
     @GetMapping("/totals") Map<String,String> totals(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestParam(required=false) UUID equipmentId) { return service.totals(actor,workspace,equipmentId); }
     @GetMapping("/{id}") FinanceService.Entry get(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id) { return service.get(actor,workspace,id); }
     @PostMapping FinanceService.Entry create(@RequestAttribute Actor actor,@PathVariable UUID workspace,@RequestHeader("Idempotency-Key") String key,@RequestBody FinanceService.Create request) { return service.create(actor,workspace,key,request); }

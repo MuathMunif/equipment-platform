@@ -29,6 +29,7 @@ public class FinanceService {
     public record Allocation(UUID equipmentId,String equipmentName,String amount,String paidShare,String refundedShare,String netPaidShare,String remainingShare) {}
     public record Draft(UUID id,UUID equipmentId,String equipmentName,String note,String lifecycle,UUID createdBy,String createdAt,UUID discardedBy,String discardedAt) {}
     public record CreateDraft(UUID equipmentId,String note) {}
+    public record HistoryFilter(String search,String fromDate,String toDate,String entryType,UUID equipmentId,Boolean generalExpense,String lifecycle,String settlementStatus) {}
     private record AllocationAmount(UUID equipmentId,String equipmentName,BigDecimal amount) {}
     public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds,String expenseScope,List<Allocation> allocations,UUID createdBy,UUID completedBy,String completedAt) {}
     private static final JsonMapper JSON=JsonMapper.builder().build();
@@ -145,13 +146,48 @@ public class FinanceService {
         db.update("delete from expense_allocation where workspace_id=? and entry_id=?",workspace,entryId);
         parts.forEach((equipmentId,amount)->db.update("insert into expense_allocation(workspace_id,entry_id,equipment_id,amount) values(?,?,?,?)",workspace,entryId,equipmentId,amount));
     }
-    public Map<String,Object> list(Actor actor,UUID workspace,UUID equipmentId,int page) {
+    public Map<String,Object> list(Actor actor,UUID workspace,HistoryFilter selected,int page) {
         access.owner(actor,workspace); if(page<0 || page>100000) throw ApiException.invalid("رقم الصفحة غير صالح");
-        if(equipmentId!=null) equipment.require(workspace,equipmentId);
-        String filter=" and f.lifecycle in ('POSTED','CANCELLED')"+(equipmentId==null?"":" and (f.equipment_id=? or exists (select 1 from expense_allocation a where a.workspace_id=f.workspace_id and a.entry_id=f.id and a.equipment_id=?))");
-        Object[] args=equipmentId==null?new Object[]{workspace,30,page*30}:new Object[]{workspace,equipmentId,equipmentId,30,page*30};
-        var ids=db.query("select f.id from financial_entry f where f.workspace_id=?"+filter+" order by f.created_at desc,f.id desc limit ? offset ?",(rs,n)->rs.getObject("id",UUID.class),args);
-        Long count=equipmentId==null?db.queryForObject("select count(*) from financial_entry f where f.workspace_id=?"+filter,Long.class,workspace):db.queryForObject("select count(*) from financial_entry f where f.workspace_id=?"+filter,Long.class,workspace,equipmentId,equipmentId);
+        HistoryFilter query=selected==null?new HistoryFilter(null,null,null,null,null,null,null,null):selected;
+        var conditions=new StringBuilder(" f.workspace_id=? and f.lifecycle in ('POSTED','CANCELLED')");
+        var params=new ArrayList<Object>(); params.add(workspace);
+        if(query.search()!=null && !query.search().isBlank()) {
+            String term=query.search().trim();
+            if(term.length()>100) throw ApiException.invalid("البحث لا يتجاوز 100 حرف");
+            String like="%"+term.replace("\\","\\\\").replace("%","\\%").replace("_","\\_")+"%";
+            conditions.append(" and (e.name ilike ? escape '\\' or ('EQ-'||lpad(e.reference::text,6,'0')) ilike ? escape '\\' or f.party_name ilike ? escape '\\' or f.note ilike ? escape '\\' or f.category ilike ? escape '\\' or exists (select 1 from expense_allocation a join equipment ae on ae.workspace_id=a.workspace_id and ae.id=a.equipment_id where a.workspace_id=f.workspace_id and a.entry_id=f.id and (ae.name ilike ? escape '\\' or ('EQ-'||lpad(ae.reference::text,6,'0')) ilike ? escape '\\')))");
+            for(int i=0;i<7;i++) params.add(like);
+        }
+        LocalDate from=query.fromDate()==null || query.fromDate().isBlank()?null:Values.date(query.fromDate());
+        LocalDate to=query.toDate()==null || query.toDate().isBlank()?null:Values.date(query.toDate());
+        if(from!=null && to!=null && from.isAfter(to)) throw ApiException.invalid("بداية الفترة بعد نهايتها");
+        if(from!=null) { conditions.append(" and f.operation_date>=?"); params.add(java.sql.Date.valueOf(from)); }
+        if(to!=null) { conditions.append(" and f.operation_date<=?"); params.add(java.sql.Date.valueOf(to)); }
+        if(query.entryType()!=null) {
+            if(!Set.of("EXPENSE","INCOME").contains(query.entryType())) throw ApiException.invalid("نوع العملية غير صالح");
+            conditions.append(" and f.entry_type=?"); params.add(query.entryType());
+        }
+        if(query.equipmentId()!=null) {
+            equipment.require(workspace,query.equipmentId());
+            conditions.append(" and (f.equipment_id=? or exists (select 1 from expense_allocation a where a.workspace_id=f.workspace_id and a.entry_id=f.id and a.equipment_id=?))");
+            params.add(query.equipmentId()); params.add(query.equipmentId());
+        }
+        if(query.generalExpense()!=null) {
+            conditions.append(query.generalExpense()?" and f.expense_scope='GENERAL'":" and f.expense_scope<>'GENERAL'");
+        }
+        if(query.lifecycle()!=null) {
+            if(!Set.of("POSTED","CANCELLED").contains(query.lifecycle())) throw ApiException.invalid("حالة العملية غير صالحة");
+            conditions.append(" and f.lifecycle=?"); params.add(query.lifecycle());
+        }
+        if(query.settlementStatus()!=null) {
+            if(!Set.of("PAID","PARTIAL","UNPAID").contains(query.settlementStatus())) throw ApiException.invalid("حالة التسوية غير صالحة");
+            String net="(coalesce((select sum(s.amount) from settlement s where s.workspace_id=f.workspace_id and s.entry_id=f.id),0)-coalesce((select sum(r.amount) from financial_refund r where r.workspace_id=f.workspace_id and r.entry_id=f.id),0))";
+            conditions.append(" and ").append(switch(query.settlementStatus()) { case "PAID" -> net+"=f.amount"; case "UNPAID" -> net+"=0"; default -> net+">0 and "+net+"<f.amount"; });
+        }
+        String base=" from financial_entry f left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where "+conditions;
+        Long count=db.queryForObject("select count(*)"+base,Long.class,params.toArray());
+        params.add(30); params.add(page*30);
+        var ids=db.query("select f.id"+base+" order by f.created_at desc,f.id desc limit ? offset ?",(rs,n)->rs.getObject("id",UUID.class),params.toArray());
         return Map.of("items",ids.stream().map(id->require(workspace,id)).toList(),"page",page,"pageSize",30,"total",count);
     }
     public Map<String,String> totals(Actor actor,UUID workspace,UUID equipmentId) {

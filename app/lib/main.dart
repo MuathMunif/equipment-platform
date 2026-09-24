@@ -903,6 +903,70 @@ class _LedgerPageState extends State<LedgerPage> {
   String? error;
   bool loading = true;
   int page = 0, total = 0;
+  final searchController = TextEditingController();
+  String search = '';
+  String? entryType, lifecycle, settlementStatus;
+  bool? generalExpense;
+  DateTime? fromDate, toDate;
+  Map<String, dynamic>? filterEquipment;
+  bool filtersExpanded = false;
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  bool get hasFilters =>
+      search.isNotEmpty ||
+      entryType != null ||
+      lifecycle != null ||
+      settlementStatus != null ||
+      generalExpense != null ||
+      fromDate != null ||
+      toDate != null ||
+      filterEquipment != null;
+
+  void applyFilter() {
+    page = 0;
+    load();
+  }
+
+  void clearFilters() {
+    searchController.clear();
+    setState(() {
+      search = '';
+      entryType = null;
+      lifecycle = null;
+      settlementStatus = null;
+      generalExpense = null;
+      fromDate = null;
+      toDate = null;
+      filterEquipment = null;
+    });
+    applyFilter();
+  }
+
+  String get listPath {
+    final params = <String, String>{'page': '$page'};
+    final equipmentId = widget.equipment?['id'] ?? filterEquipment?['id'];
+    if (equipmentId != null) params['equipmentId'] = '$equipmentId';
+    if (search.isNotEmpty) params['search'] = search;
+    if (entryType != null) params['entryType'] = entryType!;
+    if (lifecycle != null) params['lifecycle'] = lifecycle!;
+    if (settlementStatus != null) {
+      params['settlementStatus'] = settlementStatus!;
+    }
+    if (generalExpense != null) params['generalExpense'] = '$generalExpense';
+    if (fromDate != null) {
+      params['fromDate'] = fromDate!.toIso8601String().split('T').first;
+    }
+    if (toDate != null) {
+      params['toDate'] = toDate!.toIso8601String().split('T').first;
+    }
+    return '/entries?${Uri(queryParameters: params).query}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -917,9 +981,7 @@ class _LedgerPageState extends State<LedgerPage> {
     try {
       final response = await widget.api.json(
         'GET',
-        widget.api.scoped(
-          '/entries?page=$page${widget.equipment == null ? '' : '&equipmentId=${widget.equipment!['id']}'}',
-        ),
+        widget.api.scoped(listPath),
       );
       if (mounted) {
         setState(() {
@@ -984,6 +1046,202 @@ class _LedgerPageState extends State<LedgerPage> {
     );
     if (mounted) load();
   }
+
+  Future<void> chooseEquipmentFilter() async {
+    final selected = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => HistoryEquipmentPicker(api: widget.api),
+    );
+    if (selected != null && mounted) {
+      setState(() => filterEquipment = selected);
+      applyFilter();
+    }
+  }
+
+  Future<void> chooseDateFilter({required bool start}) async {
+    final first = start ? DateTime(1900) : fromDate ?? DateTime(1900);
+    final last = start ? toDate ?? DateTime(2100) : DateTime(2100);
+    final preferred = (start ? fromDate : toDate) ?? DateTime.now();
+    final initial = preferred.isBefore(first)
+        ? first
+        : preferred.isAfter(last)
+        ? last
+        : preferred;
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        if (start) {
+          fromDate = selected;
+        } else {
+          toDate = selected;
+        }
+      });
+      applyFilter();
+    }
+  }
+
+  Widget historyDropdown({
+    required String keyName,
+    required String label,
+    required String? value,
+    required Map<String, String> choices,
+    required ValueChanged<String?> onChanged,
+  }) => DropdownButtonFormField<String>(
+    key: Key('$keyName:$value'),
+    initialValue: value,
+    decoration: InputDecoration(labelText: label),
+    isExpanded: true,
+    items: [
+      const DropdownMenuItem(value: '', child: Text('الكل')),
+      ...choices.entries.map(
+        (choice) =>
+            DropdownMenuItem(value: choice.key, child: Text(choice.value)),
+      ),
+    ],
+    onChanged: (selected) => onChanged(selected == '' ? null : selected),
+  );
+
+  Widget historyFilters() => Card(
+    child: ExpansionTile(
+      key: const Key('historyFilters'),
+      title: const Text('تصفية السجل'),
+      initiallyExpanded: filtersExpanded,
+      onExpansionChanged: (expanded) => filtersExpanded = expanded,
+      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      children: [
+        if (hasFilters)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const Key('clearHistoryFilters'),
+              onPressed: clearFilters,
+              icon: const Icon(Icons.clear_all),
+              label: const Text('مسح المرشحات'),
+            ),
+          ),
+        LayoutBuilder(
+          builder: (context, box) {
+            final width = box.maxWidth >= 760 ? 220.0 : box.maxWidth;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: width,
+                  child: historyDropdown(
+                    keyName: 'filterEntryType',
+                    label: 'نوع العملية',
+                    value: entryType,
+                    choices: const {'EXPENSE': 'مصروف', 'INCOME': 'إيراد'},
+                    onChanged: (value) {
+                      setState(() => entryType = value);
+                      applyFilter();
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: width,
+                  child: historyDropdown(
+                    keyName: 'filterLifecycle',
+                    label: 'حالة العملية',
+                    value: lifecycle,
+                    choices: const {'POSTED': 'نشطة', 'CANCELLED': 'ملغاة'},
+                    onChanged: (value) {
+                      setState(() => lifecycle = value);
+                      applyFilter();
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: width,
+                  child: historyDropdown(
+                    keyName: 'filterSettlement',
+                    label: 'حالة التسوية',
+                    value: settlementStatus,
+                    choices: const {
+                      'PAID': 'مسوّى كاملًا',
+                      'PARTIAL': 'مسوّى جزئيًا',
+                      'UNPAID': 'غير مسوّى',
+                    },
+                    onChanged: (value) {
+                      setState(() => settlementStatus = value);
+                      applyFilter();
+                    },
+                  ),
+                ),
+                if (widget.equipment == null)
+                  SizedBox(
+                    width: width,
+                    child: historyDropdown(
+                      keyName: 'filterGeneral',
+                      label: 'المصروف العام',
+                      value: generalExpense == null
+                          ? null
+                          : generalExpense!
+                          ? 'GENERAL'
+                          : 'OTHER',
+                      choices: const {
+                        'GENERAL': 'مصروف عام فقط',
+                        'OTHER': 'استبعاد المصروف العام',
+                      },
+                      onChanged: (value) {
+                        setState(
+                          () => generalExpense = value == null
+                              ? null
+                              : value == 'GENERAL',
+                        );
+                        applyFilter();
+                      },
+                    ),
+                  ),
+                SizedBox(
+                  width: width,
+                  child: OutlinedButton.icon(
+                    key: const Key('filterFromDate'),
+                    onPressed: () => chooseDateFilter(start: true),
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    label: Text(
+                      fromDate == null
+                          ? 'من تاريخ'
+                          : 'من ${fromDate!.toIso8601String().split('T').first}',
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: width,
+                  child: OutlinedButton.icon(
+                    key: const Key('filterToDate'),
+                    onPressed: () => chooseDateFilter(start: false),
+                    icon: const Icon(Icons.event_outlined),
+                    label: Text(
+                      toDate == null
+                          ? 'إلى تاريخ'
+                          : 'إلى ${toDate!.toIso8601String().split('T').first}',
+                    ),
+                  ),
+                ),
+                if (widget.equipment == null)
+                  SizedBox(
+                    width: width,
+                    child: OutlinedButton.icon(
+                      key: const Key('filterEquipment'),
+                      onPressed: chooseEquipmentFilter,
+                      icon: const Icon(Icons.local_shipping_outlined),
+                      label: Text(filterEquipment?['name'] ?? 'اختر معدة'),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1077,12 +1335,54 @@ class _LedgerPageState extends State<LedgerPage> {
         ),
         const SizedBox(height: 8),
         const Text('كل عملية ودفعاتها ومرفقاتها في سجل واحد'),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('historySearch'),
+                    controller: searchController,
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(
+                      labelText: 'ابحث في السجل',
+                      hintText: 'اسم المعدة أو مرجعها أو الطرف أو الملاحظة',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onSubmitted: (_) {
+                      setState(() => search = searchController.text.trim());
+                      applyFilter();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  key: const Key('applyHistorySearch'),
+                  tooltip: 'بحث',
+                  onPressed: () {
+                    setState(() => search = searchController.text.trim());
+                    applyFilter();
+                  },
+                  icon: const Icon(Icons.search),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        historyFilters(),
+        const SizedBox(height: 12),
         if (items.isEmpty)
-          const Card(
+          Card(
             child: Padding(
-              padding: EdgeInsets.all(28),
-              child: Text('لا توجد عمليات مسجلة بعد'),
+              padding: const EdgeInsets.all(28),
+              child: Text(
+                hasFilters
+                    ? 'لا توجد عمليات تطابق البحث أو المرشحات. جرّب تغييرها أو مسحها.'
+                    : 'لا توجد عمليات مسجلة بعد',
+              ),
             ),
           ),
         ...items.map(
@@ -1133,6 +1433,100 @@ class _LedgerPageState extends State<LedgerPage> {
       ],
     );
   }
+}
+
+class HistoryEquipmentPicker extends StatefulWidget {
+  final Api api;
+  const HistoryEquipmentPicker({super.key, required this.api});
+  @override
+  State<HistoryEquipmentPicker> createState() => _HistoryEquipmentPickerState();
+}
+
+class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
+  final controller = TextEditingController();
+  List<dynamic> items = [];
+  bool loading = true;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final query = Uri(queryParameters: {'search': controller.text.trim()})
+          .query;
+      final result = await widget.api.json(
+        'GET',
+        widget.api.scoped('/equipment?$query'),
+      );
+      if (mounted) setState(() => items = result['items']);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('اختر المعدة'),
+    content: SizedBox(
+      width: 520,
+      height: 420,
+      child: Column(
+        children: [
+          TextField(
+            key: const Key('equipmentFilterSearch'),
+            controller: controller,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(
+              labelText: 'ابحث باسم المعدة أو مرجعها',
+              prefixIcon: Icon(Icons.search),
+            ),
+            onSubmitted: (_) => load(),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : error != null
+                ? ErrorPanel(message: error!, retry: load)
+                : items.isEmpty
+                ? const Center(child: Text('لا توجد معدات تطابق البحث'))
+                : ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final equipment = items[index] as Map<String, dynamic>;
+                      return ListTile(
+                        title: Text(equipment['name']),
+                        subtitle: Text(equipment['reference']),
+                        onTap: () => Navigator.pop(context, equipment),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('إغلاق'),
+      ),
+    ],
+  );
 }
 
 Future<XFile?> pickReceiptFile() => openFile(

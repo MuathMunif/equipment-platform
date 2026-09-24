@@ -4,6 +4,8 @@ Status 2026-09-24: M0 and the bounded M1 local slice are complete with evidence 
 Current bounded M2 work also implements the D-08 general/shared expense model with V6 allocation backfill, explicit amounts, active workspace/equipment totals, and deterministic proportional shares. Q-02 still blocks changing a shared expense total/allocation after money moved. This early implementation does not mark all of M3 complete.
 
 The attachment-only quick draft is implemented locally in V7: required equipment, optional note/attachments, excluded from totals, in-place completion preserving attachment identity, and discard. Search/filter and lifecycle cleanup remain M2 work.
+
+Financial history search/filter is now implemented locally with bounded 30-row pagination and workspace isolation. Attachment lifecycle cleanup and final acceptance/hardening remain M2 work.
 Break each milestone into small independently reviewable tasks; this list is not a request for one giant code generation.
 The first session should reach M1 where tooling permits, not stop after documentation.
 

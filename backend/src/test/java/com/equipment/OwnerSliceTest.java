@@ -438,4 +438,40 @@ class OwnerSliceTest {
   assertEquals(2,request("GET",path(user,"/entries/"+id+"/attachments"),null,user.token,null).json.size());
   assertEquals(1,db.queryForObject("select count(*) from financial_entry",Integer.class));assertEquals(2,db.queryForObject("select count(*) from attachment",Integer.class));
  }
+ @Test void financialHistorySearchAndCombinedFiltersStayWithinWorkspace()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),foreign=equipment(other),base=path(owner,"/entries");
+  var equipmentDetail=request("GET",path(owner,"/equipment/"+eq),null,owner.token,null).json;
+  String reference=equipmentDetail.get("reference").asString();
+  var paid=new HashMap<String,Object>(expense(eq));paid.put("note","وقود الشمال");String expenseId=request("POST",base,paid,owner.token,key()).json.get("id").asString();
+  var partial=Map.of("equipmentId",eq,"entryType","INCOME","amount","900.00","operationDate","2026-09-10","paymentStatus","PARTIAL","initialPaid","300.00","paidOn","2026-09-10","partyName","عميل الشرق","note","نقل خاص");
+  String incomeId=request("POST",base,partial,owner.token,key()).json.get("id").asString();
+  var general=Map.of("expenseScope","GENERAL","amount","75.00","category","OTHER","operationDate","2026-09-15","paidOn","2026-09-15","note","رسوم عامة");
+  String generalId=request("POST",base,general,owner.token,key()).json.get("id").asString();
+  assertEquals(200,request("POST",base+"/"+generalId+"/cancellation",Map.of("reason","قيد مكرر"),owner.token,null).status);
+  request("POST",path(owner,"/drafts"),Map.of("equipmentId",eq,"note","عميل الشرق"),owner.token,key());
+  assertEquals(3,request("GET",base,null,owner.token,null).json.get("total").asInt());
+  assertEquals(expenseId,request("GET",base+"?search="+URLEncoder.encode("وقود الشمال",StandardCharsets.UTF_8),null,owner.token,null).json.get("items").get(0).get("id").asString());
+  assertEquals(expenseId,request("GET",base+"?search=FUEL",null,owner.token,null).json.get("items").get(0).get("id").asString());
+  assertEquals(0,request("GET",base+"?search=%25",null,owner.token,null).json.get("total").asInt());
+  assertEquals(2,request("GET",base+"?search="+reference,null,owner.token,null).json.get("total").asInt());
+  assertEquals(incomeId,request("GET",base+"?search="+URLEncoder.encode("عميل الشرق",StandardCharsets.UTF_8),null,owner.token,null).json.get("items").get(0).get("id").asString());
+  assertEquals(1,request("GET",base+"?fromDate=2026-09-10&toDate=2026-09-10",null,owner.token,null).json.get("total").asInt());
+  assertEquals(incomeId,request("GET",base+"?entryType=INCOME&equipmentId="+eq+"&settlementStatus=PARTIAL&lifecycle=POSTED",null,owner.token,null).json.get("items").get(0).get("id").asString());
+  assertEquals(1,request("GET",base+"?generalExpense=true&lifecycle=CANCELLED&entryType=EXPENSE&settlementStatus=PAID",null,owner.token,null).json.get("total").asInt());
+  assertEquals(0,request("GET",base+"?generalExpense=true&lifecycle=POSTED",null,owner.token,null).json.get("total").asInt());
+  assertEquals(2,request("GET",base+"?generalExpense=false",null,owner.token,null).json.get("total").asInt());
+  assertEquals(400,request("GET",base+"?fromDate=2026-10-01&toDate=2026-09-01",null,owner.token,null).status);
+  assertEquals(400,request("GET",base+"?settlementStatus=UNKNOWN",null,owner.token,null).status);
+  assertEquals(404,request("GET",base+"?equipmentId="+foreign,null,owner.token,null).status);
+  assertEquals(0,request("GET",path(other,"/entries?search="+reference),null,other.token,null).json.get("total").asInt());
+ }
+ @Test void financialHistoryPaginationRemainsBoundedWithSearch()throws Exception{
+  User user=login("0500000001");String eq=equipment(user),base=path(user,"/entries");
+  for(int i=0;i<31;i++) {var body=new HashMap<String,Object>(expense(eq));body.put("note","صفحة سجل "+i);assertEquals(200,request("POST",base,body,user.token,key()).status);}
+  var first=request("GET",base+"?page=0&search="+URLEncoder.encode("صفحة سجل",StandardCharsets.UTF_8),null,user.token,null).json;
+  var second=request("GET",base+"?page=1&search="+URLEncoder.encode("صفحة سجل",StandardCharsets.UTF_8),null,user.token,null).json;
+  assertEquals(31,first.get("total").asInt());assertEquals(30,first.get("items").size());assertEquals(1,second.get("items").size());
+  assertNotEquals(first.get("items").get(0).get("id").asString(),second.get("items").get(0).get("id").asString());
+  assertEquals(400,request("GET",base+"?page=100001",null,user.token,null).status);
+ }
 }
