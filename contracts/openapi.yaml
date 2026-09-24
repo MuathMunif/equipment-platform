@@ -1,0 +1,351 @@
+openapi: 3.1.0
+info:
+  title: Equipment Platform — isolated development M1
+  version: 0.1.0
+  description: |
+    Owner-only local slice. Production startup is intentionally rejected.
+    Every protected resource checks active OWNER membership before lookup and replay.
+    Money is an exact SAR decimal string with two fractional digits (0.01–999999999.99).
+    Business dates use YYYY-MM-DD independently of audit instants; UI defaults to Asia/Riyadh.
+    Unknown request fields are rejected. IDs, ownership, lifecycle and settled totals are server-owned.
+    Idempotency-Key is required for creation. Same authorized normalized payload returns the same
+    resource with HTTP 200; a changed payload conflicts (409). Scope includes actor/workspace/action.
+    Lists contain at most 30 items and have zero-based pages.
+    WEB login sets a session-only HttpOnly SameSite=Strict cookie on /api/v1; authenticated writes
+    require X-CSRF-Token returned by /auth/me. No browser credential is stored in localStorage.
+    NATIVE login returns an opaque accessToken for OS secure storage and Bearer authentication.
+    Sessions expire after 8 hours; no refresh token. Logout revokes immediately; re-login is explicit.
+    Dev accepts only +966500000001/+966500000002 (or 0500000001/0500000002), code 123456.
+    OTP expires after 5 minutes, permits 5 attempts, resends at most once per 30 seconds and 10/hour.
+    Files are private development filesystem objects, not tested S3 integration. No malware scanner:
+    scanStatus is DEV_NOT_SCANNED. PNG/JPEG/PDF only; max 10 MiB, 10 files per entry, 25MP,
+    dimensions <=10000, PDF <=100 pages. Encrypted and active-content PDFs are rejected.
+    Upload is two-phase. FAILED/PENDING files retry their existing id; READY bytes are immutable.
+    File failures never recreate/erase the entry or settlement. Download always rechecks membership.
+    Transport exception: Spring's CORS filter rejects an untrusted Origin with HTTP 403 and a
+    plain-text body before application error handling. Clients must use status, not assume JSON,
+    for this rejection. Application/domain errors use the code/message schema below.
+servers:
+  - url: http://127.0.0.1:8080/api/v1
+security:
+  - bearerSession: []
+  - cookieSession: []
+paths:
+  /health:
+    get:
+      security: []
+      responses:
+        '200': {description: 'Status and explicit dev/storage/scanner limitations'}
+  /auth/challenges:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone]
+              properties:
+                phone: {type: string, example: '0500000001'}
+      responses:
+        '200':
+          description: Non-enumerating development challenge
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [challengeId, expiresAt, resendAfterSeconds]
+                properties:
+                  challengeId: {type: string, format: uuid}
+                  expiresAt: {type: string, format: date-time}
+                  resendAfterSeconds: {type: integer, const: 30}
+        '400': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+  /auth/verify:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [challengeId, code, client]
+              properties:
+                challengeId: {type: string, format: uuid}
+                code: {type: string}
+                name: {type: [string, 'null'], maxLength: 100}
+                client: {type: string, enum: [WEB, NATIVE]}
+      responses:
+        '200':
+          description: requiresName=true requests name once for a new owner; otherwise authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [requiresName]
+                properties:
+                  requiresName: {type: boolean}
+                  csrfToken: {type: string}
+                  accessToken: {type: string, description: NATIVE only; never logged}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+  /auth/me:
+    get:
+      responses:
+        '200':
+          description: Current user, current active owned workspaces and session CSRF token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [userId, name, workspaces, csrfToken, development]
+                properties:
+                  userId: {type: string, format: uuid}
+                  name: {type: string}
+                  csrfToken: {type: string}
+                  development: {const: true}
+                  workspaces:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: {type: string, format: uuid}
+                        name: {type: string}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /auth/logout:
+    post:
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      responses:
+        '200': {description: Session deleted and web cookie expired}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {in: query, name: search, schema: {type: string, maxLength: 100}, description: Literal name/reference substring}
+      responses:
+        '200':
+          description: Authorized equipment page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/Page'}
+                  - {type: object, properties: {items: {type: array, items: {$ref: '#/components/schemas/Equipment'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name, model]
+              properties:
+                name: {type: string, minLength: 1, maxLength: 100}
+                model: {type: string, minLength: 1, maxLength: 100, description: Free text, not year-only}
+      responses:
+        '200': {description: Created or authorized replay, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses:
+        '200': {description: Equipment detail, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/entries:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Authorized global ledger or equipment ledger, newest creation first
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/Page'}
+                  - {type: object, properties: {items: {type: array, items: {$ref: '#/components/schemas/Entry'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [equipmentId, amount, category, operationDate, paidOn]
+              properties:
+                equipmentId: {type: string, format: uuid}
+                amount: {$ref: '#/components/schemas/Money'}
+                category: {type: string, enum: [FUEL, MAINTENANCE, OTHER]}
+                operationDate: {type: string, format: date}
+                paidOn: {type: string, format: date}
+                note: {type: [string, 'null'], maxLength: 1000}
+      responses:
+        '200': {description: Atomic posted expense plus full initial settlement, or authorized replay, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/entries/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses:
+        '200': {description: Original and its settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/entries/{entry}/attachments:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: entry, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Authorized attachment metadata without object keys or URLs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Attachment'}}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [filename, mediaType, size]
+              properties:
+                filename: {type: string, minLength: 1, maxLength: 200}
+                mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
+                size: {type: integer, minimum: 1, maximum: 10485760}
+      responses:
+        '200': {description: PENDING metadata or idempotent replay, content: {application/json: {schema: {$ref: '#/components/schemas/Attachment'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/attachments/{id}/content:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    put:
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          image/png: {schema: {type: string, format: binary}}
+          image/jpeg: {schema: {type: string, format: binary}}
+          application/pdf: {schema: {type: string, format: binary}}
+      responses:
+        '200': {description: Validated READY dev object; exact byte replay returns same object, content: {application/json: {schema: {$ref: '#/components/schemas/Attachment'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+    get:
+      responses:
+        '200':
+          description: Authenticated immutable bytes; Content-Disposition attachment, no-store, nosniff, CSP sandbox
+          content:
+            image/png: {schema: {type: string, format: binary}}
+            image/jpeg: {schema: {type: string, format: binary}}
+            application/pdf: {schema: {type: string, format: binary}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    bearerSession: {type: http, scheme: bearer}
+    cookieSession: {type: apiKey, in: cookie, name: equipment_session}
+  parameters:
+    Workspace: {in: path, name: workspace, required: true, schema: {type: string, format: uuid}}
+    Id: {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    Page: {in: query, name: page, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
+    Idempotency: {in: header, name: Idempotency-Key, required: true, schema: {type: string, pattern: '^[a-zA-Z0-9_-]{8,100}$'}}
+    Csrf: {in: header, name: X-CSRF-Token, required: false, description: Required for cookie-authenticated writes; omitted for Bearer clients, schema: {type: string}}
+  responses:
+    Error:
+      description: Stable code and Arabic message. Cross-workspace and missing records both return NOT_FOUND.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [code, message]
+            properties:
+              code: {type: string}
+              message: {type: string}
+  schemas:
+    Money: {type: string, pattern: '^(0|[1-9][0-9]{0,8})\.[0-9]{2}$', example: '350.00'}
+    Page:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        page: {type: integer}
+        pageSize: {type: integer, const: 30}
+        total: {type: integer}
+    Equipment:
+      type: object
+      required: [id, reference, name, model, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        reference: {type: string}
+        name: {type: string}
+        model: {type: string}
+        createdAt: {type: string, format: date-time}
+    Entry:
+      type: object
+      required: [id, equipmentId, equipmentName, amount, currency, category, operationDate, note, lifecycle, paid, remaining, settlementStatus, createdAt, settlements]
+      properties:
+        id: {type: string, format: uuid}
+        equipmentId: {type: string, format: uuid}
+        equipmentName: {type: string}
+        amount: {$ref: '#/components/schemas/Money'}
+        currency: {const: SAR}
+        category: {type: string, enum: [FUEL, MAINTENANCE, OTHER]}
+        operationDate: {type: string, format: date}
+        note: {type: string}
+        lifecycle: {const: POSTED}
+        paid: {$ref: '#/components/schemas/Money'}
+        remaining: {$ref: '#/components/schemas/Money'}
+        settlementStatus: {const: PAID, description: Derived from settlements; M1 only creates fully paid expenses}
+        createdAt: {type: string, format: date-time}
+        settlements:
+          type: array
+          items:
+            type: object
+            properties:
+              id: {type: string, format: uuid}
+              amount: {$ref: '#/components/schemas/Money'}
+              paidOn: {type: string, format: date}
+    Attachment:
+      type: object
+      required: [id, entryId, filename, mediaType, size, state, scanStatus]
+      properties:
+        id: {type: string, format: uuid}
+        entryId: {type: string, format: uuid}
+        filename: {type: string}
+        mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
+        size: {type: integer}
+        state: {type: string, enum: [PENDING, FAILED, READY]}
+        scanStatus: {const: DEV_NOT_SCANNED}

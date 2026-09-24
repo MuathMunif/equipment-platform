@@ -1,36 +1,61 @@
-# Current handoff / resume state
-Last updated: 2026-09-24 (backend HTTP smoke and PostgreSQL restart passed; Flutter in progress).
+# حالة التسليم — M0/M1
+آخر تحديث: 2026-09-24. **المهمة 001 مكتملة كشريحة محلية؛ V1 غير مكتمل. توقف التنفيذ هنا بطلب المالك، ولم تبدأ M2.**
 
-## Current reality
-- The product handoff and prior visual references are present.
-- Initial package had no application source. The actual Spring Boot API is now running against PostgreSQL; one implementer continues the Flutter/automated-tests part of M0/M1.
-- Backend compile and fresh Flyway v1 migration passed. Primary executed 25 live HTTP assertions and retrieved the same records/file after PostgreSQL restart. Full M1 acceptance and Flutter/native flow are not yet claimed.
-- No remote repository, cloud account, live OTP configuration, production object store or deployment has been created.
-- Archive structure/text/config syntax checks are packaging checks only, not application acceptance tests.
+## ما يعمل فعليًا
+Flutter عربية RTL على الويب، مع اختبار تكامل على محاكي iOS، تتصل بـSpring Boot 4.1.1 وPostgreSQL 17.11 حقيقيين:
+- دخول تطويري معزول، اسم للمستخدم الجديد فقط، ومساحة مالك تلقائية.
+- معدة بالاسم والموديل النصي فقط، مرجع داخلي، قائمة/بحث وتفاصيل.
+- مصروف مدفوع كاملًا، أصل وتسوية ذريّان بأرقام عشرية دقيقة؛ إعادة الطلب لا تكرر المال.
+- رفع فاتورة PNG/JPEG/PDF، حالة وإعادة محاولة، عرض/تنزيل محميان؛ المرفق لا يضيف مصروفًا آخر.
+- تفويض مساحة العمل والعضوية من الخادم، بما في ذلك الملفات وإعادة الطلب، وإبطال الجلسة عند الخروج.
+- استرجاع البيانات والمرفق بعد تحديث الصفحة وإعادة تشغيل PostgreSQL والباك إند.
 
-## Current milestone/task
-M0/M1 task 001 in progress. UI-001 and automated regression/functional checks remain. Owner explicitly requested to finish only this task and stop; do not start M2 afterward.
+التخزين الفعلي الحالي `.local/objects` بديل تطوير معلن خلف adapter؛ S3 والفحص الخبيث غير متكاملين. لا SMS حقيقي، لا نشر، لا remote، لا بيانات/مفاتيح إنتاج.
 
-## Branch and commits
-Local branch `work/m0-m1`; original package commit `8aae033`, inspected environment/decisions checkpoint `a09a869`. Backend and evidence work are in the working tree at this checkpoint. No remote configured or pushed.
+## Git والملفات
+الفرع `work/m0-m1`. حُفظت الحزمة الأصلية في `8aae033`، ثم فحص البيئة `a09a869`، وcore API في `e55d96a`. التزام التسليم النهائي موجود في `git log -1 --oneline` بعد تحديث هذا الملف؛ لم تتغير هوية Git العامة ولم يُنشأ remote.
 
-## Completed implementation
-Backend: dev OTP/session and automatic owner workspace, equipment creation/list/detail, exact paid expense+settlement, audit actions, scoped idempotency, authorized local attachment upload/download with content validation and retry states. Native/web Flutter integration is still being implemented. No production providers or team features.
+الملفات المضافة/المعدلة: `.gitattributes` لضبط سطور Windows wrapper محليًا، `backend/` (22 مصدر Java، إعدادات، Flyway V1، اختبار HTTP/PostgreSQL، Maven Wrapper)، `app/` (Flutter API/UI/tests وAndroid/iOS/web وlockfiles)، `infra/compose.yaml`، `contracts/openapi.yaml`، `scripts/`، `tests/fixtures/`، README وdocs للحالة والقرارات والأدلة والمراجعة. لم تُحذف الحزمة السابقة أو بياناتها.
 
-## Tested commands and results
-- Implementer: Java 21 + Maven compile PASS; Flyway v1 fresh dev PostgreSQL 17.11 PASS; API startup PASS on `http://127.0.0.1:8080/api/v1/health` (explicit isolated dev, local storage, scanner unavailable).
-- Primary: inline Python HTTP harness PASS 25 assertions, recorded in `docs/evidence/API_MANUAL_CHECKS.md`. User 2 synthetic test data only; six concurrent expense replays produced one original and one settlement; file corruption/retry/immutability/logout passed. No session token printed or persisted.
-- Primary: `docker compose -f infra/compose.yaml restart postgres` then `up -d --wait postgres` PASS; re-login retrieved same workspace/equipment/expense/settlement and attachment SHA-256. Backend-process restart still pending.
-- Native simulator startup PASS (iPhone 17 Pro/iOS 26.5); application install/use NOT RUN yet. Flutter tests/builds and full backend regression suite still pending.
+## أوامر التشغيل التي جُرّبت
+من `/Users/muath/Desktop/equipment-platform`:
 
-## Known decisions/blockers
-See OPEN_QUESTIONS.md. Production provider credentials, hosting and release policy are not supplied.
-No invented existing API keys, Flutter project, SDK installation or source repository should be assumed.
+```sh
+docker compose -f infra/compose.yaml --profile test up -d --wait
+JAVA_HOME=/Users/muath/Library/Java/JavaVirtualMachines/ms-21.0.7/Contents/Home ./scripts/backend-dev.sh
+```
 
-## Next exact action
-Finish Flutter API integration and automated backend/Flutter tests, then run browser desktop/mobile-width and native simulator flow, cross-workspace negatives and backend restart. Primary owns docs/Git and manual QA; implementer owns application/contracts/tests; existing reviewers only for current task verification. API is held by implementer Maven session 56922 (Java PID 12206 at this checkpoint); coordinate before stopping. Dev and test PostgreSQL containers remain healthy. User 1 is still untouched for first UI onboarding; user 2 holds the API smoke fixture. No work is promised after this active run ends.
+في نافذة أخرى:
 
-## Next update template
-Date/session; branch/commit/diff; completed task IDs; changed files; actual test commands and pass/fail/not-run;
-URLs genuinely running in this environment; temporary services running; known defects; pending decisions;
-next task and command; owner action strictly needed. Exclude credentials and signed file URLs.
+```sh
+cd app
+flutter build web --release --dart-define=API_BASE_URL=http://127.0.0.1:8080/api/v1
+python3 -m http.server 8081 --bind 127.0.0.1 --directory build/web
+```
+
+افتح `http://127.0.0.1:8081`؛ API health: `http://127.0.0.1:8080/api/v1/health`. هوية التطوير `0500000001` أو `0500000002` ورمز التطوير `123456` فقط. كلا الحسابين أصبح له بيانات اختبار محفوظة، فلا تتوقع شاشة اسم جديد. مثال الويب: «قلاب ١»، موديل 2021، EQ-000003، مصروف وقود 350.00 مع الفاتورة الاصطناعية.
+
+## نتائج التحقق الفعلية
+- PASS: **12 backend + 7 Flutter + 1 iOS integration = 20 اختبارًا آليًا**؛ آخر تشغيل بلا فشل أو تجاهل.
+- PASS: Flutter analyze، web release build، Xcode simulator build، migrations، تركيب OpenAPI ومراجعه المحلية، syntax السكربتات، diff whitespace.
+- PASS: 25 assertions HTTP ثم 5 cookie/CSRF/CORS، فحص restart، مسار ويب حقيقي مع منتقي ملف فعلي ولقطات 1280×900 و390×844.
+- فشل سابق ثم إصلاح وإعادة ناجحة: إعداد تمرير/focus باختبار widget، إعادة استخدام Widget state في اختبار iOS، parser للرد CORS غير JSON، توافق PDFBox الأول. PDF action المتداخل الذي وجده المراجع له regression ناجح.
+- NOT RUN: Android native (SDK ناقص)، أجهزة فعلية، منتقي الملفات/PDF الأصليان على iOS، إدخال OTP في واجهة iOS، S3/scanner/real SMS/production/release/backup restore. اختيار ملف iOS محقون في الاختبار؛ الرفع وKeychain وAPI حقيقية.
+
+التفاصيل الدقيقة والأوامر والمحدوديات: [M1_ACCEPTANCE](evidence/M1_ACCEPTANCE.md)، [API checks](evidence/API_MANUAL_CHECKS.md)، [ENVIRONMENT](ENVIRONMENT.md). اختبارات V1 الكاملة في acceptance catalog لم تُدَّع ناجحة.
+
+## المراجعة المستقلة
+استخدم كاتبًا واحدًا `/root/implement`، ومراجع مصدر مستقل `/root/review`، ومراجع UX مستقل `/root/ux`. القائد نفذ البيئة والتجارب الحية ووثق الأدلة. المراجعون قراءة فقط؛ لم يشغلوا اختبارات. راجعوا حدود الإنتاج والعزل والمال والملفات والفلو واللقطات، وأُصلحت الملاحظات المانعة. التفصيل في [M1_REVIEW](reviews/M1_REVIEW.md).
+
+عيب معروف غير مانع P2: تاريخ الدفعة داخل الجملة العربية يظهر باتجاه بصري مختلف عن تاريخ العنوان؛ البيانات المخزنة صحيحة. يوصى بعزل التاريخ LTR عند المتابعة. مراجعة مستقلة إضافية للتعديلين الأخيرين (رفض amount كـJSON number والاحتفاظ بمفتاح الحفظ عند 5xx) تعذرت بحد threads؛ اختبارات الكاتب لهما نجحت.
+
+إعدادات agents ورثت الجلسة بلا model/reasoning overrides. النسخة الدقيقة ومستوى reasoning غير مكشوفين في الأدوات؛ لا يُستنتجان من ملفات الدور. CLI 0.155.0-alpha.16.3 ودعم multi_agent والأدوار فُحص فعليًا؛ لا تعديل .codex أو إعدادات جهاز عامة.
+
+## الموارد المحلية عند التسليم
+- PostgreSQL dev/test healthy ضمن مشروع compose `equipment-platform-dev`، تخزين دائم منفصل ومنافذ loopback 55432/55433.
+- API المحلي أعيد تشغيله بالسكريبت: session 6179، Java PID 17801 وقت التحقق. الويب session 59077 على 8081. تحقق من health قبل الاعتماد على بقاء عملية طرفية لاحقًا.
+- iPhone 17 Pro/iOS 26.5 simulator تم تشغيله؛ اختبار التكامل انتهى. لا اختبار يجري بالخلفية.
+- لإيقاف الخدمات دون فقد البيانات: Ctrl+C لعمليتي API/web؛ `docker compose -f infra/compose.yaml stop`. لا تستخدم `down -v`. لا reset لقاعدة التطوير؛ الاختبارات تنظف قاعدتها المعزولة فقط.
+
+## التالي — توصية فقط
+عند تكليف جديد: M2، ابدأ بمهمة محدودة لإنشاء أصل جزئي/غير مدفوع وتسويات متعددة مؤرخة، مع اختبارات الرصيد وعدم تكرار الأصل؛ ثم أكمل مهام M2 والتخزين الخاص بالترتيب. قرارات OPEN_QUESTIONS لم تُحسم خفية. لا عمل أو مراقبة مستمرة بعد انتهاء هذه الجولة.

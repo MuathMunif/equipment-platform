@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FinanceService {
     private final JdbcTemplate db; private final Access access; private final EquipmentService equipment; private final Idempotency retries; private final Audit audit;
     public FinanceService(JdbcTemplate db,Access access,EquipmentService equipment,Idempotency retries,Audit audit) { this.db=db; this.access=access; this.equipment=equipment; this.retries=retries; this.audit=audit; }
-    public record Create(UUID equipmentId,String amount,String category,String operationDate,String paidOn,String note) {}
+    public record Create(UUID equipmentId,tools.jackson.databind.JsonNode amount,String category,String operationDate,String paidOn,String note) {}
     public record Settlement(UUID id,String amount,String paidOn) {}
     public record Entry(UUID id,UUID equipmentId,String equipmentName,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String remaining,String settlementStatus,String createdAt,List<Settlement> settlements) {}
     public Entry get(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return require(workspace,id); }
@@ -39,7 +39,8 @@ public class FinanceService {
     @Transactional
     public Entry create(Actor actor,UUID workspace,String key,Create request) {
         access.owner(actor,workspace); if(request.equipmentId()==null) throw ApiException.invalid("حدد المعدة"); equipment.require(workspace,request.equipmentId());
-        BigDecimal amount=Values.money(request.amount()); LocalDate date=Values.date(request.operationDate()),paidOn=Values.date(request.paidOn());
+        if(request.amount()==null || !request.amount().isString()) throw ApiException.invalid("أرسل المبلغ كنص عشري بمنزلتين، مثل 350.00");
+        BigDecimal amount=Values.money(request.amount().asString()); LocalDate date=Values.date(request.operationDate()),paidOn=Values.date(request.paidOn());
         String category=Values.text(request.category(),30,"نوع المصروف"),note=Values.note(request.note());
         if(!Set.of("FUEL","MAINTENANCE","OTHER").contains(category)) throw ApiException.invalid("اختر نوع المصروف");
         UUID id=retries.execute(workspace,actor.userId(),"expense.create",key,Values.payload(request.equipmentId(),amount,category,date,paidOn,note),()->{

@@ -1,0 +1,3 @@
+# Keep the generated Windows Maven wrapper usable with CRLF on checkout,
+# while storing canonical text line endings in Git.
+/backend/mvnw.cmd text eol=crlf

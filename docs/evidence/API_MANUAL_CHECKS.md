@@ -33,3 +33,17 @@ This record is a transcript of actual checks, not the automated regression test 
 - PASS: Logout revokes attachment access immediately
 
 PASS: after PostgreSQL dev restart, the same workspace/equipment/entry/one settlement and original attachment SHA-256 were retrieved; login required no new name and no second workspace was created. Backend restart remains pending. Cross-workspace attempts using the first actual demo owner: pending UI onboarding.
+
+## Web-session checks
+
+Initial harness attempt: FAIL because it assumed a JSON body for Spring CORS denial (plain-text 403); no acceptance assertion failed. Updated harness parses by Content-Type; rerun exit 0.
+
+- PASS: Web sign-in sends HttpOnly SameSite Strict cookie and no bearer token in body
+- PASS: Exact allowed web origin can read current session
+- PASS: Unapproved origin is rejected
+- PASS: Cookie mutation without CSRF header is rejected
+- PASS: Correct CSRF logout clears cookie and revokes web session
+
+
+## إعادة تشغيل API النهائية
+بعد نجاح اختبارات native أوقف الكاتب Maven القديم gracefully (exit 0). شغّل القائد `JAVA_HOME=/Users/muath/Library/Java/JavaVirtualMachines/ms-21.0.7/Contents/Home ./scripts/backend-dev.sh`؛ بدأت Java PID17801، schema V1 validated. في الويب بعد reload، استُرجعت EQ-000003 وموديل2021 والمصروف350.00 بمدفوع350.00 ومتَبقٍّ0.00، ثم عُرضت صورة synthetic-receipt.png مجددًا عبر تنزيل مخوّل. PASS؛ اللقطة `screenshots/web-receipt-mobile-after-restart.png`.

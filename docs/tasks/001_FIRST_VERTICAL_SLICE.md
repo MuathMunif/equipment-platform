@@ -1,17 +1,19 @@
 # FIRST-001 — owner alone, one equipment, one expense and one attachment
-Status: IN PROGRESS (2026-09-24). Milestones M0 + M1. One implementer writes code; primary coordinates and records evidence; separate read-only reviewers are available.
+Status: DONE — local M0/M1 slice, 2026-09-24. V1 and production readiness remain incomplete. Stop here per owner's latest instruction.
 
 ## Execution checkpoints
-| Task | Status | Evidence / next gate |
+| Task | Status | Actual evidence |
 |---|---|---|
-| ENV-001 | DONE | `docs/ENVIRONMENT.md`; original package saved as local commit `8aae033` |
-| BASE-001 | IN PROGRESS | Backend compile and Flyway v1 fresh PostgreSQL PASS; Flutter skeleton created, build/test pending |
-| AUTH-001 | VERIFYING | HTTP onboarding/name/one workspace/wrong+reused OTP/logout PASS; complete regression suite pending |
-| EQ-001 | VERIFYING | HTTP name/text-model create/replay/conflict PASS; UI pending |
-| FIN-001 | VERIFYING | HTTP exact 350.00/one settlement/six concurrent retries/distinct dates PASS |
-| FILE-001 | VERIFYING | HTTP corrupt->FAILED->retry READY/bytes/immutability/logout PASS; PostgreSQL restart retrieval PASS |
-| UI-001 | IN PROGRESS | Flutter API integration; actual screens/UX review pending |
-| CHECK-001 | NEXT | Independent code review, browser exercise, restart, screenshots and test evidence |
+| ENV-001 | DONE | ENVIRONMENT.md; original package preserved in local commit 8aae033 |
+| BASE-001 | DONE | Backend/Flutter builds, Flyway V1 and wrapper, isolated PostgreSQL dev/test |
+| AUTH-001 | DONE | Dev OTP, auto-workspace, session/CSRF/revocation negatives and real web onboarding |
+| EQ-001 | DONE | Name + textual model only; UI create/retrieve; idempotency and tenant checks |
+| FIN-001 | DONE | Exact 350.00, one original and settlement; six concurrent retries; date separation |
+| FILE-001 | DONE for local adapter | Corrupt/retry/immutability/auth checks; receipt visible after restart; S3 and malware scanner NOT TESTED |
+| UI-001 | DONE | Arabic RTL; web 1280/390 flow; native iOS simulator integration PASS |
+| CHECK-001 | DONE | 12 backend + 7 Flutter + 1 iOS test PASS, live HTTP/browser checks, independent source/UX reviews |
+
+Evidence: `../evidence/M1_ACCEPTANCE.md`; known non-blocking UX date-direction issue and untested platforms are explicitly recorded. No acceptance text below was relaxed.
 
 ## Outcome
 The owner can run the application locally, authenticate via an explicitly isolated development OTP flow,

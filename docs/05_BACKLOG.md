@@ -1,5 +1,5 @@
 # Delivery backlog
-Initial status: NOT STARTED for all implementation milestones. Requirements documents exist; no application checks have run.
+Status 2026-09-24: M0 and the bounded M1 local slice are complete with evidence in `evidence/M1_ACCEPTANCE.md`. M2–M7 remain NOT STARTED. This is not completion of V1 or production readiness.
 Break each milestone into small independently reviewable tasks; this list is not a request for one giant code generation.
 The first session should reach M1 where tooling permits, not stop after documentation.
 

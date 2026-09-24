@@ -1,0 +1,246 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:equipment_app/api.dart';
+import 'package:equipment_app/main.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+http.Response json(Object body, [int status = 200]) => http.Response(
+  jsonEncode(body),
+  status,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
+Widget host(Widget child) => MaterialApp(
+  locale: const Locale('ar'),
+  supportedLocales: const [Locale('ar')],
+  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  home: child,
+);
+final sampleEntry = {
+  'id': 'entry',
+  'equipmentId': 'eq',
+  'equipmentName': 'قلاب ١',
+  'amount': '350.00',
+  'currency': 'SAR',
+  'category': 'FUEL',
+  'operationDate': '2026-09-24',
+  'paid': '350.00',
+  'remaining': '0.00',
+  'note': '',
+  'settlements': [
+    {'id': 'settlement', 'amount': '350.00', 'paidOn': '2026-09-24'},
+  ],
+};
+void main() {
+  test(
+    'exact decimal input supports Arabic digits without binary arithmetic',
+    () {
+      expect(exactMoney('٣٥٠٫٢'), '350.20');
+      expect(exactMoney('350'), '350.00');
+      expect(exactMoney('0.01'), '0.01');
+      for (final invalid in ['0', '-1', '350.001', '1e2', '1000000000']) {
+        expect(exactMoney(invalid), isNull);
+      }
+    },
+  );
+  test('timeout covers waiting for response headers and distinguishes read from save', () async {
+    final api = Api(
+      client: MockClient((_) => Completer<http.Response>().future),
+      base: 'http://localhost/api/v1',
+      persistNative: false,
+      timeout: const Duration(milliseconds: 10),
+    );
+    await expectLater(
+      api.json('POST', '/workspaces/w/entries', body: {}, key: 'same-key'),
+      throwsA(
+        isA<ApiError>()
+            .having((e) => e.code, 'code', 'TIMEOUT')
+            .having((e) => e.message, 'message', contains('الحفظ')),
+      ),
+    );
+    await expectLater(
+      api.json('GET', '/workspaces/w/equipment'),
+      throwsA(
+        isA<ApiError>().having((e) => e.message, 'message', contains('تحميل')),
+      ),
+    );
+  });
+  for (final width in [390.0, 1440.0]) {
+    testWidgets(
+      'Arabic empty owner workspace has action and adapts at $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final api = Api(
+          client: MockClient((_) async => json({'items': [], 'total': 0})),
+          persistNative: false,
+        )..workspace = 'workspace';
+        await tester.pumpWidget(
+          host(WorkspacePage(api: api, user: {'name': 'معاذ'}, logout: () {})),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('أضف أول معدة'), findsOneWidget);
+        expect(find.byKey(const Key('addEquipment')), findsOneWidget);
+        expect(
+          find.byType(NavigationRail),
+          width >= 850 ? findsOneWidget : findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+        expect(
+          Directionality.of(tester.element(find.text('أضف أول معدة'))),
+          TextDirection.rtl,
+        );
+      },
+    );
+  }
+  testWidgets('new owner receives guidance for missing name', (tester) async {
+    final api = Api(
+      client: MockClient(
+        (r) async => json(
+          r.url.path.endsWith('challenges')
+              ? {'challengeId': 'c'}
+              : {'requiresName': true},
+        ),
+      ),
+      persistNative: false,
+    );
+    await tester.pumpWidget(host(LoginPage(api: api, completed: () async {})));
+    await tester.enterText(find.byKey(const Key('phone')), '0500000001');
+    await tester.tap(find.byKey(const Key('loginContinue')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('otp')), '123456');
+    await tester.tap(find.byKey(const Key('loginContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('loginContinue')));
+    await tester.pumpAndSettle();
+    expect(find.text('اكتب الاسم للمتابعة'), findsOneWidget);
+  });
+  testWidgets(
+    'uncertain expense save preserves exact payload and same idempotency key',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final requests = <http.Request>[];
+      final first = Completer<http.Response>();
+      final api = Api(
+        client: MockClient((r) {
+          requests.add(r);
+          return requests.length == 1
+              ? first.future
+              : Future.value(
+                  json({'code': 'NETWORK', 'message': 'انقطع الاتصال'}, 503),
+                );
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(ExpenseForm(api: api, equipment: {'id': 'eq', 'name': 'قلاب ١'})),
+      );
+      await tester.enterText(find.byKey(const Key('expenseAmount')), '٣٥٠');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pump();
+      expect(requests.length, 1);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('saveExpense')))
+            .onPressed,
+        isNull,
+      );
+      first.completeError(Exception('connection lost'));
+      await tester.pumpAndSettle();
+      expect(find.text('إعادة محاولة الحفظ نفسه'), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      expect(requests.length, 2);
+      expect(
+        requests[0].headers['Idempotency-Key'],
+        requests[1].headers['Idempotency-Key'],
+      );
+      expect(requests[0].body, requests[1].body);
+      expect(jsonDecode(requests[0].body)['amount'], '350.00');
+      // A server-side 5xx can also leave the commit outcome uncertain.
+      await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      expect(requests.length, 3);
+      expect(
+        requests[0].headers['Idempotency-Key'],
+        requests[2].headers['Idempotency-Key'],
+      );
+      expect(requests[0].body, requests[2].body);
+    },
+  );
+  testWidgets(
+    'rejected attachment can be replaced without creating another expense',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      int initializations = 0, uploads = 0, expenseCreates = 0;
+      final api = Api(
+        client: MockClient((r) async {
+          if (r.method == 'GET' && r.url.path.endsWith('/attachments')) {
+            return json([]);
+          }
+          if (r.method == 'GET') return json(sampleEntry);
+          if (r.method == 'POST' && r.url.path.endsWith('/attachments')) {
+            return json({'id': 'attachment-${++initializations}'});
+          }
+          if (r.method == 'POST') {
+            expenseCreates++;
+            return json({});
+          }
+          uploads++;
+          return uploads == 1
+              ? json({
+                  'code': 'UNSUPPORTED_FILE',
+                  'message': 'اختر ملفًا سليمًا',
+                }, 400)
+              : json({'state': 'READY'});
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(
+          EntryDetail(
+            api: api,
+            id: 'entry',
+            pickFile: () async => XFile.fromData(
+              Uint8List.fromList([1, 2, 3]),
+              name: 'synthetic.png',
+              path: 'synthetic.png',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('addAttachment')));
+      await tester.tap(find.byKey(const Key('addAttachment')));
+      await tester.pumpAndSettle();
+      expect(find.text('اختيار ملف آخر'), findsOneWidget);
+      await tester.ensureVisible(find.text('اختيار ملف آخر'));
+      await tester.tap(find.text('اختيار ملف آخر'));
+      await tester.pumpAndSettle();
+      expect(initializations, 2);
+      expect(uploads, 2);
+      expect(expenseCreates, 0);
+      expect(find.text('حُفظ المرفق داخل المصروف'), findsOneWidget);
+    },
+  );
+}

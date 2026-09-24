@@ -4,3 +4,6 @@ Use: diff/commit, scope, requirement IDs, reviewer session, findings with severi
 executed vs not-executed checks, repair evidence and remaining risk.
 A read-only review is a real review of code, not proof the reviewer executed all tests.
 Do not save credentials, user invoices, OTPs or signed download links as evidence.
+
+
+2026-09-24: مراجعات M1 المستقلة للمصدر وUX مكتملة؛ `M1_REVIEW.md` يسجل الإصلاحات وحدود المراجعة وملاحظة التاريخ P2. نتائج التنفيذ الفعلية في `../evidence/M1_ACCEPTANCE.md`.
