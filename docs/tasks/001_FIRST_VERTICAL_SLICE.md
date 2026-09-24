@@ -5,12 +5,12 @@ Status: IN PROGRESS (2026-09-24). Milestones M0 + M1. One implementer writes cod
 | Task | Status | Evidence / next gate |
 |---|---|---|
 | ENV-001 | DONE | `docs/ENVIRONMENT.md`; original package saved as local commit `8aae033` |
-| BASE-001 | IN PROGRESS | Backend/Flutter/PostgreSQL skeleton; compile and migration gate pending |
-| AUTH-001 | NEXT | Dev challenge/session, default workspace, fail-closed and negative tests |
-| EQ-001 | NEXT | Name/model + internal ref; authorized/idempotent create |
-| FIN-001 | NEXT | Exact paid expense + initial settlement in one DB transaction |
-| FILE-001 | NEXT | Dev storage, actual format checks, separate upload retry and authorized retrieval |
-| UI-001 | NEXT | API-backed Arabic adaptive flow; independent UX review |
+| BASE-001 | IN PROGRESS | Backend compile and Flyway v1 fresh PostgreSQL PASS; Flutter skeleton created, build/test pending |
+| AUTH-001 | VERIFYING | HTTP onboarding/name/one workspace/wrong+reused OTP/logout PASS; complete regression suite pending |
+| EQ-001 | VERIFYING | HTTP name/text-model create/replay/conflict PASS; UI pending |
+| FIN-001 | VERIFYING | HTTP exact 350.00/one settlement/six concurrent retries/distinct dates PASS |
+| FILE-001 | VERIFYING | HTTP corrupt->FAILED->retry READY/bytes/immutability/logout PASS; PostgreSQL restart retrieval PASS |
+| UI-001 | IN PROGRESS | Flutter API integration; actual screens/UX review pending |
 | CHECK-001 | NEXT | Independent code review, browser exercise, restart, screenshots and test evidence |
 
 ## Outcome
