@@ -3646,7 +3646,10 @@ class _EntryDetailState extends State<EntryDetail> {
                       if (entry!['refunded'] != null &&
                           entry!['refunded'] != '0.00') ...[
                         const SizedBox(height: 16),
-                        moneyRow('المسترد', entry!['refunded']),
+                        moneyRow(
+                          income ? 'المعاد للعميل' : 'المسترد من المورد',
+                          entry!['refunded'],
+                        ),
                         const SizedBox(height: 16),
                         moneyRow(
                           income ? 'صافي المستلم' : 'صافي المدفوع',

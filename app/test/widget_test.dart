@@ -1075,7 +1075,7 @@ void main() {
       expect(body['partyName'], 'مورد الوقود');
       expect(body['refundedOn'], isNotNull);
       expect(posted!.headers['Idempotency-Key'], isNotNull);
-      expect(find.text('المسترد'), findsOneWidget);
+      expect(find.text('المسترد من المورد'), findsOneWidget);
       expect(find.text('صافي المدفوع'), findsOneWidget);
       expect(find.text('الاستردادات'), findsOneWidget);
       expect(find.textContaining('السبب: مرتجع من المورد'), findsOneWidget);
@@ -1093,6 +1093,7 @@ void main() {
         ...sampleEntry,
         'entryType': 'INCOME',
         'paid': '350.00',
+        'refunded': '50.00',
         'refundable': '350.00',
       };
       final api = Api(
@@ -1103,6 +1104,7 @@ void main() {
       )..workspace = 'w';
       await tester.pumpWidget(host(EntryDetail(api: api, id: 'entry')));
       await tester.pumpAndSettle();
+      expect(find.text('المعاد للعميل'), findsOneWidget);
       await tester.tap(find.byKey(const Key('addRefund')));
       await tester.pumpAndSettle();
       expect(find.textContaining('أُعيد إلى العميل'), findsOneWidget);
