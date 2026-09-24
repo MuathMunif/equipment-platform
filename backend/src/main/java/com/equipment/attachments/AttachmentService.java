@@ -19,24 +19,25 @@ public class AttachmentService {
     public record Attachment(UUID id,UUID entryId,String filename,String mediaType,long size,String state,String scanStatus) {}
     public record Download(byte[] bytes,String mediaType,String filename) {}
     private Map<String,Object> require(UUID workspace,UUID id,boolean lock) {
-        var rows=db.queryForList("select * from attachment where workspace_id=? and id=?"+(lock?" for update":""),workspace,id);
+        var rows=db.queryForList("select a.* from attachment a join financial_entry f on f.workspace_id=a.workspace_id and f.id=a.entry_id where a.workspace_id=? and a.id=? and f.lifecycle<>'DISCARDED'"+(lock?" for update of a":""),workspace,id);
         if(rows.isEmpty()) throw ApiException.missing(); return rows.getFirst();
     }
     private Attachment view(Map<String,Object> row) { return new Attachment((UUID)row.get("id"),(UUID)row.get("entry_id"),(String)row.get("original_name"),(String)row.get("declared_type"),((Number)row.get("declared_size")).longValue(),(String)row.get("state"),(String)row.get("scan_status")); }
     public Attachment get(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return view(require(workspace,id,false)); }
     public List<Attachment> list(Actor actor,UUID workspace,UUID entry) {
-        access.owner(actor,workspace); finance.require(workspace,entry);
+        access.owner(actor,workspace); finance.requireAttachable(workspace,entry);
         return db.queryForList("select * from attachment where workspace_id=? and entry_id=? order by created_at,id",workspace,entry).stream().map(this::view).toList();
     }
     @Transactional
     public Attachment initiate(Actor actor,UUID workspace,UUID entry,String key,Initiate request) {
-        access.owner(actor,workspace); finance.require(workspace,entry);
+        access.owner(actor,workspace); finance.requireAttachable(workspace,entry);
         String filename=Values.text(request.filename(),200,"اسم الملف");
         if(filename.contains("/") || filename.contains("\\") || filename.chars().anyMatch(c->c<32 || c==127)) throw ApiException.invalid("اختر اسم ملف دون رموز مسار");
         if(request.mediaType()==null || !ContentValidator.TYPES.contains(request.mediaType())) throw new ApiException(400,"UNSUPPORTED_FILE","الصيغ المدعومة: PNG وJPEG وPDF. حوّل HEIC إلى JPEG قبل الرفع");
         if(request.size()==null || request.size()<=0 || request.size()>ContentValidator.MAX_BYTES) throw new ApiException(413,"FILE_TOO_LARGE","اختر ملفًا لا يتجاوز 10 ميغابايت");
         UUID id=retries.execute(workspace,actor.userId(),"attachment.create:"+entry,key,Values.payload(filename,request.mediaType(),request.size()),()->{
-            db.queryForList("select id from financial_entry where workspace_id=? and id=? for update",workspace,entry);
+            var parent=db.queryForList("select lifecycle from financial_entry where workspace_id=? and id=? for update",workspace,entry);
+            if(parent.isEmpty() || "DISCARDED".equals(parent.getFirst().get("lifecycle"))) throw ApiException.missing();
             Long count=db.queryForObject("select count(*) from attachment where workspace_id=? and entry_id=?",Long.class,workspace,entry);
             if(count>=10) throw new ApiException(409,"ATTACHMENT_LIMIT","الحد التطويري 10 مرفقات للعملية؛ أعد محاولة المرفق المتعثر بدل إنشاء مرفق آخر");
             UUID created=UUID.randomUUID(); db.update("insert into attachment(id,workspace_id,entry_id,original_name,declared_type,declared_size,state,created_by) values(?,?,?,?,?,?,'PENDING',?)",created,workspace,entry,filename,request.mediaType(),request.size(),actor.userId());return created;
@@ -57,7 +58,7 @@ public class AttachmentService {
             audit.record(workspace,actor.userId(),"ATTACHMENT_READY",id);
             return view(require(workspace,id,false));
         } catch(ApiException e) { db.update("update attachment set state='FAILED' where workspace_id=? and id=?",workspace,id); throw e; }
-        catch(IOException e) { db.update("update attachment set state='FAILED' where workspace_id=? and id=?",workspace,id); throw new ApiException(503,"UPLOAD_FAILED","حُفظ المصروف، وتعذر رفع المرفق؛ أعد محاولة رفع المرفق"); }
+        catch(IOException e) { db.update("update attachment set state='FAILED' where workspace_id=? and id=?",workspace,id); throw new ApiException(503,"UPLOAD_FAILED","حُفظ السجل، وتعذر رفع المرفق؛ أعد محاولة رفع المرفق"); }
     }
     public Download download(Actor actor,UUID workspace,UUID id) {
         access.owner(actor,workspace);var row=require(workspace,id,false);

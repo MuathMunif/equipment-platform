@@ -497,6 +497,173 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('addGeneralExpense')), findsOneWidget);
   });
+  testWidgets(
+    'quick capture saves draft and one attachment without financial amount',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final calls = <http.Request>[];
+      final api = Api(
+        client: MockClient((r) async {
+          calls.add(r);
+          if (r.url.path.endsWith('/drafts')) {
+            return json({
+              'id': 'draft1',
+              'equipmentId': 'eq',
+              'equipmentName': 'قلاب ١',
+              'note': 'فاتورة',
+              'lifecycle': 'DRAFT',
+            });
+          }
+          if (r.url.path.endsWith('/attachments')) {
+            return json({
+              'id': 'file1',
+              'entryId': 'draft1',
+              'state': 'PENDING',
+            });
+          }
+          return json({'id': 'file1', 'entryId': 'draft1', 'state': 'READY'});
+        }),
+        persistNative: false,
+      )..workspace = 'w';
+      final file = XFile.fromData(
+        Uint8List.fromList([1, 2, 3]),
+        name: 'invoice.png',
+        path: 'invoice.png',
+      );
+      await tester.pumpWidget(
+        host(
+          DraftCapturePage(
+            api: api,
+            equipment: {'id': 'eq', 'name': 'قلاب ١'},
+            pickFile: () async => file,
+          ),
+        ),
+      );
+      expect(find.textContaining('لن تُحتسب كعملية مالية'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('pickDraftAttachment')));
+      await tester.pumpAndSettle();
+      expect(find.text('invoice.png'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('draftNote')), 'فاتورة');
+      await tester.tap(find.byKey(const Key('saveDraft')));
+      await tester.pumpAndSettle();
+      expect(calls.length, 3);
+      expect(calls[0].url.path, endsWith('/drafts'));
+      final body = jsonDecode(calls[0].body) as Map<String, dynamic>;
+      expect(body['equipmentId'], 'eq');
+      expect(body.containsKey('amount'), isFalse);
+      expect(calls[1].url.path, endsWith('/entries/draft1/attachments'));
+      expect(calls[2].url.path, endsWith('/attachments/file1/content'));
+    },
+  );
+  testWidgets('pending drafts are listed separately without monetary totals', (
+    tester,
+  ) async {
+    final api = Api(
+      client: MockClient(
+        (r) async => json({
+          'items': [
+            {
+              'id': 'draft1',
+              'equipmentId': 'eq',
+              'equipmentName': 'قلاب ١',
+              'note': 'فاتورة وقود',
+              'lifecycle': 'DRAFT',
+            },
+          ],
+          'total': 1,
+        }),
+      ),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(DraftListPage(api: api)));
+    await tester.pumpAndSettle();
+    expect(find.text('بانتظار الاستكمال'), findsWidgets);
+    expect(find.textContaining('فاتورة وقود'), findsOneWidget);
+    expect(find.textContaining('ريال سعودي'), findsNothing);
+  });
+  testWidgets('draft detail requires confirmation before discard', (
+    tester,
+  ) async {
+    final calls = <http.Request>[];
+    final api = Api(
+      client: MockClient((r) async {
+        calls.add(r);
+        if (r.url.path.endsWith('/attachments')) return json([]);
+        if (r.method == 'DELETE') {
+          return json({'id': 'draft1', 'lifecycle': 'DISCARDED'});
+        }
+        return json({
+          'id': 'draft1',
+          'equipmentId': 'eq',
+          'equipmentName': 'قلاب ١',
+          'note': '',
+          'lifecycle': 'DRAFT',
+        });
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(DraftDetailPage(api: api, id: 'draft1')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('discardDraft')));
+    await tester.tap(find.byKey(const Key('discardDraft')));
+    await tester.pumpAndSettle();
+    expect(calls.where((r) => r.method == 'DELETE'), isEmpty);
+    await tester.tap(find.byKey(const Key('confirmDiscardDraft')));
+    await tester.pumpAndSettle();
+    expect(calls.where((r) => r.method == 'DELETE').length, 1);
+  });
+  testWidgets('draft completion submits normal expense to same original id', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    http.Request? completion;
+    final api = Api(
+      client: MockClient((r) async {
+        if (r.method == 'POST' && r.url.path.endsWith('/completion')) {
+          completion = r;
+          return json({...sampleEntry, 'id': 'draft1', 'note': 'فاتورة مصورة'});
+        }
+        if (r.url.path.endsWith('/attachments')) return json([]);
+        if (r.url.path.endsWith('/drafts/draft1')) {
+          return json({
+            'id': 'draft1',
+            'equipmentId': 'eq',
+            'equipmentName': 'قلاب ١',
+            'note': 'فاتورة مصورة',
+            'lifecycle': 'DRAFT',
+          });
+        }
+        return json({...sampleEntry, 'id': 'draft1', 'note': 'فاتورة مصورة'});
+      }),
+      persistNative: false,
+    )..workspace = 'w';
+    await tester.pumpWidget(host(DraftDetailPage(api: api, id: 'draft1')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('completeDraftExpense')));
+    await tester.tap(find.byKey(const Key('completeDraftExpense')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('expenseAmount')), findsOneWidget);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('expenseNote')))
+          .controller!
+          .text,
+      'فاتورة مصورة',
+    );
+    await tester.enterText(find.byKey(const Key('expenseAmount')), '350');
+    await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+    await tester.tap(find.byKey(const Key('saveExpense')));
+    await tester.pumpAndSettle();
+    expect(completion, isNotNull);
+    expect(completion!.url.path, endsWith('/drafts/draft1/completion'));
+    expect(jsonDecode(completion!.body)['note'], 'فاتورة مصورة');
+  });
   testWidgets('partial income uses receipt wording and sends one original', (
     tester,
   ) async {

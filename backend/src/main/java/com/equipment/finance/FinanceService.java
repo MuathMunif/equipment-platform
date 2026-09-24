@@ -27,12 +27,18 @@ public class FinanceService {
     public record CreateRefund(tools.jackson.databind.JsonNode amount,String refundedOn,String reason) {}
     public record Refund(UUID id,String amount,String refundedOn,String reason,UUID createdBy,String createdAt) {}
     public record Allocation(UUID equipmentId,String equipmentName,String amount,String paidShare,String refundedShare,String netPaidShare,String remainingShare) {}
+    public record Draft(UUID id,UUID equipmentId,String equipmentName,String note,String lifecycle,UUID createdBy,String createdAt,UUID discardedBy,String discardedAt) {}
+    public record CreateDraft(UUID equipmentId,String note) {}
     private record AllocationAmount(UUID equipmentId,String equipmentName,BigDecimal amount) {}
-    public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds,String expenseScope,List<Allocation> allocations) {}
+    public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds,String expenseScope,List<Allocation> allocations,UUID createdBy,UUID completedBy,String completedAt) {}
     private static final JsonMapper JSON=JsonMapper.builder().build();
     public Entry get(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return require(workspace,id); }
+    public void requireAttachable(UUID workspace,UUID id) {
+        var lifecycle=db.query("select lifecycle from financial_entry where workspace_id=? and id=?",(rs,n)->rs.getString(1),workspace,id);
+        if(lifecycle.isEmpty() || lifecycle.getFirst().equals("DISCARDED")) throw ApiException.missing();
+    }
     public Entry require(UUID workspace,UUID id) {
-        var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.id=?",workspace,id);
+        var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.id=? and f.lifecycle in ('POSTED','CANCELLED')",workspace,id);
         if(rows.isEmpty()) throw ApiException.missing(); var row=rows.getFirst();
         var settlements=db.query("select * from settlement where workspace_id=? and entry_id=? order by paid_on,created_at",(rs,n)->new Settlement(rs.getObject("id",UUID.class),rs.getBigDecimal("amount").toPlainString(),rs.getDate("paid_on").toLocalDate().toString()),workspace,id);
         var refunds=db.query("select * from financial_refund where workspace_id=? and entry_id=? order by refunded_on,created_at,id",(rs,n)->new Refund(rs.getObject("id",UUID.class),rs.getBigDecimal("amount").toPlainString(),rs.getDate("refunded_on").toLocalDate().toString(),rs.getString("reason"),rs.getObject("created_by",UUID.class),rs.getTimestamp("created_at").toInstant().toString()),workspace,id);
@@ -50,7 +56,7 @@ public class FinanceService {
                 return new Allocation(part.equipmentId(),part.equipmentName(),part.amount().toPlainString(),partPaid.toPlainString(),partRefund.toPlainString(),partNet.toPlainString(),part.amount().subtract(partNet).toPlainString());
             }).toList();
         }
-        return new Entry(id,(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("entry_type"),amount.toPlainString(),"SAR",(String)row.get("category"),row.get("operation_date").toString(),(String)row.get("note"),(String)row.get("lifecycle"),paid.toPlainString(),refunded.toPlainString(),netPaid.toPlainString(),netPaid.toPlainString(),remaining.toPlainString(),remaining.signum()==0?"PAID":netPaid.signum()==0?"UNPAID":"PARTIAL",(String)row.get("party_name"),row.get("due_date")==null?null:row.get("due_date").toString(),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(String)row.get("cancellation_reason"),row.get("cancelled_at")==null?null:((java.sql.Timestamp)row.get("cancelled_at")).toInstant().toString(),(UUID)row.get("cancelled_by"),settlements,refunds,(String)row.get("expense_scope"),allocations);
+        return new Entry(id,(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("entry_type"),amount.toPlainString(),"SAR",(String)row.get("category"),row.get("operation_date").toString(),(String)row.get("note"),(String)row.get("lifecycle"),paid.toPlainString(),refunded.toPlainString(),netPaid.toPlainString(),netPaid.toPlainString(),remaining.toPlainString(),remaining.signum()==0?"PAID":netPaid.signum()==0?"UNPAID":"PARTIAL",(String)row.get("party_name"),row.get("due_date")==null?null:row.get("due_date").toString(),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(String)row.get("cancellation_reason"),row.get("cancelled_at")==null?null:((java.sql.Timestamp)row.get("cancelled_at")).toInstant().toString(),(UUID)row.get("cancelled_by"),settlements,refunds,(String)row.get("expense_scope"),allocations,(UUID)row.get("created_by"),(UUID)row.get("completed_by"),row.get("completed_at")==null?null:((java.sql.Timestamp)row.get("completed_at")).toInstant().toString());
     }
     private List<AllocationAmount> allocationAmounts(UUID workspace,UUID entryId) {
         return db.query("select a.equipment_id,e.name,a.amount from expense_allocation a join equipment e on e.workspace_id=a.workspace_id and e.id=a.equipment_id where a.workspace_id=? and a.entry_id=? order by a.equipment_id",(rs,n)->new AllocationAmount(rs.getObject("equipment_id",UUID.class),rs.getString("name"),rs.getBigDecimal("amount")),workspace,entryId);
@@ -142,10 +148,10 @@ public class FinanceService {
     public Map<String,Object> list(Actor actor,UUID workspace,UUID equipmentId,int page) {
         access.owner(actor,workspace); if(page<0 || page>100000) throw ApiException.invalid("رقم الصفحة غير صالح");
         if(equipmentId!=null) equipment.require(workspace,equipmentId);
-        String filter=equipmentId==null?"":" and (f.equipment_id=? or exists (select 1 from expense_allocation a where a.workspace_id=f.workspace_id and a.entry_id=f.id and a.equipment_id=?))";
+        String filter=" and f.lifecycle in ('POSTED','CANCELLED')"+(equipmentId==null?"":" and (f.equipment_id=? or exists (select 1 from expense_allocation a where a.workspace_id=f.workspace_id and a.entry_id=f.id and a.equipment_id=?))");
         Object[] args=equipmentId==null?new Object[]{workspace,30,page*30}:new Object[]{workspace,equipmentId,equipmentId,30,page*30};
         var ids=db.query("select f.id from financial_entry f where f.workspace_id=?"+filter+" order by f.created_at desc,f.id desc limit ? offset ?",(rs,n)->rs.getObject("id",UUID.class),args);
-        Long count=equipmentId==null?db.queryForObject("select count(*) from financial_entry f where f.workspace_id=?",Long.class,workspace):db.queryForObject("select count(*) from financial_entry f where f.workspace_id=?"+filter,Long.class,workspace,equipmentId,equipmentId);
+        Long count=equipmentId==null?db.queryForObject("select count(*) from financial_entry f where f.workspace_id=?"+filter,Long.class,workspace):db.queryForObject("select count(*) from financial_entry f where f.workspace_id=?"+filter,Long.class,workspace,equipmentId,equipmentId);
         return Map.of("items",ids.stream().map(id->require(workspace,id)).toList(),"page",page,"pageSize",30,"total",count);
     }
     public Map<String,String> totals(Actor actor,UUID workspace,UUID equipmentId) {
@@ -162,9 +168,70 @@ public class FinanceService {
             : BigDecimal.ZERO;
         return Map.of("expenseTotal",expense.setScale(2).toPlainString(),"incomeTotal",income.setScale(2).toPlainString(),"generalExpenseTotal",general.setScale(2).toPlainString());
     }
+    private Draft draftView(Map<String,Object> row) {
+        return new Draft((UUID)row.get("id"),(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("note"),(String)row.get("lifecycle"),(UUID)row.get("created_by"),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(UUID)row.get("discarded_by"),row.get("discarded_at")==null?null:((java.sql.Timestamp)row.get("discarded_at")).toInstant().toString());
+    }
+    private Draft requireDraft(UUID workspace,UUID id) {
+        var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.id=? and f.lifecycle='DRAFT'",workspace,id);
+        if(rows.isEmpty()) throw ApiException.missing();
+        return draftView(rows.getFirst());
+    }
+    public Draft getDraft(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return requireDraft(workspace,id); }
+    public Map<String,Object> listDrafts(Actor actor,UUID workspace,int page,UUID equipmentId) {
+        access.owner(actor,workspace);
+        if(page<0 || page>100000) throw ApiException.invalid("رقم الصفحة غير صالح");
+        if(equipmentId!=null) equipment.require(workspace,equipmentId);
+        String filter=equipmentId==null?"":" and f.equipment_id=?";
+        Object[] args=equipmentId==null?new Object[]{workspace,page*30}:new Object[]{workspace,equipmentId,page*30};
+        var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.lifecycle='DRAFT'"+filter+" order by f.created_at desc,f.id desc limit 30 offset ?",args);
+        Long count=equipmentId==null?db.queryForObject("select count(*) from financial_entry f where f.workspace_id=? and f.lifecycle='DRAFT'",Long.class,workspace):db.queryForObject("select count(*) from financial_entry f where f.workspace_id=? and f.lifecycle='DRAFT'"+filter,Long.class,workspace,equipmentId);
+        return Map.of("items",rows.stream().map(this::draftView).toList(),"page",page,"pageSize",30,"total",count);
+    }
+    @Transactional
+    public Draft createDraft(Actor actor,UUID workspace,String key,CreateDraft request) {
+        access.owner(actor,workspace);
+        if(request==null || request.equipmentId()==null) throw ApiException.invalid("حدد المعدة");
+        equipment.require(workspace,request.equipmentId());
+        String note=Values.note(request.note());
+        UUID id=retries.execute(workspace,actor.userId(),"finance.draft.create",key,Values.payload(request.equipmentId(),note),()->{
+            UUID created=UUID.randomUUID();
+            db.update("insert into financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,note,lifecycle,created_by,entry_type,expense_scope) values(?,?,?,null,'SAR',null,null,?,'DRAFT',?,null,'SINGLE')",created,workspace,request.equipmentId(),note,actor.userId());
+            audit.record(workspace,actor.userId(),"FINANCIAL_DRAFT_CREATED",created,JSON.writeValueAsString(Map.of("equipmentId",request.equipmentId(),"note",note)));
+            return created;
+        });
+        return requireDraft(workspace,id);
+    }
+    @Transactional
+    public Draft discardDraft(Actor actor,UUID workspace,UUID id) {
+        access.owner(actor,workspace);
+        var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.id=? and f.lifecycle in ('DRAFT','DISCARDED') for update of f",workspace,id);
+        if(rows.isEmpty()) throw ApiException.missing();
+        var previous=rows.getFirst();
+        if("DRAFT".equals(previous.get("lifecycle"))) {
+            db.update("update financial_entry set lifecycle='DISCARDED',discarded_by=?,discarded_at=now() where workspace_id=? and id=?",actor.userId(),workspace,id);
+            audit.record(workspace,actor.userId(),"FINANCIAL_DRAFT_DISCARDED",id,JSON.writeValueAsString(Map.of("note",previous.get("note"),"equipmentId",previous.get("equipment_id"))));
+        }
+        return draftView(db.queryForList("select f.*,e.name as equipment_name from financial_entry f join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.id=?",workspace,id).getFirst());
+    }
     @Transactional
     public Entry create(Actor actor,UUID workspace,String key,Create request) {
+        return post(actor,workspace,key,request,null);
+    }
+    @Transactional
+    public Entry completeDraft(Actor actor,UUID workspace,UUID draftId,String key,Create request) {
+        return post(actor,workspace,key,request,draftId);
+    }
+    private Entry post(Actor actor,UUID workspace,String key,Create request,UUID draftId) {
         access.owner(actor,workspace);
+        Map<String,Object> draftRow=null;
+        if(draftId!=null) {
+            var rows=db.queryForList("select * from financial_entry where workspace_id=? and id=? and lifecycle in ('DRAFT','POSTED')",workspace,draftId);
+            if(rows.isEmpty()) throw ApiException.missing();
+            draftRow=rows.getFirst();
+            if(request==null || !Objects.equals(request.equipmentId(),draftRow.get("equipment_id")) || request.expenseScope()!=null && !request.expenseScope().equals("SINGLE") || request.allocations()!=null)
+                throw ApiException.invalid("أكمل المسودة على المعدة نفسها دون تغيير ربطها");
+        }
+        if(request==null) throw ApiException.invalid("أكمل بيانات العملية");
         if(request.amount()==null || !request.amount().isString()) throw ApiException.invalid("أرسل المبلغ كنص عشري بمنزلتين، مثل 350.00");
         String type=request.entryType()==null?"EXPENSE":request.entryType();
         if(!Set.of("EXPENSE","INCOME").contains(type)) throw ApiException.invalid("اختر نوع العملية");
@@ -190,7 +257,7 @@ public class FinanceService {
         if(initial.compareTo(amount)==0 && request.partyName()!=null && !request.partyName().isBlank()) throw ApiException.invalid("اسم الطرف مطلوب فقط عند وجود متبقٍ");
         LocalDate due=request.dueDate()==null || request.dueDate().isBlank()?null:Values.date(request.dueDate());
         if(initial.compareTo(amount)==0 && due!=null) throw ApiException.invalid("موعد الاستحقاق مطلوب فقط عند وجود متبقٍ");
-        String category=type.equals("INCOME")?"OTHER":Values.text(request.category(),30,"نوع المصروف"),note=Values.note(request.note());
+        String category=type.equals("INCOME")?"OTHER":Values.text(request.category(),30,"نوع المصروف"),note=Values.note(request.note()==null && draftRow!=null?(String)draftRow.get("note"):request.note());
         if(type.equals("INCOME") && request.category()!=null && !request.category().equals("OTHER")) throw ApiException.invalid("نوع الإيراد غير صالح");
         if(type.equals("EXPENSE") && !Set.of("FUEL","MAINTENANCE","OTHER").contains(category)) throw ApiException.invalid("اختر نوع المصروف");
         String payload=request.entryType()==null
@@ -199,12 +266,21 @@ public class FinanceService {
                 : Values.payload(request.equipmentId(),amount,category,date,paidOn,note,status,initial,party,due)
             : Values.payload(request.equipmentId(),amount,category,date,paidOn,note,status,initial,party,due,type);
         if(request.expenseScope()!=null || request.allocations()!=null) payload=Values.payload(payload,scope,allocations);
-        UUID id=retries.execute(workspace,actor.userId(),type.equals("INCOME")?"income.create":"expense.create",key,payload,()->{
-            UUID created=UUID.randomUUID();
-            db.update("insert into financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,note,lifecycle,created_by,party_name,due_date,entry_type,expense_scope) values(?,?,?,?,'SAR',?,?,?,'POSTED',?,?,?,?,?)",created,workspace,request.equipmentId(),amount,category,java.sql.Date.valueOf(date),note,actor.userId(),party,due==null?null:java.sql.Date.valueOf(due),type,scope);
+        if(draftId!=null) payload=Values.payload(draftId,payload);
+        UUID id=retries.execute(workspace,actor.userId(),draftId==null?(type.equals("INCOME")?"income.create":"expense.create"):"finance.draft.complete:"+draftId,key,payload,()->{
+            UUID created=draftId==null?UUID.randomUUID():draftId;
+            if(draftId==null)
+                db.update("insert into financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,note,lifecycle,created_by,party_name,due_date,entry_type,expense_scope) values(?,?,?,?,'SAR',?,?,?,'POSTED',?,?,?,?,?)",created,workspace,request.equipmentId(),amount,category,java.sql.Date.valueOf(date),note,actor.userId(),party,due==null?null:java.sql.Date.valueOf(due),type,scope);
+            else {
+                var current=db.queryForList("select lifecycle,created_by,note from financial_entry where workspace_id=? and id=? for update",workspace,draftId);
+                if(current.isEmpty() || !"DRAFT".equals(current.getFirst().get("lifecycle"))) throw ApiException.invalid("المسودة استُكملت أو استُبعدت مسبقًا");
+                db.update("update financial_entry set amount=?,category=?,operation_date=?,note=?,lifecycle='POSTED',party_name=?,due_date=?,entry_type=?,completed_by=?,completed_at=now() where workspace_id=? and id=?",amount,category,java.sql.Date.valueOf(date),note,party,due==null?null:java.sql.Date.valueOf(due),type,actor.userId(),workspace,draftId);
+            }
             if(type.equals("EXPENSE")) saveAllocations(workspace,created,allocations);
             if(initial.signum()>0) db.update("insert into settlement(id,workspace_id,entry_id,amount,paid_on,created_by) values(?,?,?,?,?,?)",UUID.randomUUID(),workspace,created,initial,java.sql.Date.valueOf(paidOn),actor.userId());
-            audit.record(workspace,actor.userId(),type.equals("INCOME")?"INCOME_CREATED":initial.compareTo(amount)==0?"PAID_EXPENSE_CREATED":"EXPENSE_CREATED",created); return created;
+            if(draftId==null) audit.record(workspace,actor.userId(),type.equals("INCOME")?"INCOME_CREATED":initial.compareTo(amount)==0?"PAID_EXPENSE_CREATED":"EXPENSE_CREATED",created);
+            else audit.record(workspace,actor.userId(),"FINANCIAL_DRAFT_COMPLETED",created,JSON.writeValueAsString(Map.of("entryType",type,"amount",amount.toPlainString(),"completedBy",actor.userId(),"note",note)));
+            return created;
         }); return require(workspace,id);
     }
     @Transactional
@@ -216,7 +292,7 @@ public class FinanceService {
         retries.execute(workspace,actor.userId(),type.equals("INCOME")?"income.settle":"expense.settle",key,Values.payload(entryId,amount,paidOn),()->{
             var rows=db.queryForList("select amount,lifecycle from financial_entry where workspace_id=? and id=? for update",workspace,entryId);
             if(rows.isEmpty()) throw ApiException.missing();
-            if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("لا يمكن إضافة تسوية لعملية ملغاة");
+            if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("أكمل المسودة أولًا؛ التسوية متاحة للعمليات النشطة فقط");
             BigDecimal total=(BigDecimal)rows.getFirst().get("amount");
             BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
             BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
@@ -238,7 +314,7 @@ public class FinanceService {
         retries.execute(workspace,actor.userId(),"finance.refund",key,Values.payload(entryId,amount,refundedOn,reason),()->{
             var rows=db.queryForList("select lifecycle from financial_entry where workspace_id=? and id=? for update",workspace,entryId);
             if(rows.isEmpty()) throw ApiException.missing();
-            if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("لا يمكن استرداد مبلغ من عملية ملغاة");
+            if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("الاسترداد متاح للعمليات النشطة فقط");
             BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
             BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
             if(amount.compareTo(paid.subtract(refunded))>0) throw ApiException.invalid("مبلغ الاسترداد أكبر من المبلغ المتاح");

@@ -955,6 +955,36 @@ class _LedgerPageState extends State<LedgerPage> {
     }
   }
 
+  Future<void> captureDraft() async {
+    if (widget.equipment == null) return;
+    final id = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) =>
+            DraftCapturePage(api: widget.api, equipment: widget.equipment!),
+      ),
+    );
+    if (id != null && mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DraftDetailPage(api: widget.api, id: id),
+        ),
+      );
+      load();
+    }
+  }
+
+  Future<void> showDrafts() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DraftListPage(
+          api: widget.api,
+          equipmentId: widget.equipment?['id'] as String?,
+        ),
+      ),
+    );
+    if (mounted) load();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) return const Center(child: CircularProgressIndicator());
@@ -968,6 +998,13 @@ class _LedgerPageState extends State<LedgerPage> {
             onPressed: () => add(),
             icon: const Icon(Icons.add),
             label: const Text('إضافة مصروف عام'),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            key: const Key('openDrafts'),
+            onPressed: showDrafts,
+            icon: const Icon(Icons.pending_actions_outlined),
+            label: const Text('بانتظار الاستكمال'),
           ),
           const SizedBox(height: 16),
         ],
@@ -1001,6 +1038,22 @@ class _LedgerPageState extends State<LedgerPage> {
                     onPressed: () => add(income: true),
                     icon: const Icon(Icons.add),
                     label: const Text('إضافة إيراد'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('quickCapture'),
+                    onPressed: captureDraft,
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: const Text(
+                      'حفظ الفاتورة الآن وإكمال البيانات لاحقًا',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    key: const Key('openEquipmentDrafts'),
+                    onPressed: showDrafts,
+                    icon: const Icon(Icons.pending_actions_outlined),
+                    label: const Text('بانتظار الاستكمال'),
                   ),
                 ],
               ),
@@ -1082,17 +1135,613 @@ class _LedgerPageState extends State<LedgerPage> {
   }
 }
 
+Future<XFile?> pickReceiptFile() => openFile(
+  acceptedTypeGroups: [
+    const XTypeGroup(
+      label: 'صور وفواتير PDF',
+      extensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+      uniformTypeIdentifiers: ['public.jpeg', 'public.png', 'com.adobe.pdf'],
+    ),
+  ],
+);
+
+String receiptMediaType(XFile file) {
+  final extension = file.name.split('.').last.toLowerCase();
+  final type = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'pdf': 'application/pdf',
+  }[extension];
+  if (type == null) {
+    throw const ApiError(
+      400,
+      'UNSUPPORTED_FILE',
+      'اختر PNG أو JPEG أو PDF؛ حوّل HEIC إلى JPEG قبل الرفع',
+    );
+  }
+  return type;
+}
+
+class DraftCapturePage extends StatefulWidget {
+  final Api api;
+  final Map<String, dynamic> equipment;
+  final Future<XFile?> Function()? pickFile;
+  const DraftCapturePage({
+    super.key,
+    required this.api,
+    required this.equipment,
+    this.pickFile,
+  });
+  @override
+  State<DraftCapturePage> createState() => _DraftCapturePageState();
+}
+
+class _DraftCapturePageState extends State<DraftCapturePage> {
+  final note = TextEditingController();
+  final draftKey = requestKey();
+  String attachmentKey = requestKey();
+  String? draftId, attachmentId, error, filename, mediaType, submittedNote;
+  Uint8List? bytes;
+  bool busy = false;
+  @override
+  void dispose() {
+    note.dispose();
+    super.dispose();
+  }
+
+  Future<void> chooseFile() async {
+    try {
+      final file = await (widget.pickFile?.call() ?? pickReceiptFile());
+      if (file == null) return;
+      if (await file.length() > 10 * 1024 * 1024) {
+        throw const ApiError(
+          413,
+          'FILE_TOO_LARGE',
+          'اختر ملفًا لا يتجاوز 10 ميغابايت',
+        );
+      }
+      final type = receiptMediaType(file);
+      final contents = await file.readAsBytes();
+      if (mounted) {
+        setState(() {
+          filename = file.name;
+          mediaType = type;
+          bytes = contents;
+          attachmentKey = requestKey();
+          attachmentId = null;
+          error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    }
+  }
+
+  Future<void> save() async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      if (draftId == null) {
+        submittedNote ??= note.text.trim();
+        final draft = await widget.api.json(
+          'POST',
+          widget.api.scoped('/drafts'),
+          key: draftKey,
+          body: {'equipmentId': widget.equipment['id'], 'note': submittedNote},
+        );
+        draftId = draft['id'] as String;
+      }
+      if (bytes != null) {
+        if (attachmentId == null) {
+          final file = await widget.api.json(
+            'POST',
+            widget.api.scoped('/entries/$draftId/attachments'),
+            key: attachmentKey,
+            body: {
+              'filename': filename,
+              'mediaType': mediaType,
+              'size': bytes!.length,
+            },
+          );
+          attachmentId = file['id'] as String;
+        }
+        await widget.api.send(
+          'PUT',
+          widget.api.scoped('/attachments/$attachmentId/content'),
+          bytes: bytes,
+          type: mediaType,
+        );
+      }
+      if (mounted) Navigator.pop(context, draftId);
+    } catch (e) {
+      if (draftId == null && e is ApiError && e.status > 0 && e.status < 409) {
+        submittedNote = null;
+      }
+      if (mounted) {
+        setState(
+          () => error = draftId == null
+              ? '$e'
+              : 'حُفظت المسودة، وتعذر رفع الملف. أعد المحاولة. $e',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('حفظ فاتورة الآن')),
+    body: FormBody(
+      children: [
+        Text(
+          widget.equipment['name'] as String,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'بانتظار الاستكمال • لن تُحتسب كعملية مالية حتى تُدخل بياناتها لاحقًا.',
+        ),
+        const SizedBox(height: 24),
+        OutlinedButton.icon(
+          key: const Key('pickDraftAttachment'),
+          onPressed: busy || submittedNote != null ? null : chooseFile,
+          icon: const Icon(Icons.attach_file),
+          label: Text(
+            filename == null ? 'إضافة صورة أو PDF (اختياري)' : filename!,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          key: const Key('draftNote'),
+          controller: note,
+          enabled: !busy && submittedNote == null,
+          maxLength: 1000,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+        ),
+        InlineError(error),
+        FilledButton(
+          key: const Key('saveDraft'),
+          onPressed: busy ? null : save,
+          child: Text(
+            busy
+                ? 'جارٍ الحفظ…'
+                : draftId == null
+                ? 'حفظ الفاتورة الآن وإكمال البيانات لاحقًا'
+                : 'إعادة محاولة رفع الملف',
+          ),
+        ),
+        if (draftId != null)
+          TextButton(
+            key: const Key('openSavedDraft'),
+            onPressed: () => Navigator.pop(context, draftId),
+            child: const Text('فتح المسودة المحفوظة'),
+          ),
+      ],
+    ),
+  );
+}
+
+class DraftListPage extends StatefulWidget {
+  final Api api;
+  final String? equipmentId;
+  const DraftListPage({super.key, required this.api, this.equipmentId});
+  @override
+  State<DraftListPage> createState() => _DraftListPageState();
+}
+
+class _DraftListPageState extends State<DraftListPage> {
+  List<dynamic> items = [];
+  String? error;
+  bool loading = true;
+  int page = 0, total = 0;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final response = await widget.api.json(
+        'GET',
+        widget.api.scoped(
+          '/drafts?page=$page${widget.equipmentId == null ? '' : '&equipmentId=${widget.equipmentId}'}',
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          items = response['items'] as List;
+          total = response['total'] as int;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('بانتظار الاستكمال')),
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : error != null
+        ? ErrorPanel(message: error!, retry: load)
+        : ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              if (items.isEmpty)
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('لا توجد فواتير بانتظار الاستكمال'),
+                  ),
+                ),
+              ...items.map(
+                (draft) => Card(
+                  child: ListTile(
+                    title: Text(draft['equipmentName'] as String),
+                    subtitle: Text(
+                      'بانتظار الاستكمال${(draft['note'] as String).isEmpty ? '' : '\n${draft['note']}'}',
+                    ),
+                    isThreeLine: (draft['note'] as String).isNotEmpty,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => DraftDetailPage(
+                            api: widget.api,
+                            id: draft['id'] as String,
+                          ),
+                        ),
+                      );
+                      if (mounted) load();
+                    },
+                  ),
+                ),
+              ),
+              Pager(
+                page: page,
+                total: total,
+                change: (value) {
+                  page = value;
+                  load();
+                },
+              ),
+            ],
+          ),
+  );
+}
+
+class DraftDetailPage extends StatefulWidget {
+  final Api api;
+  final String id;
+  final Future<XFile?> Function()? pickFile;
+  const DraftDetailPage({
+    super.key,
+    required this.api,
+    required this.id,
+    this.pickFile,
+  });
+  @override
+  State<DraftDetailPage> createState() => _DraftDetailPageState();
+}
+
+class _DraftDetailPageState extends State<DraftDetailPage> {
+  Map<String, dynamic>? draft;
+  List<dynamic> attachments = [];
+  String? error, uploadError, attachmentId, filename, mediaType;
+  Uint8List? bytes;
+  String attachmentKey = requestKey();
+  bool loading = true, busy = false;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final found = await widget.api.json(
+        'GET',
+        widget.api.scoped('/drafts/${widget.id}'),
+      );
+      final files = await widget.api.json(
+        'GET',
+        widget.api.scoped('/entries/${widget.id}/attachments'),
+      );
+      if (mounted) {
+        setState(() {
+          draft = Map<String, dynamic>.from(found);
+          attachments = files as List;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> addAttachment() async {
+    try {
+      final file = await (widget.pickFile?.call() ?? pickReceiptFile());
+      if (file == null) return;
+      if (await file.length() > 10 * 1024 * 1024) {
+        throw const ApiError(
+          413,
+          'FILE_TOO_LARGE',
+          'اختر ملفًا لا يتجاوز 10 ميغابايت',
+        );
+      }
+      final type = receiptMediaType(file);
+      bytes = await file.readAsBytes();
+      filename = file.name;
+      mediaType = type;
+      attachmentId = null;
+      attachmentKey = requestKey();
+      await upload();
+    } catch (e) {
+      if (mounted) setState(() => uploadError = '$e');
+    }
+  }
+
+  Future<void> upload() async {
+    setState(() {
+      busy = true;
+      uploadError = null;
+    });
+    try {
+      if (attachmentId == null) {
+        final result = await widget.api.json(
+          'POST',
+          widget.api.scoped('/entries/${widget.id}/attachments'),
+          key: attachmentKey,
+          body: {
+            'filename': filename,
+            'mediaType': mediaType,
+            'size': bytes!.length,
+          },
+        );
+        attachmentId = result['id'] as String;
+      }
+      await widget.api.send(
+        'PUT',
+        widget.api.scoped('/attachments/$attachmentId/content'),
+        bytes: bytes,
+        type: mediaType,
+      );
+      bytes = null;
+      attachmentId = null;
+      if (mounted) await load();
+    } catch (e) {
+      if (mounted) setState(() => uploadError = '$e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> openAttachment(Map<String, dynamic> file) async {
+    try {
+      final response = await widget.api.send(
+        'GET',
+        widget.api.scoped('/attachments/${file['id']}/content'),
+      );
+      if (!mounted) return;
+      if ((file['mediaType'] as String).startsWith('image/')) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => Dialog(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppBar(
+                  title: Text(file['filename'] as String),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      tooltip: 'إغلاق المرفق',
+                    ),
+                  ],
+                ),
+                Flexible(
+                  child: InteractiveViewer(
+                    child: Image.memory(response.bodyBytes),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        await exportFile(
+          response.bodyBytes,
+          file['filename'] as String,
+          file['mediaType'] as String,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
+  Future<void> complete({bool income = false}) async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => ExpenseForm(
+          api: widget.api,
+          equipment: {
+            'id': draft!['equipmentId'],
+            'name': draft!['equipmentName'],
+          },
+          income: income,
+          draftId: widget.id,
+          draftNote: draft!['note'] as String,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => EntryDetail(api: widget.api, id: widget.id),
+        ),
+      );
+    }
+  }
+
+  Future<void> discard() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('استبعاد المسودة؟'),
+        content: const Text(
+          'لن تُحتسب كعملية مالية. ستختفي المرفقات من القائمة بعد الاستبعاد.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('رجوع'),
+          ),
+          FilledButton(
+            key: const Key('confirmDiscardDraft'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('استبعاد المسودة'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.api.json(
+        'DELETE',
+        widget.api.scoped('/drafts/${widget.id}'),
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('بانتظار الاستكمال'),
+      actions: [
+        IconButton(
+          onPressed: load,
+          icon: const Icon(Icons.refresh),
+          tooltip: 'تحديث المسودة',
+        ),
+      ],
+    ),
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : error != null
+        ? ErrorPanel(message: error!, retry: load)
+        : FormBody(
+            children: [
+              Text(
+                draft!['equipmentName'] as String,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'هذه الفاتورة محفوظة بانتظار الاستكمال، ولا تدخل المجاميع المالية بعد.',
+              ),
+              if ((draft!['note'] as String).isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text('ملاحظة: ${draft!['note']}'),
+                ),
+              const SizedBox(height: 24),
+              Text('المرفقات', style: Theme.of(context).textTheme.titleLarge),
+              if (attachments.isEmpty) const Text('لا توجد مرفقات بعد'),
+              ...attachments.map(
+                (file) => ListTile(
+                  title: Text(file['filename'] as String),
+                  subtitle: Text(
+                    file['state'] == 'READY'
+                        ? 'جاهز للعرض'
+                        : file['state'] == 'FAILED'
+                        ? 'تعثر الرفع؛ أعد المحاولة'
+                        : 'لم يكتمل الرفع',
+                  ),
+                  onTap: file['state'] == 'READY'
+                      ? () => openAttachment(Map<String, dynamic>.from(file))
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                key: const Key('addDraftAttachment'),
+                onPressed: busy ? null : addAttachment,
+                icon: const Icon(Icons.attach_file),
+                label: const Text('إضافة مرفق'),
+              ),
+              if (bytes != null && uploadError != null)
+                TextButton(
+                  key: const Key('retryDraftAttachment'),
+                  onPressed: busy ? null : upload,
+                  child: const Text('إعادة محاولة رفع الملف'),
+                ),
+              InlineError(uploadError),
+              const SizedBox(height: 28),
+              FilledButton(
+                key: const Key('completeDraftExpense'),
+                onPressed: busy ? null : () => complete(),
+                child: const Text('استكمال كمصروف'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                key: const Key('completeDraftIncome'),
+                onPressed: busy ? null : () => complete(income: true),
+                child: const Text('استكمال كإيراد'),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                key: const Key('discardDraft'),
+                onPressed: busy ? null : discard,
+                child: const Text('استبعاد المسودة'),
+              ),
+            ],
+          ),
+  );
+}
+
 class ExpenseForm extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> equipment;
   final bool income;
   final String initialScope;
+  final String? draftId;
+  final String? draftNote;
   const ExpenseForm({
     super.key,
     required this.api,
     required this.equipment,
     this.income = false,
     this.initialScope = 'SINGLE',
+    this.draftId,
+    this.draftNote,
   });
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
@@ -1127,6 +1776,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
   void initState() {
     super.initState();
     expenseScope = widget.initialScope;
+    if (widget.draftNote != null) note.text = widget.draftNote!;
   }
 
   Future<void> loadEquipmentChoices() async {
@@ -1246,7 +1896,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
     try {
       final result = await widget.api.json(
         'POST',
-        widget.api.scoped('/entries'),
+        widget.api.scoped(
+          widget.draftId == null
+              ? '/entries'
+              : '/drafts/${widget.draftId}/completion',
+        ),
         key: key,
         body: {
           if (widget.income || expenseScope == 'SINGLE')
@@ -1315,6 +1969,10 @@ class _ExpenseFormState extends State<ExpenseForm> {
             const SizedBox(height: 8),
             if (widget.income)
               const Text('يُسجّل هذا الإيراد على هذه المعدة')
+            else if (widget.draftId != null)
+              const Text(
+                'استكمل بيانات الفاتورة المحفوظة؛ المرفقات ستبقى معها.',
+              )
             else if (widget.equipment['id'] == null)
               const Text('مصروف عام لمساحة العمل؛ لا يُحمّل على معدة')
             else ...[

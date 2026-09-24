@@ -167,6 +167,82 @@ paths:
         '200': {description: Equipment detail, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/drafts:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Pending quick captures only; excluded from financial history and totals.
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Paged pending drafts, content: {application/json: {schema: {allOf: [{$ref: '#/components/schemas/Page'}, {type: object, properties: {items: {type: array, items: {$ref: '#/components/schemas/Draft'}}}}]}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [equipmentId]
+              properties:
+                equipmentId: {type: string, format: uuid}
+                note: {type: [string, 'null'], maxLength: 1000}
+      responses:
+        '200': {description: Saved draft with no monetary amount or settlement, content: {application/json: {schema: {$ref: '#/components/schemas/Draft'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/drafts/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses:
+        '200': {description: Pending draft, content: {application/json: {schema: {$ref: '#/components/schemas/Draft'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    delete:
+      description: Discard a never-posted draft; repeated discard returns the same state. Its attachments become inaccessible pending safe cleanup.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      responses:
+        '200': {description: Discarded draft, content: {application/json: {schema: {$ref: '#/components/schemas/Draft'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/drafts/{id}/completion:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: Complete the draft in place as one single-equipment expense or income on its original equipment; retain attachment IDs and creator, record completer and audit.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [equipmentId, amount, operationDate]
+              properties:
+                equipmentId: {type: string, format: uuid}
+                entryType: {type: string, enum: [EXPENSE, INCOME], default: EXPENSE}
+                expenseScope: {type: string, enum: [SINGLE]}
+                amount: {$ref: '#/components/schemas/Money'}
+                category: {type: string, enum: [FUEL, MAINTENANCE, OTHER], description: Required for expenses; omitted for income}
+                operationDate: {type: string, format: date}
+                paidOn: {type: string, format: date}
+                paymentStatus: {type: string, enum: [FULL, PARTIAL, UNPAID], default: FULL}
+                initialPaid: {$ref: '#/components/schemas/Money'}
+                partyName: {type: string, maxLength: 100}
+                dueDate: {type: string, format: date}
+                note: {type: [string, 'null'], maxLength: 1000, description: Omit to retain draft note}
+      responses:
+        '200': {description: Posted financial entry with the same ID and attachments, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
   /workspaces/{workspace}/entries:
     parameters: [{$ref: '#/components/parameters/Workspace'}]
     get:
@@ -340,7 +416,7 @@ paths:
       - {in: path, name: entry, required: true, schema: {type: string, format: uuid}}
     get:
       responses:
-        '200': {description: Authorized attachment metadata without object keys or URLs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Attachment'}}}}}
+        '200': {description: Authorized attachment metadata for a posted entry or pending draft, without object keys or URLs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Attachment'}}}}}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
     post:
@@ -358,7 +434,7 @@ paths:
                 mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
                 size: {type: integer, minimum: 1, maximum: 10485760}
       responses:
-        '200': {description: PENDING metadata or idempotent replay, content: {application/json: {schema: {$ref: '#/components/schemas/Attachment'}}}}
+        '200': {description: PENDING metadata for an entry or draft, or idempotent replay, content: {application/json: {schema: {$ref: '#/components/schemas/Attachment'}}}}
         '400': {$ref: '#/components/responses/Error'}
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
@@ -433,6 +509,19 @@ components:
         name: {type: string}
         model: {type: string}
         createdAt: {type: string, format: date-time}
+    Draft:
+      type: object
+      required: [id, equipmentId, equipmentName, note, lifecycle, createdBy, createdAt, discardedBy, discardedAt]
+      properties:
+        id: {type: string, format: uuid}
+        equipmentId: {type: string, format: uuid}
+        equipmentName: {type: string}
+        note: {type: string}
+        lifecycle: {type: string, enum: [DRAFT, DISCARDED]}
+        createdBy: {type: string, format: uuid}
+        createdAt: {type: string, format: date-time}
+        discardedBy: {type: [string, 'null'], format: uuid}
+        discardedAt: {type: [string, 'null'], format: date-time}
     AllocationInput:
       type: object
       required: [equipmentId, amount]
@@ -453,7 +542,7 @@ components:
         remainingShare: {$ref: '#/components/schemas/Money'}
     Entry:
       type: object
-      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations]
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations, createdBy, completedBy, completedAt]
       properties:
         id: {type: string, format: uuid}
         equipmentId: {type: [string, 'null'], format: uuid, description: Null for shared/general expenses}
@@ -479,6 +568,9 @@ components:
         partyName: {type: [string, 'null']}
         dueDate: {type: [string, 'null'], format: date}
         createdAt: {type: string, format: date-time}
+        createdBy: {type: string, format: uuid}
+        completedBy: {type: [string, 'null'], format: uuid, description: Present when posted by completing a draft}
+        completedAt: {type: [string, 'null'], format: date-time}
         settlements:
           type: array
           items:

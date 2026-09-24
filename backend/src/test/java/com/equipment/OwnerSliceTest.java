@@ -376,4 +376,66 @@ class OwnerSliceTest {
   int refunds=0,net=0;for(var part:after.json.get("allocations")){int partRefund=Integer.parseInt(part.get("refundedShare").asString().replace(".",""));int partNet=Integer.parseInt(part.get("netPaidShare").asString().replace(".",""));assertTrue(partRefund>=0);assertTrue(partNet>=0);refunds+=partRefund;net+=partNet;}
   assertEquals(3,refunds);assertEquals(1,net);
  }
+ @Test void quickDraftCompletesInPlaceWithSameAttachmentAndAudit()throws Exception{
+  User user=login("0500000001");String eq=equipment(user),draftKey=key();String drafts=path(user,"/drafts");
+  var capture=Map.of("equipmentId",eq,"note","فاتورة وقود سريعة");
+  var created=request("POST",drafts,capture,user.token,draftKey);assertEquals(200,created.status);String id=created.json.get("id").asString();
+  assertEquals(id,request("POST",drafts,capture,user.token,draftKey).json.get("id").asString());
+  assertEquals(409,request("POST",drafts,Map.of("equipmentId",eq,"note","مختلفة"),user.token,draftKey).status);
+  assertEquals("DRAFT",created.json.get("lifecycle").asString());assertEquals("0.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(0,request("GET",path(user,"/entries"),null,user.token,null).json.get("total").asInt());
+  assertEquals(1,request("GET",drafts,null,user.token,null).json.get("total").asInt());
+  assertEquals(404,request("GET",path(user,"/entries/"+id),null,user.token,null).status);
+  assertEquals(404,request("POST",path(user,"/entries/"+id+"/settlements"),Map.of("amount","1.00","paidOn","2026-09-24"),user.token,key()).status);
+  assertEquals(400,request("PUT",path(user,"/entries/"+id),expense(eq),user.token,null).status);
+  assertNull(db.queryForObject("select amount from financial_entry where id=?",java.math.BigDecimal.class,UUID.fromString(id)));
+  byte[] bytes=image("png");String fileKey=key();var fileBody=Map.of("filename","receipt.png","mediaType","image/png","size",bytes.length);
+  String attachment=request("POST",path(user,"/entries/"+id+"/attachments"),fileBody,user.token,fileKey).json.get("id").asString();
+  assertEquals(attachment,request("POST",path(user,"/entries/"+id+"/attachments"),fileBody,user.token,fileKey).json.get("id").asString());
+  assertEquals(200,raw("PUT",path(user,"/attachments/"+attachment+"/content"),bytes,"image/png",user.token,null,Map.of()).status);
+  assertArrayEquals(bytes,request("GET",path(user,"/attachments/"+attachment+"/content"),null,user.token,null).raw.body());
+  var incomplete=new HashMap<>(expense(eq));incomplete.remove("amount");assertEquals(400,request("POST",drafts+"/"+id+"/completion",incomplete,user.token,key()).status);
+  assertEquals(1,request("GET",drafts,null,user.token,null).json.get("total").asInt());
+  var completion=new HashMap<>(expense(eq));completion.remove("note");
+  var completed=request("POST",drafts+"/"+id+"/completion",completion,user.token,"complete1234");assertEquals(200,completed.status);assertEquals(id,completed.json.get("id").asString());
+  assertEquals("POSTED",completed.json.get("lifecycle").asString());assertEquals("فاتورة وقود سريعة",completed.json.get("note").asString());
+  assertEquals(user.user,completed.json.get("createdBy").asString());assertEquals(user.user,completed.json.get("completedBy").asString());assertNotNull(completed.json.get("completedAt"));
+  assertEquals(id,request("POST",drafts+"/"+id+"/completion",completion,user.token,"complete1234").json.get("id").asString());
+  assertEquals(0,request("GET",drafts,null,user.token,null).json.get("total").asInt());assertEquals(1,request("GET",path(user,"/entries"),null,user.token,null).json.get("total").asInt());
+  assertEquals("350.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(1,db.queryForObject("select count(*) from financial_entry",Integer.class));assertEquals(1,db.queryForObject("select count(*) from settlement",Integer.class));assertEquals(1,db.queryForObject("select count(*) from attachment",Integer.class));
+  assertEquals(attachment,request("GET",path(user,"/entries/"+id+"/attachments"),null,user.token,null).json.get(0).get("id").asString());
+  assertArrayEquals(bytes,request("GET",path(user,"/attachments/"+attachment+"/content"),null,user.token,null).raw.body());
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where resource_id=? and action='FINANCIAL_DRAFT_CREATED'",Integer.class,UUID.fromString(id)));
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where resource_id=? and action='FINANCIAL_DRAFT_COMPLETED'",Integer.class,UUID.fromString(id)));
+ }
+ @Test void discardedDraftIsHiddenWithoutFinancialCancellationAndTenantAccess()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),drafts=path(owner,"/drafts");
+  String id=request("POST",drafts,Map.of("equipmentId",eq),owner.token,key()).json.get("id").asString();byte[] bytes=image("png");String file=initiate(owner,id,bytes,"image/png");raw("PUT",path(owner,"/attachments/"+file+"/content"),bytes,"image/png",owner.token,null,Map.of());
+  assertEquals(404,request("GET",path(other,"/drafts/"+id),null,other.token,null).status);
+  assertEquals(404,request("GET",path(other,"/drafts?equipmentId="+eq),null,other.token,null).status);
+  assertEquals(404,request("POST",path(other,"/drafts/"+id+"/completion"),expense(eq),other.token,key()).status);
+  assertEquals(404,request("DELETE",path(other,"/drafts/"+id),null,other.token,null).status);
+  assertEquals(404,request("GET",path(other,"/attachments/"+file+"/content"),null,other.token,null).status);
+  assertEquals("DISCARDED",request("DELETE",drafts+"/"+id,null,owner.token,null).json.get("lifecycle").asString());
+  assertEquals("DISCARDED",request("DELETE",drafts+"/"+id,null,owner.token,null).json.get("lifecycle").asString());
+  assertEquals(0,request("GET",drafts,null,owner.token,null).json.get("total").asInt());assertEquals(404,request("GET",drafts+"/"+id,null,owner.token,null).status);
+  assertEquals(404,request("GET",path(owner,"/attachments/"+file+"/content"),null,owner.token,null).status);
+  assertEquals(404,request("GET",path(owner,"/entries/"+id+"/attachments"),null,owner.token,null).status);
+  assertEquals(404,request("POST",drafts+"/"+id+"/completion",expense(eq),owner.token,key()).status);
+  assertEquals("0.00",request("GET",path(owner,"/entries/totals"),null,owner.token,null).json.get("expenseTotal").asString());
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where resource_id=? and action='FINANCIAL_DRAFT_DISCARDED'",Integer.class,UUID.fromString(id)));
+  assertEquals(0,db.queryForObject("select count(*) from audit_event where resource_id=? and action='FINANCIAL_ENTRY_CANCELLED'",Integer.class,UUID.fromString(id)));
+ }
+ @Test void draftCanCompleteAsIncomeAndReuseMultipleAttachments()throws Exception{
+  User user=login("0500000001");String eq=equipment(user),drafts=path(user,"/drafts");String id=request("POST",drafts,Map.of("equipmentId",eq),user.token,key()).json.get("id").asString();
+  byte[] bytes=image("png");String first=initiate(user,id,bytes,"image/png"),second=initiate(user,id,bytes,"image/png");
+  assertEquals(200,raw("PUT",path(user,"/attachments/"+first+"/content"),bytes,"image/png",user.token,null,Map.of()).status);
+  assertEquals(200,raw("PUT",path(user,"/attachments/"+second+"/content"),bytes,"image/png",user.token,null,Map.of()).status);
+  var income=Map.of("equipmentId",eq,"entryType","INCOME","amount","3000.00","operationDate","2026-09-24","paymentStatus","UNPAID","partyName","عميل");
+  var result=request("POST",drafts+"/"+id+"/completion",income,user.token,key());assertEquals(200,result.status);assertEquals(id,result.json.get("id").asString());assertEquals("INCOME",result.json.get("entryType").asString());
+  assertEquals("3000.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("incomeTotal").asString());
+  assertEquals(2,request("GET",path(user,"/entries/"+id+"/attachments"),null,user.token,null).json.size());
+  assertEquals(1,db.queryForObject("select count(*) from financial_entry",Integer.class));assertEquals(2,db.queryForObject("select count(*) from attachment",Integer.class));
+ }
 }
