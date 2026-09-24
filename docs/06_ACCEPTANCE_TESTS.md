@@ -1,7 +1,7 @@
 # Acceptance and regression test catalog
 Status: broader acceptance catalog; a tested local M2 subset is documented below.
 
-# تنفيذ قبول M2 المحلي بتاريخ 2026-09-24: اختبارات Backend HTTP/PostgreSQL ‏41/41، Flutter unit/widget ‏28/28، وiOS simulator integration ‏2/2 تغطي رحلات A–J المذكورة في HANDOFF؛ بعضها عبر API حي داخل اختبار Flutter. Web release وفحص سجل/مرشحات حي بعرضين نجحا. Web E2E آلي وAndroid والإنتاج غير متحققين. حالات القبول التالية تبقى مواصفات للمنتج الأشمل؛ وجود اختبار مرتبط لا يعني اكتمال كل المسارات الإنتاجية.
+# تنفيذ قبول M2 المحلي بتاريخ 2026-09-24: اختبارات Backend HTTP/PostgreSQL ‏43/43، Flutter unit/widget ‏29/29، وiOS simulator integration ‏2/2 تغطي رحلات A–J المذكورة في HANDOFF؛ بعضها عبر API حي داخل اختبار Flutter. Web release وفحص سجل/مرشحات حي بعرضين نجحا. Web E2E آلي وAndroid والإنتاج غير متحققين. حالات القبول التالية تبقى مواصفات للمنتج الأشمل؛ وجود اختبار مرتبط لا يعني اكتمال كل المسارات الإنتاجية.
 Automate progressively and map each ID to actual test names/evidence. Passing mocks is not proof of live integrations.
 
 ## Authentication and onboarding
@@ -29,7 +29,7 @@ FIN-03: Unpaid entry requires a party name, not a separately created customer/su
 FIN-04: No due date does not produce an overdue label by assumption.
 FIN-05: Invalid/negative/excess settlement is rejected. Two concurrent final-balance payments cannot overpay.
 FIN-06: A replayed idempotency key with the same authorized payload returns the original result; a different payload conflicts.
-FIN-07: Total cannot be lowered below valid settled amount via a simple edit that bypasses the approved correction rules.
+FIN-07: Before any settlement/refund, total may be edited with normal validation. After the first financial movement, original total cannot change at all for expense or income.
 FIN-08: Settlement status is derived; submitting paid=true without valid settlements cannot mark a debt paid.
 FIN-09: General expense 200.00 + equipment A expense 350.00 => workspace 550.00, equipment A 350.00, general 200.00.
 FIN-10: Shared expense total 1200.00 with A=700.00/B=500.00 counted once at workspace level. A sees its authorized share only.
@@ -43,7 +43,7 @@ FIN-16: Draft, incomplete image-only submission, pending-review and error-cancel
 FIN-17: Original real expense or income with actual returned money retains settlement and refund history; each cash return has its own date.
         Per D-19, net settled = original settlements - refunds; remaining = original total - net settled.
         Expense 1000.00 / paid 600.00 / refunded 200.00 => net paid 400.00 / remaining payable 600.00.
-FIN-18: Shared allocations cannot rewrite historical settlement shares through an unapproved edit path.
+FIN-18: Active expense allocation/classification may be corrected after movement at unchanged total, including single/shared/general conversions; exact sum, same-workspace equipment and before/after audit are required. Historical settlement/refund rows remain unchanged; calculated equipment shares reflect the current classification.
 FIN-19: Financial record mistaken/duplicate cancellation keeps actor/time/reason and excludes erroneous totals; actual refund is not simulated by it.
 FIN-20: Editing a note or adding an attachment creates no payment, changes no original amount and preserves audit evidence.
 FIN-21: Current outstanding differs from period cash; labels never claim net profit, bank balance or zero activity from missing entries.

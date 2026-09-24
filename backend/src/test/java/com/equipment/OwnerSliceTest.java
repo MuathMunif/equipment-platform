@@ -150,12 +150,12 @@ class OwnerSliceTest {
   for(String type:List.of("EXPENSE","INCOME")) {
    var body=new HashMap<String,Object>();body.put("equipmentId",eq);body.put("entryType",type);body.put("amount","3000.00");body.put("operationDate","2026-09-01");body.put("paymentStatus","PARTIAL");body.put("initialPaid","1000.00");body.put("paidOn","2026-09-20");body.put("partyName","طرف أول");if(type.equals("EXPENSE"))body.put("category","FUEL");
    var created=request("POST",path(user,"/entries"),body,user.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString();String firstSettlement=created.json.get("settlements").get(0).get("id").asString();
-   var edit=new HashMap<String,Object>();edit.put("amount","2500.00");edit.put("operationDate","2026-09-05");edit.put("note","تصحيح موثق");edit.put("partyName","طرف ثان");edit.put("dueDate","2026-10-15");if(type.equals("EXPENSE"))edit.put("category","MAINTENANCE");
-   var updated=request("PUT",path(user,"/entries/"+id),edit,user.token,null);assertEquals(200,updated.status);assertEquals("1500.00",updated.json.get("remaining").asString());assertEquals("PARTIAL",updated.json.get("settlementStatus").asString());assertEquals("2026-09-05",updated.json.get("operationDate").asString());assertEquals(firstSettlement,updated.json.get("settlements").get(0).get("id").asString());
+   var edit=new HashMap<String,Object>();edit.put("amount","3000.00");edit.put("operationDate","2026-09-05");edit.put("note","تصحيح موثق");edit.put("partyName","طرف ثان");edit.put("dueDate","2026-10-15");if(type.equals("EXPENSE"))edit.put("category","MAINTENANCE");
+   var updated=request("PUT",path(user,"/entries/"+id),edit,user.token,null);assertEquals(200,updated.status);assertEquals("2000.00",updated.json.get("remaining").asString());assertEquals("PARTIAL",updated.json.get("settlementStatus").asString());assertEquals("2026-09-05",updated.json.get("operationDate").asString());assertEquals(firstSettlement,updated.json.get("settlements").get(0).get("id").asString());
    assertEquals(400,request("PUT",path(user,"/entries/"+id),Map.of("amount","500.00","operationDate","2026-09-05","partyName","طرف ثان","category",type.equals("EXPENSE")?"MAINTENANCE":"OTHER"),user.token,null).status);
    assertEquals(400,request("PUT",path(user,"/entries/"+id),Map.of("amount","1000.00","operationDate","2026-09-05","dueDate","2026-10-15","category",type.equals("EXPENSE")?"MAINTENANCE":"OTHER"),user.token,null).status);
    assertEquals(1,db.queryForObject("select count(*) from settlement where entry_id=?",Integer.class,UUID.fromString(id)));
-   var audit=db.queryForMap("select metadata,actor_id from audit_event where resource_id=? and action=?",UUID.fromString(id),type.equals("INCOME")?"INCOME_EDITED":"EXPENSE_EDITED");assertEquals(UUID.fromString(user.user),audit.get("actor_id"));String metadata=audit.get("metadata").toString();assertTrue(metadata.contains("3000.00"));assertTrue(metadata.contains("2500.00"));
+   var audit=db.queryForMap("select metadata,actor_id from audit_event where resource_id=? and action=?",UUID.fromString(id),type.equals("INCOME")?"INCOME_EDITED":"EXPENSE_EDITED");assertEquals(UUID.fromString(user.user),audit.get("actor_id"));String metadata=audit.get("metadata").toString();assertTrue(metadata.contains("3000.00"));assertTrue(metadata.contains("طرف أول"));assertTrue(metadata.contains("طرف ثان"));
   }
  }
  @Test void cancellationRetainsHistoryAndFilesButBlocksMutationAndCrossTenantAccess()throws Exception{
@@ -367,7 +367,7 @@ class OwnerSliceTest {
   assertEquals("350.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
   assertEquals(400,request("POST",path(user,"/entries/"+general.json.get("id").asString()+"/settlements"),Map.of("amount","20.00","paidOn","2026-09-03"),user.token,key()).status);
  }
- @Test void sharedAllocationEditFreezesAfterCashWithoutBlockingNotes()throws Exception{
+ @Test void sharedAllocationEditKeepsTotalButAllowsClassificationCorrectionAfterCash()throws Exception{
   User user=login("0500000001");String a=equipment(user),b=equipment(user);
   var body=Map.of("expenseScope","SHARED","amount","100.00","category","OTHER","operationDate","2026-09-01","paymentStatus","UNPAID","partyName","مورد","allocations",List.of(Map.of("equipmentId",a,"amount","60.00"),Map.of("equipmentId",b,"amount","40.00")));
   String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();
@@ -376,11 +376,50 @@ class OwnerSliceTest {
   assertEquals("70.00",request("GET",path(user,"/entries/totals?equipmentId="+a),null,user.token,null).json.get("expenseTotal").asString());
   assertEquals(200,request("POST",path(user,"/entries/"+id+"/settlements"),Map.of("amount","30.00","paidOn","2026-09-03"),user.token,key()).status);
   var changed=new HashMap<>(edit);changed.put("amount","130.00");assertEquals(400,request("PUT",path(user,"/entries/"+id),changed,user.token,null).status);
+  var corrected=new HashMap<>(edit);corrected.put("allocations",List.of(Map.of("equipmentId",a,"amount","80.00"),Map.of("equipmentId",b,"amount","40.00")));
+  var allocationEdit=request("PUT",path(user,"/entries/"+id),corrected,user.token,null);assertEquals(200,allocationEdit.status);assertEquals("80.00",request("GET",path(user,"/entries/totals?equipmentId="+a),null,user.token,null).json.get("expenseTotal").asString());
   var noteOnly=Map.of("amount","120.00","category","OTHER","operationDate","2026-09-02","partyName","مورد","note","تصحيح الوصف");
   var updated=request("PUT",path(user,"/entries/"+id),noteOnly,user.token,null);assertEquals(200,updated.status);assertEquals("30.00",updated.json.get("paid").asString());assertEquals(1,updated.json.get("settlements").size());
   var returned=request("POST",path(user,"/entries/"+id+"/refunds"),Map.of("amount","10.00","refundedOn","2026-09-04","reason","عودة جزء"),user.token,key());assertEquals(200,returned.status);assertEquals("100.00",returned.json.get("remaining").asString());
   assertEquals(400,request("PUT",path(user,"/entries/"+id),changed,user.token,null).status);
   updated=request("PUT",path(user,"/entries/"+id),noteOnly,user.token,null);assertEquals(200,updated.status);assertEquals(1,updated.json.get("settlements").size());assertEquals(1,updated.json.get("refunds").size());
+ }
+ @Test void q02CorrectsExpenseClassificationAfterMovementsWithoutChangingMoneyHistory()throws Exception{
+  User owner=login("0500000001");String a=equipment(owner),b=equipment(owner),c=equipment(owner);
+  User other=login("0500000002");String foreign=equipment(other);
+  var create=Map.of("equipmentId",a,"amount","100.00","category","OTHER","operationDate","2026-09-01","paymentStatus","UNPAID","partyName","مورد");
+  String id=request("POST",path(owner,"/entries"),create,owner.token,key()).json.get("id").asString(),url=path(owner,"/entries/"+id);
+  var base=new HashMap<String,Object>();base.put("amount","100.00");base.put("category","OTHER");base.put("operationDate","2026-09-01");base.put("partyName","مورد");
+  var beforeCash=new HashMap<>(base);beforeCash.put("amount","120.00");beforeCash.put("equipmentId",b);beforeCash.put("expenseScope","SINGLE");
+  assertEquals(200,request("PUT",url,beforeCash,owner.token,null).status);
+  assertEquals("120.00",request("GET",url,null,owner.token,null).json.get("amount").asString());
+  base.put("amount","120.00");
+  var settlement=request("POST",url+"/settlements",Map.of("amount","50.00","paidOn","2026-09-02"),owner.token,key());assertEquals(200,settlement.status);String settlementId=settlement.json.get("settlements").get(0).get("id").asString();
+  var changedTotal=new HashMap<>(base);changedTotal.put("amount","121.00");assertEquals(400,request("PUT",url,changedTotal,owner.token,null).status);
+  var shared=new HashMap<>(base);shared.put("expenseScope","SHARED");shared.put("allocations",List.of(Map.of("equipmentId",a,"amount","70.00"),Map.of("equipmentId",c,"amount","50.00")));
+  assertEquals(200,request("PUT",url,shared,owner.token,null).status);
+  var mismatch=new HashMap<>(shared);mismatch.put("allocations",List.of(Map.of("equipmentId",a,"amount","70.00"),Map.of("equipmentId",c,"amount","49.00")));assertEquals(400,request("PUT",url,mismatch,owner.token,null).status);
+  var cross=new HashMap<>(shared);cross.put("allocations",List.of(Map.of("equipmentId",a,"amount","70.00"),Map.of("equipmentId",foreign,"amount","50.00")));assertEquals(404,request("PUT",url,cross,owner.token,null).status);
+  var one=new HashMap<>(base);one.put("expenseScope","SINGLE");one.put("equipmentId",c);assertEquals(200,request("PUT",url,one,owner.token,null).status);
+  var general=new HashMap<>(base);general.put("expenseScope","GENERAL");assertEquals(200,request("PUT",url,general,owner.token,null).status);
+  assertEquals("120.00",request("GET",path(owner,"/entries/totals"),null,owner.token,null).json.get("generalExpenseTotal").asString());
+  one.put("equipmentId",a);assertEquals(200,request("PUT",url,one,owner.token,null).status);
+  var refund=request("POST",url+"/refunds",Map.of("amount","10.00","refundedOn","2026-09-03","reason","مرتجع"),owner.token,key());assertEquals(200,refund.status);String refundId=refund.json.get("refunds").get(0).get("id").asString();
+  assertEquals(400,request("PUT",url,changedTotal,owner.token,null).status);
+  assertEquals(200,request("PUT",url,shared,owner.token,null).status);
+  var finalEntry=request("GET",url,null,owner.token,null).json;assertEquals("120.00",finalEntry.get("amount").asString());assertEquals(settlementId,finalEntry.get("settlements").get(0).get("id").asString());assertEquals(refundId,finalEntry.get("refunds").get(0).get("id").asString());
+  var audit=db.queryForMap("select actor_id,metadata,created_at from audit_event where resource_id=? and action='EXPENSE_EDITED' order by created_at desc limit 1",UUID.fromString(id));assertEquals(UUID.fromString(owner.user),audit.get("actor_id"));assertNotNull(audit.get("created_at"));String metadata=audit.get("metadata").toString();assertTrue(metadata.contains("before"));assertTrue(metadata.contains("after"));assertTrue(metadata.contains("SINGLE"));assertTrue(metadata.contains("SHARED"));assertTrue(metadata.contains(a));assertTrue(metadata.contains(c));
+  assertEquals(200,request("POST",url+"/cancellation",Map.of("reason","قيد خاطئ"),owner.token,null).status);assertEquals(400,request("PUT",url,general,owner.token,null).status);
+ }
+ @Test void q02IncomeTotalEditableOnlyBeforeMovement()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner);var create=Map.of("equipmentId",eq,"entryType","INCOME","amount","100.00","operationDate","2026-09-01","paymentStatus","UNPAID","partyName","عميل");
+  String id=request("POST",path(owner,"/entries"),create,owner.token,key()).json.get("id").asString(),url=path(owner,"/entries/"+id);
+  var edit=new HashMap<String,Object>();edit.put("amount","120.00");edit.put("operationDate","2026-09-01");edit.put("partyName","عميل");assertEquals(200,request("PUT",url,edit,owner.token,null).status);
+  assertEquals(200,request("POST",url+"/settlements",Map.of("amount","50.00","paidOn","2026-09-02"),owner.token,key()).status);
+  edit.put("amount","119.00");assertEquals(400,request("PUT",url,edit,owner.token,null).status);
+  assertEquals(200,request("POST",url+"/refunds",Map.of("amount","10.00","refundedOn","2026-09-03","reason","مرتجع"),owner.token,key()).status);
+  edit.put("amount","121.00");assertEquals(400,request("PUT",url,edit,owner.token,null).status);
+  edit.put("amount","120.00");edit.put("note","تصحيح وصف");assertEquals(200,request("PUT",url,edit,owner.token,null).status);
  }
  @Test void tinySharedSharesReconcileDeterministicallyAcrossPaymentsAndRefund()throws Exception{
   User user=login("0500000001");String a=equipment(user),b=equipment(user),c=equipment(user);

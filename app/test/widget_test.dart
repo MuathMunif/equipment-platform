@@ -458,33 +458,99 @@ void main() {
       ['70.00', '50.00'],
     );
   });
-  testWidgets('shared expense locks financial amounts after payment', (
+  testWidgets(
+    'shared expense locks total but allows allocation correction after payment',
+    (tester) async {
+      final entry = {
+        ...sampleEntry,
+        'expenseScope': 'SHARED',
+        'allocations': [
+          {'equipmentId': 'eq', 'equipmentName': 'قلاب ١', 'amount': '200.00'},
+          {'equipmentId': 'eq2', 'equipmentName': 'قلاب ٢', 'amount': '150.00'},
+        ],
+      };
+      final api = Api(
+        client: MockClient((r) async => json({'items': [], 'total': 0})),
+        persistNative: false,
+      )..workspace = 'w';
+      await tester.pumpWidget(host(EntryEditForm(api: api, entry: entry)));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('editAmount')))
+            .enabled,
+        isFalse,
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('editAllocationAmount0')),
+            )
+            .enabled,
+        isTrue,
+      );
+      expect(find.textContaining('لا يمكن تغيير الإجمالي'), findsOneWidget);
+    },
+  );
+  testWidgets('edit switches a paid expense from single equipment to shared', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    Map<String, dynamic>? updated;
     final entry = {
       ...sampleEntry,
-      'expenseScope': 'SHARED',
+      'expenseScope': 'SINGLE',
       'allocations': [
-        {'equipmentId': 'eq', 'equipmentName': 'قلاب ١', 'amount': '200.00'},
-        {'equipmentId': 'eq2', 'equipmentName': 'قلاب ٢', 'amount': '150.00'},
+        {'equipmentId': 'eq', 'equipmentName': 'قلاب ١', 'amount': '350.00'},
       ],
     };
     final api = Api(
-      client: MockClient((r) async => json({'items': [], 'total': 0})),
+      client: MockClient((r) async {
+        if (r.method == 'GET') {
+          return json({
+            'items': [
+              {'id': 'eq', 'name': 'قلاب ١'},
+              {'id': 'eq2', 'name': 'قلاب ٢'},
+            ],
+            'total': 2,
+          });
+        }
+        updated = jsonDecode(r.body) as Map<String, dynamic>;
+        return json(entry);
+      }),
       persistNative: false,
     )..workspace = 'w';
     await tester.pumpWidget(host(EntryEditForm(api: api, entry: entry)));
     await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextFormField>(find.byKey(const Key('editAmount'))).enabled,
-      isFalse,
+    await tester.ensureVisible(find.byKey(const Key('editExpenseScope')));
+    await tester.tap(find.byKey(const Key('editExpenseScope')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('عدة معدات').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('editAllocationAmount0')),
+      '200',
     );
-    expect(
-      tester
-          .widget<TextFormField>(find.byKey(const Key('editAllocationAmount0')))
-          .enabled,
-      isFalse,
+    await tester.enterText(
+      find.byKey(const Key('editAllocationAmount1')),
+      '150',
     );
+    await tester.ensureVisible(
+      find.byKey(const Key('editAllocationEquipment1')),
+    );
+    await tester.tap(find.byKey(const Key('editAllocationEquipment1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('قلاب ٢').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('saveEntryEdit')));
+    await tester.tap(find.byKey(const Key('saveEntryEdit')));
+    await tester.pumpAndSettle();
+    expect(updated?['amount'], '350.00');
+    expect(updated?['expenseScope'], 'SHARED');
+    expect((updated?['allocations'] as List).length, 2);
   });
   testWidgets('workspace ledger offers general expense without equipment', (
     tester,
@@ -918,14 +984,24 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('editEntry')));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('editAmount')), '2500');
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('editAmount')))
+            .enabled,
+        isFalse,
+      );
+      await tester.enterText(
+        find.byKey(const Key('editNote')),
+        'تصحيح وصف الإيراد',
+      );
       await tester.ensureVisible(find.byKey(const Key('saveEntryEdit')));
       await tester.tap(find.byKey(const Key('saveEntryEdit')));
       await tester.pumpAndSettle();
       expect(edited, isNotNull);
       final body = jsonDecode(edited!.body) as Map<String, dynamic>;
       expect(edited!.method, 'PUT');
-      expect(body['amount'], '2500.00');
+      expect(body['amount'], '3000.00');
+      expect(body['note'], 'تصحيح وصف الإيراد');
       expect(body.containsKey('settlements'), false);
       expect(body.containsKey('entryType'), false);
     },

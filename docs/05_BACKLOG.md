@@ -1,17 +1,18 @@
 # Delivery backlog
-Status 2026-09-24: M0 and the bounded M1 local slice are complete with evidence in `evidence/M1_ACCEPTANCE.md`. M2 local finance, drafts, history search, attachment cleanup and connected acceptance journeys are implemented and verified as described in HANDOFF. Private production object storage and malware scanning remain open; Q-02 limits editing posted shared allocations. M3–M7 as full milestones are NOT STARTED, although the approved general/shared expense slice was delivered early within this M2 run. This is not completion of V1 or production readiness.
+Status 2026-09-24: M0 and the bounded M1 local slice are complete with evidence in `evidence/M1_ACCEPTANCE.md`. M2 local finance, drafts, history search, attachment cleanup and connected acceptance journeys are implemented and verified as described in HANDOFF. Q-02 is closed by D-20; private production object storage and malware scanning are deferred to Production Readiness and do not block functional M2 completion. M3–M7 as full milestones are NOT STARTED, although the approved general/shared expense slice was delivered early within this M2 run. This is not completion of V1 or production readiness.
 
-Current bounded M2 work also implements the D-08 general/shared expense model with V6 allocation backfill, explicit amounts, active workspace/equipment totals, and deterministic proportional shares. Q-02 still blocks changing a shared expense total/allocation after money moved. This early implementation does not mark all of M3 complete.
+Current bounded M2 work also implements the D-08 general/shared expense model with V6 allocation backfill, explicit amounts, active workspace/equipment totals, and deterministic proportional shares. D-20 locks all entry totals after movement but permits audited expense allocation/classification corrections at unchanged total. This early implementation does not mark all of M3 complete.
 
-The attachment-only quick draft is implemented locally in V7: required equipment, optional note/attachments, excluded from totals, in-place completion preserving attachment identity, and discard. Search/filter and lifecycle cleanup remain M2 work.
+The attachment-only quick draft is implemented locally in V7: required equipment, optional note/attachments, excluded from totals, in-place completion preserving attachment identity, and discard.
 
-Financial history search/filter is now implemented locally with bounded 30-row pagination and workspace isolation. Attachment lifecycle cleanup and final acceptance/hardening remain M2 work.
+Financial history search/filter is implemented locally with bounded 30-row pagination and workspace isolation.
 
 Development-only attachment lifecycle cleanup is implemented in V8 for stale PENDING/FAILED, discarded-draft attachments and local orphan files with configurable retention. Production private storage/scanning remains unselected and unverified.
 
-Focused M2 financial hardening is implemented in V9 and API/UI: refunds that reopen an unnamed obligation require and persist the party name, edit after refund keeps party safety, and SQL enforces posted entry type. The historical-gross edit limit is still conservative; Q-02 remains unresolved.
+Focused M2 financial hardening is implemented in V9 and API/UI: refunds that reopen an unnamed obligation require and persist the party name, edit after refund keeps party safety, and SQL enforces posted entry type. D-20 supersedes the historical-gross edit limit: any financial movement locks the original total, while audited expense classification corrections remain allowed.
 
 Connected iOS simulator acceptance now covers M2 journeys A–J using live local API/PostgreSQL; some steps are API-driven within the Flutter integration test. Web release build and short responsive live smoke pass; automated Flutter integration on Chrome is unavailable with the installed toolchain. Android remains unverified.
+M2 is FUNCTIONALLY COMPLETE for V1 development after D-20 and tests; Production Readiness remains separate.
 Break each milestone into small independently reviewable tasks; this list is not a request for one giant code generation.
 The first session should reach M1 where tooling permits, not stop after documentation.
 
@@ -49,7 +50,7 @@ Concurrent/duplicate payment protection; cancelled/pending/draft exclusion.
 Gate: FIN cases pass with dates across periods and multi-equipment/scoped visibility tests.
 
 ## M4 — Corrections, refunds and archive lifecycle
-Q-01 is resolved by D-19 and a bounded linked-refund slice is implemented in M2; Q-02 remains open for shared allocations.
+Q-01 is resolved by D-19 and Q-02 by D-20; linked refunds and audited classification corrections are implemented in M2.
 Complete any additional correction/refund policy paths, equipment archive and old balance settlement.
 Gate: history preserved, business meaning explicit, no silent retrospective rewrite or erased obligation.
 

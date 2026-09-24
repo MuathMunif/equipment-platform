@@ -347,7 +347,7 @@ paths:
                 partyName: {type: [string, 'null'], maxLength: 100, description: Required if an amount remains}
                 dueDate: {type: [string, 'null'], format: date, description: Allowed only while an amount remains}
                 equipmentId: {type: string, format: uuid, description: Required when changing expense to SINGLE scope}
-                expenseScope: {type: string, enum: [SINGLE, SHARED, GENERAL], description: Expense only. Changing a shared allocation after settlements/refunds is blocked until Q-02 is resolved}
+                expenseScope: {type: string, enum: [SINGLE, SHARED, GENERAL], description: Expense only. Classification and allocations may change after financial movement while the original total remains unchanged. A cancelled entry cannot be edited.}
                 allocations: {type: array, items: {$ref: '#/components/schemas/AllocationInput'}}
       responses:
         '200': {description: Updated entry with unchanged settlements, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}

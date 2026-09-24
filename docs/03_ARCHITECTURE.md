@@ -75,7 +75,7 @@ Recognized totals exclude draft/pending/cancelled entries. Settlement dates dete
 A pending submission may record what the driver reports paying, but is not included in recognized financial totals until approval.
 Distinguish operation date (business date), settlement date (cash date), created_at (instant), and optional due date.
 Proposed timezone baseline: Asia/Riyadh business dates; store instants consistently, document date-boundary conversions.
-Do not retrospectively rewrite historical allocations or settlement snapshots on an ordinary edit.
+Per D-20, a posted active expense may receive an audited classification/allocation correction at unchanged total after movement. No historical settlement/refund rows are rewritten; equipment shares are calculated from the current allocation and may change for reporting. The original total is locked after the first movement.
 Shared settlement allocation uses the confirmed original proportions, with a deterministic minor-unit reconciliation rule.
 Test cumulative allocation across many tiny settlements, final exact exhaustion, stable ties and refunds.
 Record the rounding policy before implementing it; it must preserve original total and each share at full settlement.

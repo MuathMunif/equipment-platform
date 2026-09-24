@@ -50,8 +50,8 @@ Dependency resolution, Flyway V1–V3, backend tests, Flutter analysis/tests/web
 - Simulator listing initially failed on sandbox CoreSimulator/log access; approved retry succeeded. Listing is not an app build/device validation.
 
 ## Current validation checkpoint — 2026-09-24
-- Backend: Boot 4.1.1 targets Java 21 (tests in this run used installed Java 24), real PostgreSQL 17.11; Flyway V1–V9 validated; 41 tests / 0 failures / 0 errors / 0 skipped in the latest run.
-- Flutter: analyze PASS; 28 unit/widget tests PASS; release web build PASS; iOS simulator integration 2/2 PASS with local API/PostgreSQL. Flutter integration on Chrome is unsupported by the installed toolchain; Android not run.
+- Backend: Boot 4.1.1 targets Java 21 (tests in this run used installed Java 24), real PostgreSQL 17.11; Flyway V1–V9 validated; 43 tests / 0 failures / 0 errors / 0 skipped in the latest run.
+- Flutter: analyze PASS; 29 unit/widget tests PASS; release web build PASS; iOS simulator integration 2/2 PASS with local API/PostgreSQL. Flutter integration on Chrome is unsupported by the installed toolchain; Android not run.
 - Native build warning: open_filex currently falls back to CocoaPods rather than Swift Package Manager. Build succeeded; future Flutter migration is untested. No SDK upgrades were performed.
 - Web build warning about unused CupertinoIcons font was non-fatal; current app uses Material icons.
 - Exact earlier setup/restart evidence: evidence/M1_ACCEPTANCE.md; current M2 test and flow evidence: evidence/M2_EXPENSE_SETTLEMENTS.md and evidence/M2_INCOME_SETTLEMENTS.md.

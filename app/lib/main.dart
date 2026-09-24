@@ -2668,11 +2668,12 @@ class EntryEditForm extends StatefulWidget {
 class _EntryEditFormState extends State<EntryEditForm> {
   final form = GlobalKey<FormState>();
   late final TextEditingController amount, note, party;
-  late String category, date;
+  late String category, date, expenseScope;
+  String? selectedEquipment;
   String? dueDate, error;
   bool busy = false;
   bool get income => widget.entry['entryType'] == 'INCOME';
-  bool get shared => widget.entry['expenseScope'] == 'SHARED';
+  bool get shared => expenseScope == 'SHARED';
   bool get hasCash =>
       widget.entry['paid'] != '0.00' || widget.entry['refunded'] != '0.00';
   final parts = <_ExpensePart>[];
@@ -2686,14 +2687,16 @@ class _EntryEditFormState extends State<EntryEditForm> {
     category = widget.entry['category'];
     date = widget.entry['operationDate'];
     dueDate = widget.entry['dueDate'];
+    expenseScope = widget.entry['expenseScope'] ?? 'SINGLE';
+    selectedEquipment = widget.entry['equipmentId'];
     if (shared) {
       for (final allocation in widget.entry['allocations'] as List) {
         final part = _ExpensePart(allocation['equipmentId'] as String);
         part.amount.text = allocation['amount'] as String;
         parts.add(part);
       }
-      loadEquipmentChoices();
     }
+    if (!income) loadEquipmentChoices();
   }
 
   Future<void> loadEquipmentChoices() async {
@@ -2750,7 +2753,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
 
   Future<void> save() async {
     if (!form.currentState!.validate()) return;
-    if (shared && !hasCash) {
+    if (shared) {
       final totalAmount = exactMoney(amount.text);
       final assigned = parts
           .map((part) => exactMoney(part.amount.text))
@@ -2774,11 +2777,14 @@ class _EntryEditFormState extends State<EntryEditForm> {
       }
     }
     final settled = BigInt.parse(
-      (widget.entry['paid'] as String).replaceAll('.', ''),
+      (widget.entry['netPaid'] as String).replaceAll('.', ''),
     );
     final total = BigInt.parse(exactMoney(amount.text)!.replaceAll('.', ''));
-    if (total < settled) {
-      setState(() => error = 'الإجمالي لا يقل عن مجموع التسويات');
+    if (hasCash && exactMoney(amount.text) != widget.entry['amount']) {
+      setState(
+        () =>
+            error = 'لا يمكن تغيير الإجمالي بعد تسجيل دفعة أو تحصيل أو استرداد',
+      );
       return;
     }
     if (total == settled && dueDate != null) {
@@ -2800,7 +2806,10 @@ class _EntryEditFormState extends State<EntryEditForm> {
           'note': note.text.trim(),
           'partyName': party.text.trim(),
           'dueDate': dueDate,
-          if (shared && !hasCash)
+          if (!income) 'expenseScope': expenseScope,
+          if (!income && expenseScope == 'SINGLE')
+            'equipmentId': selectedEquipment,
+          if (shared)
             'allocations': parts
                 .map(
                   (part) => {
@@ -2834,7 +2843,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
           TextFormField(
             key: const Key('editAmount'),
             controller: amount,
-            enabled: !busy && !(shared && hasCash),
+            enabled: !busy && !hasCash,
             textDirection: TextDirection.ltr,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
@@ -2843,13 +2852,65 @@ class _EntryEditFormState extends State<EntryEditForm> {
             validator: (v) =>
                 exactMoney(v ?? '') == null ? 'اكتب مبلغًا صحيحًا' : null,
           ),
+          if (hasCash)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'لا يمكن تغيير الإجمالي لوجود دفعة أو تحصيل أو استرداد.',
+              ),
+            ),
+          if (!income) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key: const Key('editExpenseScope'),
+              initialValue: expenseScope,
+              decoration: const InputDecoration(labelText: 'المصروف يخص'),
+              items: const [
+                DropdownMenuItem(value: 'SINGLE', child: Text('معدة واحدة')),
+                DropdownMenuItem(value: 'SHARED', child: Text('عدة معدات')),
+                DropdownMenuItem(value: 'GENERAL', child: Text('مصروف عام')),
+              ],
+              onChanged: busy
+                  ? null
+                  : (value) => setState(() {
+                      expenseScope = value!;
+                      if (value == 'SHARED' && parts.isEmpty) {
+                        parts.addAll([
+                          _ExpensePart(selectedEquipment),
+                          _ExpensePart(null),
+                        ]);
+                      }
+                    }),
+            ),
+          ],
+          if (!income && expenseScope == 'SINGLE') ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key: const Key('editSingleEquipment'),
+              initialValue: selectedEquipment,
+              decoration: const InputDecoration(labelText: 'المعدة'),
+              items: [
+                if (selectedEquipment != null &&
+                    !equipmentChoices.any((e) => e['id'] == selectedEquipment))
+                  DropdownMenuItem(
+                    value: selectedEquipment,
+                    child: Text(widget.entry['equipmentName'] ?? 'المعدة'),
+                  ),
+                ...equipmentChoices.map(
+                  (e) => DropdownMenuItem(
+                    value: e['id'] as String,
+                    child: Text(e['name'] as String),
+                  ),
+                ),
+              ],
+              onChanged: busy
+                  ? null
+                  : (value) => setState(() => selectedEquipment = value),
+            ),
+          ],
           if (shared) ...[
             const SizedBox(height: 12),
-            Text(
-              hasCash
-                  ? 'توزيع هذا المصروف محفوظ بعد تسجيل دفعة أو استرداد. يمكنك تعديل الوصف والبيانات الأخرى.'
-                  : 'عدّل مبلغ كل معدة بحيث يساوي الإجمالي.',
-            ),
+            const Text('عدّل مبلغ كل معدة بحيث يساوي الإجمالي.'),
             ...parts.asMap().entries.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -2884,7 +2945,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
                             ),
                           ),
                         ],
-                        onChanged: busy || hasCash
+                        onChanged: busy
                             ? null
                             : (value) => setState(
                                 () => item.value.equipmentId = value,
@@ -2896,7 +2957,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
                       child: TextFormField(
                         key: Key('editAllocationAmount${item.key}'),
                         controller: item.value.amount,
-                        enabled: !busy && !hasCash,
+                        enabled: !busy,
                         textDirection: TextDirection.ltr,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
@@ -2907,7 +2968,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
                             : null,
                       ),
                     ),
-                    if (!hasCash && parts.length > 2)
+                    if (parts.length > 2)
                       IconButton(
                         key: Key('removeEditAllocation${item.key}'),
                         onPressed: busy
@@ -2922,15 +2983,14 @@ class _EntryEditFormState extends State<EntryEditForm> {
                 ),
               ),
             ),
-            if (!hasCash)
-              TextButton.icon(
-                key: const Key('addEditAllocation'),
-                onPressed: busy
-                    ? null
-                    : () => setState(() => parts.add(_ExpensePart(null))),
-                icon: const Icon(Icons.add),
-                label: const Text('إضافة معدة'),
-              ),
+            TextButton.icon(
+              key: const Key('addEditAllocation'),
+              onPressed: busy
+                  ? null
+                  : () => setState(() => parts.add(_ExpensePart(null))),
+              icon: const Icon(Icons.add),
+              label: const Text('إضافة معدة'),
+            ),
           ],
           if (!income) ...[
             const SizedBox(height: 16),
@@ -2964,7 +3024,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
               final total = exactMoney(amount.text);
               if (total == null) return null;
               final settled = BigInt.parse(
-                (widget.entry['paid'] as String).replaceAll('.', ''),
+                (widget.entry['netPaid'] as String).replaceAll('.', ''),
               );
               return BigInt.parse(total.replaceAll('.', '')) > settled &&
                       (v == null || v.trim().isEmpty)

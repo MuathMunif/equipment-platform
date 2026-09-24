@@ -396,7 +396,9 @@ public class FinanceService {
         BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
         BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
         BigDecimal netPaid=paid.subtract(refunded);
-        if(amount.compareTo(paid)<0) throw ApiException.invalid("الإجمالي لا يقل عن مجموع التسويات");
+        BigDecimal originalAmount=(BigDecimal)previous.get("amount");
+        boolean hasMovement=paid.signum()>0 || refunded.signum()>0;
+        if(hasMovement && amount.compareTo(originalAmount)!=0) throw ApiException.invalid("لا يمكن تغيير الإجمالي بعد تسجيل دفعة أو تحصيل أو استرداد");
         String type=(String)previous.get("entry_type");
         String currentScope=(String)previous.get("expense_scope");
         String scope=request.expenseScope()==null?currentScope:expenseScope(type,request.expenseScope());
@@ -409,11 +411,6 @@ public class FinanceService {
                 allocations=validateAllocations(workspace,type,scope,selectedEquipment,request.allocations(),amount);
             else if(scope.equals("SHARED") && amount.compareTo((BigDecimal)previous.get("amount"))!=0)
                 throw ApiException.invalid("حدّث مبالغ المعدات مع إجمالي المصروف");
-            if((paid.signum()>0 || refunded.signum()>0) &&
-                ((!scope.equals(currentScope) || !allocations.equals(previousAllocations)) && !(scope.equals("SINGLE") && currentScope.equals("SINGLE") && selectedEquipment.equals(previous.get("equipment_id")))))
-                throw ApiException.invalid("لا يمكن تغيير توزيع المصروف بعد تسجيل دفعة أو استرداد؛ السجل المالي السابق محفوظ");
-            if(scope.equals("SHARED") && paid.signum()>0 && amount.compareTo((BigDecimal)previous.get("amount"))!=0)
-                throw ApiException.invalid("لا يمكن تغيير إجمالي المصروف المشترك بعد تسجيل دفعة");
         } else if(request.expenseScope()!=null || request.allocations()!=null || request.equipmentId()!=null) throw ApiException.invalid("لا يمكن تغيير ربط الإيراد بالمعدة");
         String category=type.equals("INCOME")?"OTHER":Values.text(request.category(),30,"نوع المصروف");
         if(type.equals("INCOME") && request.category()!=null && !request.category().equals("OTHER")) throw ApiException.invalid("نوع الإيراد غير صالح");
