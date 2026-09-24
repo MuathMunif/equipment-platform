@@ -185,6 +185,18 @@ class OwnerSliceTest {
   var current=request("GET",url,null,user.token,null).json;assertTrue(new java.math.BigDecimal(current.get("amount").asString()).compareTo(new java.math.BigDecimal(current.get("paid").asString()))>=0);
   assertTrue(current.get("settlements").size()==1 || current.get("settlements").size()==2);
  }
+ @Test void concurrentCancellationAndEditLeaveOneCancelledOriginal()throws Exception{
+  User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id);
+  var edit=Map.of("amount","350.00","category","FUEL","operationDate","2026-09-01","note","تصحيح متزامن");
+  try(var pool=Executors.newVirtualThreadPerTaskExecutor()) {
+   var change=pool.submit(()->request("PUT",url,edit,owner.token,null));var cancel=pool.submit(()->request("POST",url+"/cancellation",Map.of("reason","قيد مكرر"),owner.token,null));
+   assertTrue(Set.of(200,400).contains(change.get().status));assertEquals(200,cancel.get().status);
+  }
+  var current=request("GET",url,null,owner.token,null).json;assertEquals("CANCELLED",current.get("lifecycle").asString());assertEquals(1,current.get("settlements").size());assertEquals("0.00",request("GET",path(owner,"/entries/totals"),null,owner.token,null).json.get("expenseTotal").asString());
+  assertEquals(400,request("PUT",url,edit,owner.token,null).status);
+  assertEquals(1,db.queryForObject("select count(*) from financial_entry where id=?",Integer.class,UUID.fromString(id)));
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where action='FINANCIAL_ENTRY_CANCELLED' and resource_id=?",Integer.class,UUID.fromString(id)));
+ }
  @Test void cancelledIncomeKeepsCollectionHistoryAndRejectsAnotherCollection()throws Exception{
   User user=login("0500000001");String eq=equipment(user);var body=Map.of("equipmentId",eq,"entryType","INCOME","amount","500.00","operationDate","2026-09-01","paymentStatus","PARTIAL","initialPaid","200.00","paidOn","2026-09-20","partyName","عميل");
   String id=request("POST",path(user,"/entries"),body,user.token,key()).json.get("id").asString();String url=path(user,"/entries/"+id);
@@ -210,7 +222,7 @@ class OwnerSliceTest {
  @Test void incomeRefundIsLinkedAndCanBeResettledWithoutChangingOriginalReceipt()throws Exception{
   User user=login("0500000001");String eq=equipment(user);var body=Map.of("equipmentId",eq,"entryType","INCOME","amount","3000.00","operationDate","2026-09-01","paidOn","2026-09-20");
   var created=request("POST",path(user,"/entries"),body,user.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString(),url=path(user,"/entries/"+id);
-  var refunded=request("POST",url+"/refunds",Map.of("amount","500.00","refundedOn","2026-10-02","reason","إعادة جزء للعميل"),user.token,key());assertEquals(200,refunded.status);assertEquals("3000.00",refunded.json.get("paid").asString());assertEquals("500.00",refunded.json.get("refunded").asString());assertEquals("2500.00",refunded.json.get("netPaid").asString());assertEquals("500.00",refunded.json.get("remaining").asString());assertEquals("PARTIAL",refunded.json.get("settlementStatus").asString());assertEquals(1,refunded.json.get("settlements").size());assertEquals("2026-09-20",refunded.json.get("settlements").get(0).get("paidOn").asString());
+  var refunded=request("POST",url+"/refunds",Map.of("amount","500.00","refundedOn","2026-10-02","reason","إعادة جزء للعميل","partyName","عميل النقل"),user.token,key());assertEquals(200,refunded.status);assertEquals("عميل النقل",refunded.json.get("partyName").asString());assertEquals("3000.00",refunded.json.get("paid").asString());assertEquals("500.00",refunded.json.get("refunded").asString());assertEquals("2500.00",refunded.json.get("netPaid").asString());assertEquals("500.00",refunded.json.get("remaining").asString());assertEquals("PARTIAL",refunded.json.get("settlementStatus").asString());assertEquals(1,refunded.json.get("settlements").size());assertEquals("2026-09-20",refunded.json.get("settlements").get(0).get("paidOn").asString());
   var collected=request("POST",url+"/settlements",Map.of("amount","500.00","paidOn","2026-10-10"),user.token,key());assertEquals(200,collected.status);assertEquals("3000.00",collected.json.get("netPaid").asString());assertEquals("0.00",collected.json.get("remaining").asString());assertEquals("PAID",collected.json.get("settlementStatus").asString());assertEquals(2,collected.json.get("settlements").size());assertEquals(1,collected.json.get("refunds").size());
   assertEquals(400,request("POST",url+"/settlements",Map.of("amount","0.01","paidOn","2026-10-11"),user.token,key()).status);
  }
@@ -223,7 +235,7 @@ class OwnerSliceTest {
   assertEquals(0,db.queryForObject("select count(*) from financial_refund",Integer.class));
  }
  @Test void concurrentRefundsCannotExceedGrossSettled()throws Exception{
-  User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id+"/refunds");var body=Map.of("amount","300.00","refundedOn","2026-10-02","reason","عودة مال");
+  User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id+"/refunds");var body=Map.of("amount","300.00","refundedOn","2026-10-02","reason","عودة مال","partyName","مورد");
   try(var pool=Executors.newVirtualThreadPerTaskExecutor()){var a=pool.submit(()->request("POST",url,body,owner.token,key()));var b=pool.submit(()->request("POST",url,body,owner.token,key()));assertEquals(Set.of(200,400),Set.of(a.get().status,b.get().status));}
   assertEquals("300.00",request("GET",path(owner,"/entries/"+id),null,owner.token,null).json.get("refunded").asString());
   assertEquals(1,db.queryForObject("select count(*) from financial_refund",Integer.class));
@@ -240,9 +252,31 @@ class OwnerSliceTest {
  }
  @Test void oneFullExpenseRefundReopensEntireAmountWithoutCancellingEntry()throws Exception{
   User owner=login("0500000001");String id=entry(owner,equipment(owner)),url=path(owner,"/entries/"+id);
-  var result=request("POST",url+"/refunds",Map.of("amount","350.00","refundedOn","2026-09-21","reason","أُعيد كامل المبلغ"),owner.token,key());
+  var result=request("POST",url+"/refunds",Map.of("amount","350.00","refundedOn","2026-09-21","reason","أُعيد كامل المبلغ","partyName","مورد الوقود"),owner.token,key());
   assertEquals(200,result.status);assertEquals("POSTED",result.json.get("lifecycle").asString());assertEquals("350.00",result.json.get("paid").asString());assertEquals("350.00",result.json.get("refunded").asString());assertEquals("0.00",result.json.get("netPaid").asString());assertEquals("350.00",result.json.get("remaining").asString());assertEquals("UNPAID",result.json.get("settlementStatus").asString());assertEquals("0.00",result.json.get("refundable").asString());
   assertEquals(1,result.json.get("settlements").size());assertEquals(1,result.json.get("refunds").size());
+ }
+ @Test void refundReopeningRequiresPartyAndEditUsesNetSettledForExpenseAndIncome()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner);
+  for(String type:List.of("EXPENSE","INCOME")) {
+   var body=new HashMap<String,Object>();body.put("equipmentId",eq);body.put("entryType",type);body.put("amount","350.00");body.put("operationDate","2026-09-01");body.put("paidOn","2026-09-20");if(type.equals("EXPENSE"))body.put("category","FUEL");
+   String id=request("POST",path(owner,"/entries"),body,owner.token,key()).json.get("id").asString(),url=path(owner,"/entries/"+id);
+   var missing=Map.of("amount","100.00","refundedOn","2026-09-21","reason","عودة جزء");var denied=request("POST",url+"/refunds",missing,owner.token,key());assertEquals(400,denied.status);assertTrue(denied.json.toString().contains("اسم الطرف"));
+   assertEquals(0,db.queryForObject("select count(*) from financial_refund where entry_id=?",Integer.class,UUID.fromString(id)));
+   var complete=new HashMap<String,Object>(missing);complete.put("partyName",type.equals("INCOME")?"عميل النقل":"مورد الوقود");String refundKey=key();
+   var refund=request("POST",url+"/refunds",complete,owner.token,refundKey);assertEquals(200,refund.status);assertEquals(complete.get("partyName"),refund.json.get("partyName").asString());assertEquals("100.00",refund.json.get("remaining").asString());
+   assertEquals(200,request("POST",url+"/refunds",complete,owner.token,refundKey).status);assertEquals(1,db.queryForObject("select count(*) from financial_refund where entry_id=?",Integer.class,UUID.fromString(id)));
+   var edit=new HashMap<String,Object>();edit.put("amount","350.00");edit.put("operationDate","2026-09-01");if(type.equals("EXPENSE"))edit.put("category","FUEL");
+   assertEquals(400,request("PUT",url,edit,owner.token,null).status);
+   edit.put("partyName",complete.get("partyName"));edit.put("dueDate","2026-10-20");var updated=request("PUT",url,edit,owner.token,null);assertEquals(200,updated.status);assertEquals("100.00",updated.json.get("remaining").asString());assertEquals("2026-10-20",updated.json.get("dueDate").asString());
+   var audit=db.queryForMap("select metadata from audit_event where resource_id=? and action=?",UUID.fromString(id),type.equals("INCOME")?"INCOME_EDITED":"EXPENSE_EDITED");assertTrue(audit.get("metadata").toString().contains("100.00"));
+  }
+ }
+ @Test void v9RejectsNullPostedTypeWhileDraftKeepsItNull()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner),posted=entry(owner,eq);
+  assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->db.update("update financial_entry set entry_type=null where id=?",UUID.fromString(posted)));
+  String draft=request("POST",path(owner,"/drafts"),Map.of("equipmentId",eq),owner.token,key()).json.get("id").asString();
+  assertNull(db.queryForObject("select entry_type from financial_entry where id=?",String.class,UUID.fromString(draft)));
  }
  @Test void equipmentNeedsOnlyNameAndModelAndRejectsSystemFields()throws Exception{
   User user=login("0500000001");String key=key();var body=Map.of("name","قلاب ١","model","FH16");var first=request("POST",path(user,"/equipment"),body,user.token,key);var replay=request("POST",path(user,"/equipment"),body,user.token,key);
@@ -328,8 +362,10 @@ class OwnerSliceTest {
   var existing=request("GET",path(user,"/entries/"+single),null,user.token,null);assertEquals("SINGLE",existing.json.get("expenseScope").asString());assertEquals("350.00",existing.json.get("allocations").get(0).get("amount").asString());
   var general=request("POST",path(user,"/entries"),Map.of("expenseScope","GENERAL","amount","100.00","category","OTHER","operationDate","2026-09-01","paidOn","2026-09-01"),user.token,key());assertEquals(200,general.status);assertTrue(general.json.get("equipmentId").isNull());assertEquals(0,general.json.get("allocations").size());
   assertEquals("450.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());assertEquals("100.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("generalExpenseTotal").asString());assertEquals("350.00",request("GET",path(user,"/entries/totals?equipmentId="+eq),null,user.token,null).json.get("expenseTotal").asString());
+  var returned=request("POST",path(user,"/entries/"+general.json.get("id").asString()+"/refunds"),Map.of("amount","20.00","refundedOn","2026-09-02","reason","عودة جزء","partyName","المورد العام"),user.token,key());assertEquals(200,returned.status);assertEquals("GENERAL",returned.json.get("expenseScope").asString());assertEquals("20.00",returned.json.get("remaining").asString());
   assertEquals(200,request("POST",path(user,"/entries/"+general.json.get("id").asString()+"/cancellation"),Map.of("reason","قيد مكرر"),user.token,null).status);
   assertEquals("350.00",request("GET",path(user,"/entries/totals"),null,user.token,null).json.get("expenseTotal").asString());
+  assertEquals(400,request("POST",path(user,"/entries/"+general.json.get("id").asString()+"/settlements"),Map.of("amount","20.00","paidOn","2026-09-03"),user.token,key()).status);
  }
  @Test void sharedAllocationEditFreezesAfterCashWithoutBlockingNotes()throws Exception{
   User user=login("0500000001");String a=equipment(user),b=equipment(user);
@@ -342,6 +378,9 @@ class OwnerSliceTest {
   var changed=new HashMap<>(edit);changed.put("amount","130.00");assertEquals(400,request("PUT",path(user,"/entries/"+id),changed,user.token,null).status);
   var noteOnly=Map.of("amount","120.00","category","OTHER","operationDate","2026-09-02","partyName","مورد","note","تصحيح الوصف");
   var updated=request("PUT",path(user,"/entries/"+id),noteOnly,user.token,null);assertEquals(200,updated.status);assertEquals("30.00",updated.json.get("paid").asString());assertEquals(1,updated.json.get("settlements").size());
+  var returned=request("POST",path(user,"/entries/"+id+"/refunds"),Map.of("amount","10.00","refundedOn","2026-09-04","reason","عودة جزء"),user.token,key());assertEquals(200,returned.status);assertEquals("100.00",returned.json.get("remaining").asString());
+  assertEquals(400,request("PUT",path(user,"/entries/"+id),changed,user.token,null).status);
+  updated=request("PUT",path(user,"/entries/"+id),noteOnly,user.token,null);assertEquals(200,updated.status);assertEquals(1,updated.json.get("settlements").size());assertEquals(1,updated.json.get("refunds").size());
  }
  @Test void tinySharedSharesReconcileDeterministicallyAcrossPaymentsAndRefund()throws Exception{
   User user=login("0500000001");String a=equipment(user),b=equipment(user),c=equipment(user);

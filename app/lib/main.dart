@@ -3225,6 +3225,10 @@ class _EntryDetailState extends State<EntryDetail> {
     String refundAmount = '';
     String refundedOn = todayRiyadh();
     String reason = '';
+    String partyName = '';
+    final needsParty =
+        entry!['partyName'] == null ||
+        (entry!['partyName'] as String).trim().isEmpty;
     String? refundError;
     bool saving = false;
     final refundKey = requestKey();
@@ -3282,6 +3286,20 @@ class _EntryDetailState extends State<EntryDetail> {
                 maxLines: 2,
                 decoration: const InputDecoration(labelText: 'سبب الاسترداد'),
               ),
+              if (needsParty) ...[
+                const Text(
+                  'بعد الاسترداد سيبقى مبلغ مستحق؛ سجّل اسم الطرف للمتابعة.',
+                ),
+                TextField(
+                  key: const Key('refundPartyName'),
+                  onChanged: (value) => partyName = value,
+                  enabled: !saving,
+                  maxLength: 100,
+                  decoration: InputDecoration(
+                    labelText: income ? 'اسم العميل' : 'اسم المورد أو الطرف',
+                  ),
+                ),
+              ],
               InlineError(refundError),
             ],
           ),
@@ -3316,6 +3334,13 @@ class _EntryDetailState extends State<EntryDetail> {
                         update(() => refundError = 'اكتب سبب الاسترداد');
                         return;
                       }
+                      if (needsParty && partyName.trim().isEmpty) {
+                        update(
+                          () => refundError =
+                              'اكتب اسم الطرف؛ بعد الاسترداد سيبقى مبلغ مستحق',
+                        );
+                        return;
+                      }
                       update(() {
                         saving = true;
                         refundError = null;
@@ -3329,6 +3354,7 @@ class _EntryDetailState extends State<EntryDetail> {
                             'amount': value,
                             'refundedOn': refundedOn,
                             'reason': reason.trim(),
+                            if (needsParty) 'partyName': partyName.trim(),
                           },
                         );
                         if (dialogContext.mounted) Navigator.pop(dialogContext);

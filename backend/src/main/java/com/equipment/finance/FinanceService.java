@@ -24,7 +24,7 @@ public class FinanceService {
     public record Edit(tools.jackson.databind.JsonNode amount,String category,String operationDate,String note,String partyName,String dueDate,UUID equipmentId,String expenseScope,List<AllocationInput> allocations) {}
     public record Cancel(String reason) {}
     public record Settlement(UUID id,String amount,String paidOn) {}
-    public record CreateRefund(tools.jackson.databind.JsonNode amount,String refundedOn,String reason) {}
+    public record CreateRefund(tools.jackson.databind.JsonNode amount,String refundedOn,String reason,String partyName) {}
     public record Refund(UUID id,String amount,String refundedOn,String reason,UUID createdBy,String createdAt) {}
     public record Allocation(UUID equipmentId,String equipmentName,String amount,String paidShare,String refundedShare,String netPaidShare,String remainingShare) {}
     public record Draft(UUID id,UUID equipmentId,String equipmentName,String note,String lifecycle,UUID createdBy,String createdAt,UUID discardedBy,String discardedAt) {}
@@ -347,13 +347,22 @@ public class FinanceService {
         BigDecimal amount=Values.money(request.amount().asString());
         LocalDate refundedOn=Values.date(request.refundedOn());
         String reason=Values.text(request.reason(),500,"سبب الاسترداد");
-        retries.execute(workspace,actor.userId(),"finance.refund",key,Values.payload(entryId,amount,refundedOn,reason),()->{
-            var rows=db.queryForList("select lifecycle from financial_entry where workspace_id=? and id=? for update",workspace,entryId);
+        String suppliedParty=request.partyName()==null || request.partyName().isBlank()?null:Values.text(request.partyName(),100,"اسم الطرف");
+        String payload=Values.payload(entryId,amount,refundedOn,reason);
+        if(suppliedParty!=null) payload=Values.payload(payload,suppliedParty);
+        retries.execute(workspace,actor.userId(),"finance.refund",key,payload,()->{
+            var rows=db.queryForList("select lifecycle,amount,party_name from financial_entry where workspace_id=? and id=? for update",workspace,entryId);
             if(rows.isEmpty()) throw ApiException.missing();
             if(!"POSTED".equals(rows.getFirst().get("lifecycle"))) throw ApiException.invalid("الاسترداد متاح للعمليات النشطة فقط");
+            BigDecimal total=(BigDecimal)rows.getFirst().get("amount");
+            String existingParty=(String)rows.getFirst().get("party_name");
             BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
             BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
             if(amount.compareTo(paid.subtract(refunded))>0) throw ApiException.invalid("مبلغ الاسترداد أكبر من المبلغ المتاح");
+            if(total.subtract(paid.subtract(refunded).subtract(amount)).signum()>0 && existingParty==null && suppliedParty==null)
+                throw ApiException.invalid("اكتب اسم الطرف؛ بعد الاسترداد سيبقى مبلغ مستحق");
+            if(existingParty!=null && suppliedParty!=null && !existingParty.equals(suppliedParty))
+                throw ApiException.invalid("اسم الطرف مسجل مسبقًا؛ عدّل العملية إذا لزم تصحيحه");
             // A backdated refund must leave nonnegative cash movements at every date, not only today.
             BigDecimal available=BigDecimal.ZERO;
             var movements=db.queryForList("select movement_date,sum(delta) as delta from ("+
@@ -366,8 +375,11 @@ public class FinanceService {
                 if(available.signum()<0) throw ApiException.invalid("تاريخ الاسترداد أو مبلغه يسبق المال المتاح في ذلك التاريخ");
             }
             UUID refundId=UUID.randomUUID();
+            if(existingParty==null && suppliedParty!=null) db.update("update financial_entry set party_name=? where workspace_id=? and id=?",suppliedParty,workspace,entryId);
             db.update("insert into financial_refund(id,workspace_id,entry_id,amount,refunded_on,reason,created_by) values(?,?,?,?,?,?,?)",refundId,workspace,entryId,amount,java.sql.Date.valueOf(refundedOn),reason,actor.userId());
-            audit.record(workspace,actor.userId(),"FINANCIAL_REFUND_CREATED",entryId,JSON.writeValueAsString(Map.of("refundId",refundId,"amount",amount.toPlainString(),"refundedOn",refundedOn.toString(),"reason",reason)));
+            var metadata=new LinkedHashMap<String,Object>();metadata.put("refundId",refundId);metadata.put("amount",amount.toPlainString());metadata.put("refundedOn",refundedOn.toString());metadata.put("reason",reason);
+            if(existingParty==null && suppliedParty!=null) metadata.put("partyName",suppliedParty);
+            audit.record(workspace,actor.userId(),"FINANCIAL_REFUND_CREATED",entryId,JSON.writeValueAsString(metadata));
             return refundId;
         });
         return require(workspace,entryId);
@@ -382,6 +394,8 @@ public class FinanceService {
         if(request.amount()==null || !request.amount().isString()) throw ApiException.invalid("أرسل المبلغ كنص عشري بمنزلتين");
         BigDecimal amount=Values.money(request.amount().asString());
         BigDecimal paid=db.queryForObject("select coalesce(sum(amount),0) from settlement where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
+        BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
+        BigDecimal netPaid=paid.subtract(refunded);
         if(amount.compareTo(paid)<0) throw ApiException.invalid("الإجمالي لا يقل عن مجموع التسويات");
         String type=(String)previous.get("entry_type");
         String currentScope=(String)previous.get("expense_scope");
@@ -395,7 +409,6 @@ public class FinanceService {
                 allocations=validateAllocations(workspace,type,scope,selectedEquipment,request.allocations(),amount);
             else if(scope.equals("SHARED") && amount.compareTo((BigDecimal)previous.get("amount"))!=0)
                 throw ApiException.invalid("حدّث مبالغ المعدات مع إجمالي المصروف");
-            BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,workspace,entryId);
             if((paid.signum()>0 || refunded.signum()>0) &&
                 ((!scope.equals(currentScope) || !allocations.equals(previousAllocations)) && !(scope.equals("SINGLE") && currentScope.equals("SINGLE") && selectedEquipment.equals(previous.get("equipment_id")))))
                 throw ApiException.invalid("لا يمكن تغيير توزيع المصروف بعد تسجيل دفعة أو استرداد؛ السجل المالي السابق محفوظ");
@@ -407,9 +420,9 @@ public class FinanceService {
         if(type.equals("EXPENSE") && !Set.of("FUEL","MAINTENANCE","OTHER").contains(category)) throw ApiException.invalid("اختر نوع المصروف");
         LocalDate date=Values.date(request.operationDate()); String note=Values.note(request.note());
         String party=request.partyName()==null || request.partyName().isBlank()?null:Values.text(request.partyName(),100,"اسم الطرف");
-        if(amount.compareTo(paid)>0 && party==null) throw ApiException.invalid("اكتب اسم الطرف عند وجود متبقٍ");
+        if(amount.compareTo(netPaid)>0 && party==null) throw ApiException.invalid("اكتب اسم الطرف عند وجود متبقٍ");
         LocalDate due=request.dueDate()==null || request.dueDate().isBlank()?null:Values.date(request.dueDate());
-        if(amount.compareTo(paid)==0 && due!=null) throw ApiException.invalid("موعد الاستحقاق مطلوب فقط عند وجود متبقٍ");
+        if(amount.compareTo(netPaid)==0 && due!=null) throw ApiException.invalid("موعد الاستحقاق مطلوب فقط عند وجود متبقٍ");
         var before=financialSnapshot(previous,paid);
         db.update("update financial_entry set amount=?,category=?,operation_date=?,note=?,party_name=?,due_date=?,equipment_id=?,expense_scope=? where workspace_id=? and id=?",amount,category,java.sql.Date.valueOf(date),note,party,due==null?null:java.sql.Date.valueOf(due),selectedEquipment,scope,workspace,entryId);
         if(type.equals("EXPENSE") && !allocations.equals(previousAllocations)) saveAllocations(workspace,entryId,allocations);
@@ -434,8 +447,10 @@ public class FinanceService {
     }
     private Map<String,Object> financialSnapshot(Map<String,Object> row,BigDecimal paid) {
         var snapshot=new LinkedHashMap<String,Object>();
+        BigDecimal refunded=db.queryForObject("select coalesce(sum(amount),0) from financial_refund where workspace_id=? and entry_id=?",BigDecimal.class,row.get("workspace_id"),row.get("id"));
+        BigDecimal netPaid=paid.subtract(refunded);
         snapshot.put("entryType",row.get("entry_type")); snapshot.put("amount",((BigDecimal)row.get("amount")).toPlainString());
-        snapshot.put("paid",paid.toPlainString()); snapshot.put("remaining",((BigDecimal)row.get("amount")).subtract(paid).toPlainString());
+        snapshot.put("paid",paid.toPlainString()); snapshot.put("refunded",refunded.toPlainString()); snapshot.put("netPaid",netPaid.toPlainString()); snapshot.put("remaining",((BigDecimal)row.get("amount")).subtract(netPaid).toPlainString());
         snapshot.put("category",row.get("category")); snapshot.put("operationDate",row.get("operation_date").toString());
         snapshot.put("note",row.get("note")); snapshot.put("partyName",row.get("party_name"));
         snapshot.put("dueDate",row.get("due_date")==null?null:row.get("due_date").toString());

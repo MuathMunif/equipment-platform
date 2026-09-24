@@ -8,6 +8,8 @@ The attachment-only quick draft is implemented locally in V7: required equipment
 Financial history search/filter is now implemented locally with bounded 30-row pagination and workspace isolation. Attachment lifecycle cleanup and final acceptance/hardening remain M2 work.
 
 Development-only attachment lifecycle cleanup is implemented in V8 for stale PENDING/FAILED, discarded-draft attachments and local orphan files with configurable retention. Production private storage/scanning remains unselected and unverified.
+
+Focused M2 financial hardening is implemented in V9 and API/UI: refunds that reopen an unnamed obligation require and persist the party name, edit after refund keeps party safety, and SQL enforces posted entry type. The historical-gross edit limit is still conservative; Q-02 remains unresolved.
 Break each milestone into small independently reviewable tasks; this list is not a request for one giant code generation.
 The first session should reach M1 where tooling permits, not stop after documentation.
 

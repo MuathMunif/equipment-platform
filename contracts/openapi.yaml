@@ -398,7 +398,7 @@ paths:
   /workspaces/{workspace}/entries/{id}/refunds:
     parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
     post:
-      description: Record a dated return of previously settled money on an active entry. Original settlements remain immutable. Requires an available refundable amount.
+      description: Record a dated return of previously settled money on an active entry. Original settlements remain immutable. If the refund leaves an outstanding amount and the original has no party, partyName is required and saved on the original.
       parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
       requestBody:
         required: true
@@ -412,6 +412,7 @@ paths:
                 amount: {$ref: '#/components/schemas/Money'}
                 refundedOn: {type: string, format: date}
                 reason: {type: string, minLength: 1, maxLength: 500}
+                partyName: {type: string, minLength: 1, maxLength: 100, description: Required only when the refund leaves an outstanding amount and the original entry has no party}
       responses:
         '200': {description: Updated entry with its original settlements and dated refund history, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '400': {$ref: '#/components/responses/Error'}

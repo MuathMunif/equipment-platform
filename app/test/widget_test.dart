@@ -1057,10 +1057,22 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('saveRefund')));
       await tester.pumpAndSettle();
+      expect(
+        find.textContaining('بعد الاسترداد سيبقى مبلغ مستحق'),
+        findsWidgets,
+      );
+      expect(posted, isNull);
+      await tester.enterText(
+        find.byKey(const Key('refundPartyName')),
+        'مورد الوقود',
+      );
+      await tester.tap(find.byKey(const Key('saveRefund')));
+      await tester.pumpAndSettle();
       expect(posted, isNotNull);
       final body = jsonDecode(posted!.body) as Map<String, dynamic>;
       expect(body['amount'], '100.00');
       expect(body['reason'], 'مرتجع من المورد');
+      expect(body['partyName'], 'مورد الوقود');
       expect(body['refundedOn'], isNotNull);
       expect(posted!.headers['Idempotency-Key'], isNotNull);
       expect(find.text('المسترد'), findsOneWidget);
