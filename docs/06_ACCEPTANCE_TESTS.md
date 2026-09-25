@@ -74,6 +74,7 @@ FILE-10: Supported phone image/PDF input is tested; unsupported formats give a u
 FILE-11: Object storage survives supported restart and a restore drill retrieves bytes, not just metadata references.
 
 ## Authorization, tenants and teams
+M5 final gate (2026-09-25): `TeamM5Test` includes rejected-request resubmission and immutable approved-history checks alongside invitation lifecycle, owner protection, driver uniqueness/history/concurrency, REVIEW bypass attempts through legacy M2 routes, double approval, revocation, selected-scope resource/file/totals denial, and workspace switching. A connected API/PostgreSQL journey verified driver submission through approval, access scope, live permission change, driver move and revocation. iOS/Android M5 remain unverified; UI smoke is recorded in HANDOFF.
 TEN-01: User in workspace A cannot read/update/delete/archive/list/search B's equipment by guessing an ID.
 TEN-02: Cross-workspace references to equipment/entries/attachments/organizations are rejected.
 TEN-03: Restricted equipment scope does not expose other equipment through totals, counts, selectors, exports or notifications.

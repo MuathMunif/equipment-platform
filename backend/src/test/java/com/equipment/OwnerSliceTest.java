@@ -385,9 +385,16 @@ class OwnerSliceTest {
   assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->db.update("insert into financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,lifecycle,created_by) values(?,?,?,1.00,'SAR','FUEL',current_date,'POSTED',?)",UUID.randomUUID(),UUID.fromString(b.workspace),UUID.fromString(eq),UUID.fromString(b.user)));
  }
  @Test void membershipRevocationPreventsCurrentReadsDownloadsAndIdempotentReplay()throws Exception{
-  User user=login("0500000001");String eq=equipment(user),key=key();String entry=request("POST",path(user,"/entries"),expense(eq),user.token,key).json.get("id").asString();byte[] png=image("png");String file=initiate(user,entry,png,"image/png");raw("PUT",path(user,"/attachments/"+file+"/content"),png,"image/png",user.token,null,Map.of());
-  db.update("update membership set active=false where user_id=?",UUID.fromString(user.user));
-  assertEquals(404,request("POST",path(user,"/entries"),expense(eq),user.token,key).status);assertEquals(404,request("GET",path(user,"/attachments/"+file+"/content"),null,user.token,null).status);assertEquals(403,request("GET","/auth/me",null,user.token,null).status);
+  User owner=login("0500000001"),member=login("0500000003");String eq=equipment(owner),key=key(),workspace="/workspaces/"+owner.workspace;
+  String invitation=request("POST",path(owner,"/team/invitations"),Map.of("displayName","عضو اختبار","phone","0500000003","role","ACCOUNTANT"),owner.token,null).json.get("id").asString();
+  assertEquals(200,request("POST","/account/invitations/"+invitation+"/accept",null,member.token,null).status);
+  String entry=request("POST",workspace+"/entries",expense(eq),member.token,key).json.get("id").asString();byte[] png=image("png");
+  String file=request("POST",workspace+"/entries/"+entry+"/attachments",Map.of("filename","synthetic-receipt.png","mediaType","image/png","size",png.length),member.token,key()).json.get("id").asString();
+  assertEquals(200,raw("PUT",workspace+"/attachments/"+file+"/content",png,"image/png",member.token,null,Map.of()).status);
+  assertEquals(200,request("DELETE",workspace+"/team/members/"+member.user,null,owner.token,null).status);
+  assertEquals(404,request("POST",workspace+"/entries",expense(eq),member.token,key).status);assertEquals(404,request("GET",workspace+"/attachments/"+file+"/content",null,member.token,null).status);
+  JsonNode profile=request("GET","/auth/me",null,member.token,null).json;assertEquals(1,profile.get("workspaces").size());assertEquals(member.workspace,profile.get("workspaces").get(0).get("id").asString());
+  assertEquals(200,request("GET",path(member,"/equipment"),null,member.token,null).status);
  }
  @Test void browserCookieCsrfOriginAndLogoutAreEnforced()throws Exception{
   String c=challenge("0500000001");var verified=request("POST","/auth/verify",Map.of("challengeId",c,"code","123456","name","مالك","client","WEB"),null,null);assertNull(verified.json.get("accessToken"));String cookie=verified.raw.headers().firstValue("Set-Cookie").orElseThrow();assertTrue(cookie.contains("HttpOnly"));assertTrue(cookie.contains("SameSite=Strict"));cookie=cookie.split(";")[0];

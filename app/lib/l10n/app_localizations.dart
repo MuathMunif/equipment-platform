@@ -1171,7 +1171,7 @@ abstract class AppLocalizations {
   /// No description provided for @uiDevelopmentNumbers0500000001Or0500000002.
   ///
   /// In ar, this message translates to:
-  /// **'الأرقام التجريبية: 0500000001 أو 0500000002'**
+  /// **'أرقام التطوير: 0500000000–0500000999، بما فيها أرقام المدعوين'**
   String get uiDevelopmentNumbers0500000001Or0500000002;
 
   /// No description provided for @uiTotalSar.
@@ -2888,6 +2888,772 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إزالة ربط البلاغ'**
   String get m4ClearIssue;
+
+  /// No description provided for @m5Owner.
+  ///
+  /// In ar, this message translates to:
+  /// **'المالك'**
+  String get m5Owner;
+
+  /// No description provided for @m5Manager.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدير'**
+  String get m5Manager;
+
+  /// No description provided for @m5Accountant.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاسب'**
+  String get m5Accountant;
+
+  /// No description provided for @m5Driver.
+  ///
+  /// In ar, this message translates to:
+  /// **'سائق'**
+  String get m5Driver;
+
+  /// No description provided for @m5Member.
+  ///
+  /// In ar, this message translates to:
+  /// **'عضو'**
+  String get m5Member;
+
+  /// No description provided for @m5Pending.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار المراجعة'**
+  String get m5Pending;
+
+  /// No description provided for @m5Accepted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقبولة'**
+  String get m5Accepted;
+
+  /// No description provided for @m5Cancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغاة'**
+  String get m5Cancelled;
+
+  /// No description provided for @m5Expired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهية'**
+  String get m5Expired;
+
+  /// No description provided for @m5Approved.
+  ///
+  /// In ar, this message translates to:
+  /// **'معتمدة'**
+  String get m5Approved;
+
+  /// No description provided for @m5Rejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرفوضة'**
+  String get m5Rejected;
+
+  /// No description provided for @m5EquipmentView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض المعدات'**
+  String get m5EquipmentView;
+
+  /// No description provided for @m5EquipmentManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة المعدات'**
+  String get m5EquipmentManage;
+
+  /// No description provided for @m5FinanceView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الماليات'**
+  String get m5FinanceView;
+
+  /// No description provided for @m5FinanceManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الماليات'**
+  String get m5FinanceManage;
+
+  /// No description provided for @m5FinanceReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة الطلبات المالية'**
+  String get m5FinanceReview;
+
+  /// No description provided for @m5DocumentView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض المستندات'**
+  String get m5DocumentView;
+
+  /// No description provided for @m5DocumentManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة المستندات'**
+  String get m5DocumentManage;
+
+  /// No description provided for @m5IssueView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض البلاغات'**
+  String get m5IssueView;
+
+  /// No description provided for @m5IssueManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة البلاغات'**
+  String get m5IssueManage;
+
+  /// No description provided for @m5MaintenanceView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الصيانة'**
+  String get m5MaintenanceView;
+
+  /// No description provided for @m5MaintenanceManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الصيانة'**
+  String get m5MaintenanceManage;
+
+  /// No description provided for @m5DriverAssignmentManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين السائقين'**
+  String get m5DriverAssignmentManage;
+
+  /// No description provided for @m5ReportView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض التقارير'**
+  String get m5ReportView;
+
+  /// No description provided for @m5TeamManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الفريق'**
+  String get m5TeamManage;
+
+  /// No description provided for @m5MyInvitations.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعواتي'**
+  String get m5MyInvitations;
+
+  /// No description provided for @m5NoInvitations.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد دعوات معلقة'**
+  String get m5NoInvitations;
+
+  /// No description provided for @m5Expires.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي'**
+  String get m5Expires;
+
+  /// No description provided for @m5Accept.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبول الدعوة'**
+  String get m5Accept;
+
+  /// No description provided for @m5Decline.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض الدعوة'**
+  String get m5Decline;
+
+  /// No description provided for @m5Team.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفريق'**
+  String get m5Team;
+
+  /// No description provided for @m5Members.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأعضاء'**
+  String get m5Members;
+
+  /// No description provided for @m5NoMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد أعضاء بعد'**
+  String get m5NoMembers;
+
+  /// No description provided for @m5Invitations.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدعوات'**
+  String get m5Invitations;
+
+  /// No description provided for @m5InviteMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعوة عضو'**
+  String get m5InviteMember;
+
+  /// No description provided for @m5Resend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة إرسال'**
+  String get m5Resend;
+
+  /// No description provided for @m5CancelInvitation.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الدعوة؟'**
+  String get m5CancelInvitation;
+
+  /// No description provided for @m5ResendInvitation.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة إرسال الدعوة؟'**
+  String get m5ResendInvitation;
+
+  /// No description provided for @m5EditMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل العضو'**
+  String get m5EditMember;
+
+  /// No description provided for @m5Role.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدور'**
+  String get m5Role;
+
+  /// No description provided for @m5Scope.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطاق المعدات'**
+  String get m5Scope;
+
+  /// No description provided for @m5AllEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المعدات'**
+  String get m5AllEquipment;
+
+  /// No description provided for @m5SelectedEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'معدات محددة'**
+  String get m5SelectedEquipment;
+
+  /// No description provided for @m5ChooseEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر معدة واحدة على الأقل'**
+  String get m5ChooseEquipment;
+
+  /// No description provided for @m5FinancialMode.
+  ///
+  /// In ar, this message translates to:
+  /// **'وضع الإدخال المالي'**
+  String get m5FinancialMode;
+
+  /// No description provided for @m5ReviewMode.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرسل للمراجعة'**
+  String get m5ReviewMode;
+
+  /// No description provided for @m5DirectMode.
+  ///
+  /// In ar, this message translates to:
+  /// **'يسجل مباشرة'**
+  String get m5DirectMode;
+
+  /// No description provided for @m5Capabilities.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحيات'**
+  String get m5Capabilities;
+
+  /// No description provided for @m5CapabilitiesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد ما يمكن لهذا العضو فعله.'**
+  String get m5CapabilitiesHint;
+
+  /// No description provided for @m5NamePhoneRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الاسم ورقم الجوال'**
+  String get m5NamePhoneRequired;
+
+  /// No description provided for @m5ConfirmPermissions.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ تغييرات الدور أو النطاق؟'**
+  String get m5ConfirmPermissions;
+
+  /// No description provided for @m5SendInvitation.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال الدعوة'**
+  String get m5SendInvitation;
+
+  /// No description provided for @m5MemberDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل العضو'**
+  String get m5MemberDetails;
+
+  /// No description provided for @m5DriverAssignment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين السائق'**
+  String get m5DriverAssignment;
+
+  /// No description provided for @m5RevokeConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف وصول هذا العضو؟'**
+  String get m5RevokeConfirm;
+
+  /// No description provided for @m5RevokeAccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف الوصول'**
+  String get m5RevokeAccess;
+
+  /// No description provided for @m5CurrentAssignment.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعيين الحالي'**
+  String get m5CurrentAssignment;
+
+  /// No description provided for @m5NoAssignment.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد تعيين حالي'**
+  String get m5NoAssignment;
+
+  /// No description provided for @m5ReplaceAssignmentConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير المعدة المعينة لهذا السائق؟'**
+  String get m5ReplaceAssignmentConfirm;
+
+  /// No description provided for @m5Assign.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين'**
+  String get m5Assign;
+
+  /// No description provided for @m5Unassign.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء التعيين'**
+  String get m5Unassign;
+
+  /// No description provided for @m5UnassignConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء تعيين هذا السائق؟'**
+  String get m5UnassignConfirm;
+
+  /// No description provided for @m5AssignmentHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل التعيينات'**
+  String get m5AssignmentHistory;
+
+  /// No description provided for @m5NoHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تعيينات سابقة'**
+  String get m5NoHistory;
+
+  /// No description provided for @m5DriverHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملك اليوم'**
+  String get m5DriverHome;
+
+  /// No description provided for @m5NoAssignmentDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد معدة معيّنة لك حاليًا.'**
+  String get m5NoAssignmentDriver;
+
+  /// No description provided for @m5ReportIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإبلاغ عن عطل'**
+  String get m5ReportIssue;
+
+  /// No description provided for @m5SubmitExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال مصروف'**
+  String get m5SubmitExpense;
+
+  /// No description provided for @m5MyIssues.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغاتي'**
+  String get m5MyIssues;
+
+  /// No description provided for @m5NoIssues.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بلاغات لهذه المعدة'**
+  String get m5NoIssues;
+
+  /// No description provided for @m5MySubmissions.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلباتي المالية'**
+  String get m5MySubmissions;
+
+  /// No description provided for @m5NoSubmissions.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم ترسل طلبات مالية بعد'**
+  String get m5NoSubmissions;
+
+  /// No description provided for @m5ReceiptOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيصال دون مبلغ'**
+  String get m5ReceiptOnly;
+
+  /// No description provided for @m5SubmissionHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف المبلغ أو الملاحظة أو الإيصال؛ يراجعه المسؤول قبل تسجيل المصروف.'**
+  String get m5SubmissionHint;
+
+  /// No description provided for @m5TransactionDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ العملية'**
+  String get m5TransactionDate;
+
+  /// No description provided for @m5Note.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get m5Note;
+
+  /// No description provided for @m5AddReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة إيصال'**
+  String get m5AddReceipt;
+
+  /// No description provided for @m5SubmissionNeedsContent.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف مبلغًا أو ملاحظة أو إيصالًا'**
+  String get m5SubmissionNeedsContent;
+
+  /// No description provided for @m5SendForReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال للمراجعة'**
+  String get m5SendForReview;
+
+  /// No description provided for @m5ReviewQueue.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات المراجعة'**
+  String get m5ReviewQueue;
+
+  /// No description provided for @m5ReviewQueueEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات بانتظار المراجعة'**
+  String get m5ReviewQueueEmpty;
+
+  /// No description provided for @m5SubmissionDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الطلب'**
+  String get m5SubmissionDetails;
+
+  /// No description provided for @m5Status.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get m5Status;
+
+  /// No description provided for @m5SubmittedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسله'**
+  String get m5SubmittedBy;
+
+  /// No description provided for @m5RejectionReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الرفض'**
+  String get m5RejectionReason;
+
+  /// No description provided for @m5ApprovedEntryCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'سُجل المصروف بعد الاعتماد'**
+  String get m5ApprovedEntryCreated;
+
+  /// No description provided for @m5Approve.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتماد'**
+  String get m5Approve;
+
+  /// No description provided for @m5Reject.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get m5Reject;
+
+  /// No description provided for @m5RejectSubmission.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض الطلب'**
+  String get m5RejectSubmission;
+
+  /// No description provided for @m5Resubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الإرسال'**
+  String get m5Resubmit;
+
+  /// No description provided for @m5ReasonRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب سبب الرفض'**
+  String get m5ReasonRequired;
+
+  /// No description provided for @m5ApproveExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتماد المصروف'**
+  String get m5ApproveExpense;
+
+  /// No description provided for @m5ApprovalHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع بيانات المصروف قبل اعتماده. سيظهر في السجل مرة واحدة.'**
+  String get m5ApprovalHint;
+
+  /// No description provided for @m5Category.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get m5Category;
+
+  /// No description provided for @m5PaymentStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة الدفع'**
+  String get m5PaymentStatus;
+
+  /// No description provided for @m5PaidOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الدفع'**
+  String get m5PaidOn;
+
+  /// No description provided for @m5DueDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الاستحقاق'**
+  String get m5DueDate;
+
+  /// No description provided for @m5ChooseDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر تاريخًا'**
+  String get m5ChooseDate;
+
+  /// No description provided for @m5PartyDueRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم الطرف وتاريخ الاستحقاق'**
+  String get m5PartyDueRequired;
+
+  /// No description provided for @m5PartialLessThanTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع جزئيًا يجب أن يكون أقل من الإجمالي'**
+  String get m5PartialLessThanTotal;
+
+  /// No description provided for @m5ApproveConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتماد هذا المصروف وتسجيله؟'**
+  String get m5ApproveConfirm;
+
+  /// No description provided for @m5SwitchWorkspace.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبديل المساحة'**
+  String get m5SwitchWorkspace;
+
+  /// No description provided for @m5NotificationDriverAssigned.
+  ///
+  /// In ar, this message translates to:
+  /// **'عُيّنت لك معدة'**
+  String get m5NotificationDriverAssigned;
+
+  /// No description provided for @m5NotificationDriverIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغ جديد من السائق'**
+  String get m5NotificationDriverIssue;
+
+  /// No description provided for @m5NotificationSubmissionPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب مالي ينتظر مراجعتك'**
+  String get m5NotificationSubmissionPending;
+
+  /// No description provided for @m5NotificationSubmissionApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتُمد طلبك المالي'**
+  String get m5NotificationSubmissionApproved;
+
+  /// No description provided for @m5NotificationSubmissionRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'رُفض طلبك المالي'**
+  String get m5NotificationSubmissionRejected;
+
+  /// No description provided for @m5AttentionReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات مالية تحتاج مراجعة'**
+  String get m5AttentionReview;
+
+  /// No description provided for @m5PendingReviewsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} طلبات مالية بانتظار المراجعة'**
+  String m5PendingReviewsCount(String count);
+
+  /// No description provided for @m5RoleChangeResetsPermissions.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير الدور سيعيد الصلاحيات إلى إعدادات الدور الجديد ويلغي تخصيصاتها السابقة. هل تريد المتابعة؟'**
+  String get m5RoleChangeResetsPermissions;
+
+  /// No description provided for @m5DirectExpenseHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكمل بيانات المصروف وسجله مباشرة.'**
+  String get m5DirectExpenseHint;
+
+  /// No description provided for @m5DirectExpenseConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل هذا المصروف؟'**
+  String get m5DirectExpenseConfirm;
+
+  /// No description provided for @m5InvitationPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'توجد دعوة معلقة لهذا الرقم'**
+  String get m5InvitationPending;
+
+  /// No description provided for @m5InvitationClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُغلقت الدعوة أو انتهت؛ حدّث القائمة'**
+  String get m5InvitationClosed;
+
+  /// No description provided for @m5AlreadyMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الشخص عضو بالفعل'**
+  String get m5AlreadyMember;
+
+  /// No description provided for @m5SubmissionReviewed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت مراجعة الطلب؛ حدّث القائمة'**
+  String get m5SubmissionReviewed;
+
+  /// No description provided for @m5NoDriverAssignment.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد معدة معيّنة لك حاليًا'**
+  String get m5NoDriverAssignment;
+
+  /// No description provided for @m5Issues.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلاغات'**
+  String get m5Issues;
+
+  /// No description provided for @m5DriverInviteHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكن تعيين معدة للسائق بعد قبوله الدعوة.'**
+  String get m5DriverInviteHint;
+
+  /// No description provided for @m5AllScopeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يشمل المعدات الحالية وأي معدات تضاف لاحقًا.'**
+  String get m5AllScopeHint;
+
+  /// No description provided for @m5AssignMayReplace.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد يحل هذا التعيين محل سائق المعدة الحالي. متابعة؟'**
+  String get m5AssignMayReplace;
+
+  /// No description provided for @m5ChooseDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر السائق'**
+  String get m5ChooseDriver;
+
+  /// No description provided for @m5NoEligibleDrivers.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد سائقون متاحون لهذه المعدة'**
+  String get m5NoEligibleDrivers;
+
+  /// No description provided for @m5DriverCurrentlyOnEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'السائق معيّن حاليًا على {equipmentName}'**
+  String m5DriverCurrentlyOnEquipment(String equipmentName);
+
+  /// No description provided for @m5ConfirmAssignDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين {driverName} على {equipmentName}؟'**
+  String m5ConfirmAssignDriver(String driverName, String equipmentName);
+
+  /// No description provided for @m5ConfirmReplaceDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'استبدال {currentDriver} بـ {newDriver} على {equipmentName}؟'**
+  String m5ConfirmReplaceDriver(
+    String currentDriver,
+    String newDriver,
+    String equipmentName,
+  );
+
+  /// No description provided for @m5ConfirmMoveDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'سينتهي تعيين {driverName} الحالي على {sourceEquipment}.'**
+  String m5ConfirmMoveDriver(String driverName, String sourceEquipment);
 }
 
 class _AppLocalizationsDelegate

@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
-  title: Equipment Platform — isolated development M4
-  version: 0.4.0
+  title: Equipment Platform — isolated development M5
+  version: 0.5.0
   description: |
-    Owner-only local slice. Production startup is intentionally rejected.
-    Every protected resource checks active OWNER membership before lookup and replay.
+    Local M5 team slice. Production startup is intentionally rejected.
+    Protected resources check active workspace membership, effective capabilities and equipment scope.
     Money is an exact SAR decimal string with two fractional digits (0.01–999999999.99).
     Business dates use YYYY-MM-DD independently of audit instants; UI defaults to Asia/Riyadh.
     Unknown request fields are rejected. IDs, ownership, lifecycle and settled totals are server-owned.
@@ -15,7 +15,7 @@ info:
     require X-CSRF-Token returned by /auth/me. No browser credential is stored in localStorage.
     NATIVE login returns an opaque accessToken for OS secure storage and Bearer authentication.
     Sessions expire after 8 hours; no refresh token. Logout revokes immediately; re-login is explicit.
-    Dev accepts only +966500000001/+966500000002 (or 0500000001/0500000002), code 123456.
+    Dev accepts reserved synthetic +966500000000 through +966500000999 numbers, code 123456.
     OTP expires after 5 minutes, permits 5 attempts, resends at most once per 30 seconds and 10/hour.
     Files are private development filesystem objects, not tested S3 integration. No malware scanner:
     scanStatus is DEV_NOT_SCANNED. PNG/JPEG/PDF only; max 10 MiB, 10 files per entry, 25MP,
@@ -792,6 +792,138 @@ paths:
       description: Current issues and documents ordered by priorityRank 1–7. Archived equipment and non-OPEN issues are excluded. Existing document-only endpoint stays available.
       parameters: [{in: query, name: equipmentId, schema: {type: string, format: uuid}}]
       responses: {'200': {description: Derived current Attention array}}
+  /workspaces:
+    get:
+      summary: Current user's active workspace memberships
+      responses: {'200': {description: Workspaces and current role/scope/mode}}
+  /workspaces/{workspace}/selection:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    put:
+      summary: Save last valid workspace preference
+      responses: {'200': {description: Selected workspace ID}}
+  /account/invitations:
+    get:
+      summary: Pending invitations for authenticated normalized phone
+      responses: {'200': {description: Minimal invitation summaries}}
+  /account/invitations/{id}/accept:
+    parameters: [{$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Atomically accept invitation and activate membership
+      responses: {'200': {description: Accepted invitation}, '409': {description: Closed or expired invitation}}
+  /account/invitations/{id}/decline:
+    parameters: [{$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Decline invitation
+      responses: {'200': {description: Declined invitation}}
+  /workspaces/{workspace}/team/invitations:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      summary: Workspace invitations, owner only in M5
+      responses: {'200': {description: Bounded invitation list}}
+    post:
+      summary: Invite synthetic phone without sending SMS
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TeamInvite'}}}}
+      responses: {'200': {description: Invitation}, '409': {description: Existing active member or pending invitation}}
+  /workspaces/{workspace}/team/invitations/{id}/resend:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Renew pending invitation for seven days
+      responses: {'200': {description: Renewed invitation}}
+  /workspaces/{workspace}/team/invitations/{id}/cancel:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Cancel pending invitation
+      responses: {'200': {description: Cancelled invitation}}
+  /workspaces/{workspace}/team/members:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      summary: Active and revoked workspace members
+      responses: {'200': {description: Bounded member list}}
+  /workspaces/{workspace}/team/members/{user}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {in: path, name: user, required: true, schema: {type: string, format: uuid}}]
+    get:
+      summary: Member detail and selected equipment IDs
+      responses: {'200': {description: Member}}
+    put:
+      summary: Owner updates role, capabilities, scope and financial mode; role change resets defaults
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MemberChange'}}}}
+      responses: {'200': {description: Updated member}}
+    delete:
+      summary: Owner revokes non-owner membership and ends active driver assignment
+      responses: {'200': {description: Revoked}}
+  /workspaces/{workspace}/drivers/me/assignment:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      summary: Current driver assignment or null
+      responses: {'200': {description: Equipment ID or null}}
+  /workspaces/{workspace}/drivers/eligible:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {in: query, name: equipmentId, required: true, schema: {type: string, format: uuid}}]
+    get:
+      summary: Up to 100 active driver members eligible for an authorized equipment
+      description: Requires DRIVER_ASSIGNMENT_MANAGE and equipment scope. A driver currently assigned outside the caller's scope is excluded. No other team roles or private member fields are returned.
+      responses:
+        '200': {description: Minimal eligible driver list, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/EligibleDriver'}}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/drivers/equipment/{equipment}/assignment:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}]
+    get:
+      summary: Current driver for an authorized equipment, or null assignment fields
+      description: Requires DRIVER_ASSIGNMENT_MANAGE and equipment scope. Read immediately before replacing a driver.
+      responses:
+        '200': {description: Current equipment assignment, content: {application/json: {schema: {$ref: '#/components/schemas/CurrentEquipmentAssignment'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+    delete:
+      summary: End active equipment assignment
+      responses: {'200': {description: Unassigned}}
+  /workspaces/{workspace}/drivers/{user}/assignments:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {in: path, name: user, required: true, schema: {type: string, format: uuid}}]
+    get:
+      summary: Bounded assignment history
+      responses: {'200': {description: Assignment history}}
+  /workspaces/{workspace}/drivers/assignments:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    post:
+      summary: Atomically assign or move driver
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [driverUserId, equipmentId], properties: {driverUserId: {type: string, format: uuid}, equipmentId: {type: string, format: uuid}}}}}}
+      responses: {'200': {description: Active assignment}}
+  /workspaces/{workspace}/financial-submissions:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    post:
+      summary: Create review request; one of amount, note or receipt is required
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/SubmissionCreate'}}}}
+      responses: {'200': {description: Pending submission}}
+  /workspaces/{workspace}/financial-submissions/mine:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Page'}]
+    get:
+      summary: Own submission history, including former assigned equipment
+      responses: {'200': {description: Paginated submissions}}
+  /workspaces/{workspace}/financial-submissions/review-queue:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Page'}]
+    get:
+      summary: Pending submissions within reviewer equipment scope
+      responses: {'200': {description: Paginated pending submissions}}
+  /workspaces/{workspace}/financial-submissions/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      summary: Own submission or scoped reviewer detail
+      responses: {'200': {description: Submission detail}}
+  /workspaces/{workspace}/financial-submissions/{id}/approve:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Lock submission and create exactly one M2 expense for original equipment
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/EntryCreate'}}}}
+      responses: {'200': {description: Approved submission}, '409': {description: Already reviewed}}
+  /workspaces/{workspace}/financial-submissions/{id}/resubmit:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Create one new pending request from own rejected submission while preserving its review history and reusing immutable receipt objects
+      responses: {'200': {description: New pending submission}, '409': {description: Original is not rejected}}
+  /workspaces/{workspace}/financial-submissions/{id}/reject:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Reject with required reason; no financial entry created
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [reason], properties: {reason: {type: string, minLength: 1, maxLength: 500}}}}}}
+      responses: {'200': {description: Rejected submission}, '409': {description: Already reviewed}}
 components:
   securitySchemes:
     bearerSession: {type: http, scheme: bearer}
@@ -814,6 +946,76 @@ components:
               code: {type: string}
               message: {type: string}
   schemas:
+    EligibleDriver:
+      type: object
+      required: [userId, displayName, currentEquipmentId, currentEquipmentName, startedAt]
+      properties:
+        userId: {type: string, format: uuid}
+        displayName: {type: string}
+        currentEquipmentId: {type: [string, 'null'], format: uuid}
+        currentEquipmentName: {type: [string, 'null']}
+        startedAt: {type: [string, 'null'], format: date-time}
+    CurrentEquipmentAssignment:
+      type: object
+      required: [equipmentId, assignmentId, driverUserId, driverName, startedAt]
+      properties:
+        equipmentId: {type: string, format: uuid}
+        assignmentId: {type: [string, 'null'], format: uuid}
+        driverUserId: {type: [string, 'null'], format: uuid}
+        driverName: {type: [string, 'null']}
+        startedAt: {type: [string, 'null'], format: date-time}
+    TeamInvite:
+      type: object
+      required: [displayName, phone, role]
+      properties:
+        displayName: {type: string, minLength: 1, maxLength: 100}
+        phone: {type: string, description: Synthetic development number normalized to +9665...}
+        role: {type: string, enum: [MANAGER, ACCOUNTANT, DRIVER]}
+        scope: {type: string, enum: [ALL_EQUIPMENT, SELECTED_EQUIPMENT], description: Omit for DRIVER}
+        equipmentIds: {type: array, items: {type: string, format: uuid}}
+        capabilities: {type: array, uniqueItems: true, items: {type: string}}
+        financialMode: {type: string, enum: [DIRECT, REVIEW]}
+    MemberChange:
+      type: object
+      description: Omitted fields retain current values except role change resets capability defaults.
+      properties:
+        role: {type: string, enum: [MANAGER, ACCOUNTANT, DRIVER]}
+        scope: {type: string, enum: [ALL_EQUIPMENT, SELECTED_EQUIPMENT]}
+        equipmentIds: {type: array, items: {type: string, format: uuid}}
+        capabilities: {type: array, uniqueItems: true, items: {type: string}}
+        financialMode: {type: string, enum: [DIRECT, REVIEW]}
+    SubmissionCreate:
+      type: object
+      description: Driver equipmentId is derived from current active assignment; if supplied it must match.
+      properties:
+        equipmentId: {type: string, format: uuid}
+        amount: {$ref: '#/components/schemas/Money'}
+        transactionDate: {type: string, format: date, description: Defaults to today in Asia/Riyadh}
+        note: {type: string, maxLength: 1000}
+        receipt:
+          type: object
+          required: [filename, mediaType, base64]
+          properties:
+            filename: {type: string, maxLength: 200}
+            mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
+            base64: {type: string, contentEncoding: base64, description: Maximum decoded size 10 MiB}
+    EntryCreate:
+      type: object
+      description: Existing M2 expense creation shape; approval requires SINGLE expense for the submission equipment.
+      required: [equipmentId, amount, category, operationDate]
+      properties:
+        equipmentId: {type: string, format: uuid}
+        amount: {$ref: '#/components/schemas/Money'}
+        category: {type: string, enum: [FUEL, MAINTENANCE, OTHER]}
+        operationDate: {type: string, format: date}
+        paidOn: {type: string, format: date}
+        note: {type: string}
+        paymentStatus: {type: string, enum: [FULL, PARTIAL, UNPAID]}
+        initialPaid: {$ref: '#/components/schemas/Money'}
+        partyName: {type: string}
+        dueDate: {type: string, format: date}
+        entryType: {const: EXPENSE}
+        expenseScope: {const: SINGLE}
     Money: {type: string, pattern: '^(0|[1-9][0-9]{0,8})\.[0-9]{2}$', example: '350.00'}
     IssueInput:
       type: object
@@ -984,7 +1186,7 @@ components:
         remainingShare: {$ref: '#/components/schemas/Money'}
     Entry:
       type: object
-      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations, createdBy, completedBy, completedAt]
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations, createdBy, completedBy, completedAt, submittedBy, submissionId]
       properties:
         id: {type: string, format: uuid}
         equipmentId: {type: [string, 'null'], format: uuid, description: Null for shared/general expenses}
@@ -1011,6 +1213,8 @@ components:
         dueDate: {type: [string, 'null'], format: date}
         createdAt: {type: string, format: date-time}
         createdBy: {type: string, format: uuid}
+        submittedBy: {type: [string, 'null'], format: uuid, description: Original submitter when entry was approved from a review request}
+        submissionId: {type: [string, 'null'], format: uuid, description: Linked M5 financial submission}
         completedBy: {type: [string, 'null'], format: uuid, description: Present when posted by completing a draft}
         completedAt: {type: [string, 'null'], format: date-time}
         settlements:

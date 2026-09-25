@@ -567,7 +567,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiDevelopmentNumbers0500000001Or0500000002 =>
-      'Development numbers: 0500000001 or 0500000002';
+      'Development numbers: 0500000000–0500000999, including invited members';
 
   @override
   String get uiTotalSar => 'Total (SAR)';
@@ -1554,4 +1554,415 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get m4ClearIssue => 'Clear linked issue';
+
+  @override
+  String get m5Owner => 'Owner';
+
+  @override
+  String get m5Manager => 'Manager';
+
+  @override
+  String get m5Accountant => 'Accountant';
+
+  @override
+  String get m5Driver => 'Driver';
+
+  @override
+  String get m5Member => 'Member';
+
+  @override
+  String get m5Pending => 'Pending';
+
+  @override
+  String get m5Accepted => 'Accepted';
+
+  @override
+  String get m5Cancelled => 'Cancelled';
+
+  @override
+  String get m5Expired => 'Expired';
+
+  @override
+  String get m5Approved => 'Approved';
+
+  @override
+  String get m5Rejected => 'Rejected';
+
+  @override
+  String get m5EquipmentView => 'View equipment';
+
+  @override
+  String get m5EquipmentManage => 'Manage equipment';
+
+  @override
+  String get m5FinanceView => 'View finances';
+
+  @override
+  String get m5FinanceManage => 'Manage finances';
+
+  @override
+  String get m5FinanceReview => 'Review financial requests';
+
+  @override
+  String get m5DocumentView => 'View documents';
+
+  @override
+  String get m5DocumentManage => 'Manage documents';
+
+  @override
+  String get m5IssueView => 'View issues';
+
+  @override
+  String get m5IssueManage => 'Manage issues';
+
+  @override
+  String get m5MaintenanceView => 'View maintenance';
+
+  @override
+  String get m5MaintenanceManage => 'Manage maintenance';
+
+  @override
+  String get m5DriverAssignmentManage => 'Assign drivers';
+
+  @override
+  String get m5ReportView => 'View reports';
+
+  @override
+  String get m5TeamManage => 'Manage team';
+
+  @override
+  String get m5MyInvitations => 'My invitations';
+
+  @override
+  String get m5NoInvitations => 'No pending invitations';
+
+  @override
+  String get m5Expires => 'Expires';
+
+  @override
+  String get m5Accept => 'Accept invitation';
+
+  @override
+  String get m5Decline => 'Decline invitation';
+
+  @override
+  String get m5Team => 'Team';
+
+  @override
+  String get m5Members => 'Members';
+
+  @override
+  String get m5NoMembers => 'No members yet';
+
+  @override
+  String get m5Invitations => 'Invitations';
+
+  @override
+  String get m5InviteMember => 'Invite member';
+
+  @override
+  String get m5Resend => 'Resend';
+
+  @override
+  String get m5CancelInvitation => 'Cancel invitation?';
+
+  @override
+  String get m5ResendInvitation => 'Resend invitation?';
+
+  @override
+  String get m5EditMember => 'Edit member';
+
+  @override
+  String get m5Role => 'Role';
+
+  @override
+  String get m5Scope => 'Equipment scope';
+
+  @override
+  String get m5AllEquipment => 'All equipment';
+
+  @override
+  String get m5SelectedEquipment => 'Selected equipment';
+
+  @override
+  String get m5ChooseEquipment => 'Choose at least one equipment item';
+
+  @override
+  String get m5FinancialMode => 'Financial entry mode';
+
+  @override
+  String get m5ReviewMode => 'Send for review';
+
+  @override
+  String get m5DirectMode => 'Post directly';
+
+  @override
+  String get m5Capabilities => 'Permissions';
+
+  @override
+  String get m5CapabilitiesHint => 'Choose what this member can do.';
+
+  @override
+  String get m5NamePhoneRequired => 'Enter name and phone number';
+
+  @override
+  String get m5ConfirmPermissions => 'Save role or scope changes?';
+
+  @override
+  String get m5SendInvitation => 'Send invitation';
+
+  @override
+  String get m5MemberDetails => 'Member details';
+
+  @override
+  String get m5DriverAssignment => 'Driver assignment';
+
+  @override
+  String get m5RevokeConfirm => 'Revoke this member’s access?';
+
+  @override
+  String get m5RevokeAccess => 'Revoke access';
+
+  @override
+  String get m5CurrentAssignment => 'Current assignment';
+
+  @override
+  String get m5NoAssignment => 'No current assignment';
+
+  @override
+  String get m5ReplaceAssignmentConfirm =>
+      'Change this driver’s assigned equipment?';
+
+  @override
+  String get m5Assign => 'Assign';
+
+  @override
+  String get m5Unassign => 'End assignment';
+
+  @override
+  String get m5UnassignConfirm => 'End this driver assignment?';
+
+  @override
+  String get m5AssignmentHistory => 'Assignment history';
+
+  @override
+  String get m5NoHistory => 'No previous assignments';
+
+  @override
+  String get m5DriverHome => 'Your work today';
+
+  @override
+  String get m5NoAssignmentDriver =>
+      'No equipment is currently assigned to you.';
+
+  @override
+  String get m5ReportIssue => 'Report an issue';
+
+  @override
+  String get m5SubmitExpense => 'Submit expense';
+
+  @override
+  String get m5MyIssues => 'My issues';
+
+  @override
+  String get m5NoIssues => 'No issues for this equipment';
+
+  @override
+  String get m5MySubmissions => 'My financial requests';
+
+  @override
+  String get m5NoSubmissions => 'No financial requests yet';
+
+  @override
+  String get m5ReceiptOnly => 'Receipt without amount';
+
+  @override
+  String get m5SubmissionHint =>
+      'Add an amount, note, or receipt. A reviewer checks it before posting the expense.';
+
+  @override
+  String get m5TransactionDate => 'Transaction date';
+
+  @override
+  String get m5Note => 'Note';
+
+  @override
+  String get m5AddReceipt => 'Add receipt';
+
+  @override
+  String get m5SubmissionNeedsContent => 'Add an amount, note, or receipt';
+
+  @override
+  String get m5SendForReview => 'Send for review';
+
+  @override
+  String get m5ReviewQueue => 'Review queue';
+
+  @override
+  String get m5ReviewQueueEmpty => 'No requests awaiting review';
+
+  @override
+  String get m5SubmissionDetails => 'Request details';
+
+  @override
+  String get m5Status => 'Status';
+
+  @override
+  String get m5SubmittedBy => 'Submitted by';
+
+  @override
+  String get m5RejectionReason => 'Rejection reason';
+
+  @override
+  String get m5ApprovedEntryCreated => 'Expense posted after approval';
+
+  @override
+  String get m5Approve => 'Approve';
+
+  @override
+  String get m5Reject => 'Reject';
+
+  @override
+  String get m5RejectSubmission => 'Reject request';
+
+  @override
+  String get m5Resubmit => 'Resubmit';
+
+  @override
+  String get m5ReasonRequired => 'Enter a rejection reason';
+
+  @override
+  String get m5ApproveExpense => 'Approve expense';
+
+  @override
+  String get m5ApprovalHint =>
+      'Check the expense details before approval. It will appear once in the ledger.';
+
+  @override
+  String get m5Category => 'Category';
+
+  @override
+  String get m5PaymentStatus => 'Payment status';
+
+  @override
+  String get m5PaidOn => 'Payment date';
+
+  @override
+  String get m5DueDate => 'Due date';
+
+  @override
+  String get m5ChooseDate => 'Choose a date';
+
+  @override
+  String get m5PartyDueRequired => 'Enter party name and due date';
+
+  @override
+  String get m5PartialLessThanTotal =>
+      'Partial payment must be less than the total';
+
+  @override
+  String get m5ApproveConfirm => 'Approve and post this expense?';
+
+  @override
+  String get m5SwitchWorkspace => 'Switch workspace';
+
+  @override
+  String get m5NotificationDriverAssigned => 'Equipment assigned to you';
+
+  @override
+  String get m5NotificationDriverIssue => 'New driver issue';
+
+  @override
+  String get m5NotificationSubmissionPending =>
+      'Financial request needs review';
+
+  @override
+  String get m5NotificationSubmissionApproved =>
+      'Your financial request was approved';
+
+  @override
+  String get m5NotificationSubmissionRejected =>
+      'Your financial request was rejected';
+
+  @override
+  String get m5AttentionReview => 'Financial requests need review';
+
+  @override
+  String m5PendingReviewsCount(String count) {
+    return '$count financial requests awaiting review';
+  }
+
+  @override
+  String get m5RoleChangeResetsPermissions =>
+      'Changing the role resets permissions to the new role defaults and removes previous customizations. Continue?';
+
+  @override
+  String get m5DirectExpenseHint =>
+      'Complete the expense details and post it directly.';
+
+  @override
+  String get m5DirectExpenseConfirm => 'Post this expense?';
+
+  @override
+  String get m5InvitationPending =>
+      'An invitation is already pending for this number.';
+
+  @override
+  String get m5InvitationClosed =>
+      'Invitation closed or expired. Refresh the list.';
+
+  @override
+  String get m5AlreadyMember => 'This person is already a member.';
+
+  @override
+  String get m5SubmissionReviewed =>
+      'This request was already reviewed. Refresh the list.';
+
+  @override
+  String get m5NoDriverAssignment => 'No equipment is assigned to you now.';
+
+  @override
+  String get m5Issues => 'Issues';
+
+  @override
+  String get m5DriverInviteHint =>
+      'Assign equipment after the driver accepts the invitation.';
+
+  @override
+  String get m5AllScopeHint => 'Includes current and future equipment.';
+
+  @override
+  String get m5AssignMayReplace =>
+      'This assignment may replace the equipment’s current driver. Continue?';
+
+  @override
+  String get m5ChooseDriver => 'Choose driver';
+
+  @override
+  String get m5NoEligibleDrivers =>
+      'No drivers are available for this equipment';
+
+  @override
+  String m5DriverCurrentlyOnEquipment(String equipmentName) {
+    return 'Currently assigned to $equipmentName';
+  }
+
+  @override
+  String m5ConfirmAssignDriver(String driverName, String equipmentName) {
+    return 'Assign $driverName to $equipmentName?';
+  }
+
+  @override
+  String m5ConfirmReplaceDriver(
+    String currentDriver,
+    String newDriver,
+    String equipmentName,
+  ) {
+    return 'Replace $currentDriver with $newDriver on $equipmentName?';
+  }
+
+  @override
+  String m5ConfirmMoveDriver(String driverName, String sourceEquipment) {
+    return '$driverName will no longer be assigned to $sourceEquipment.';
+  }
 }

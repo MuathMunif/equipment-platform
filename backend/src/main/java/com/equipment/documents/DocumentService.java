@@ -63,25 +63,25 @@ public class DocumentService {
         return result;
     }
     private Map<String,Object> current(UUID w,UUID id) {var d=doc(w,id,false);return view(d,version(w,id,(UUID)d.get("current_version_id")));}
-    public Map<String,Object> get(Actor actor,UUID w,UUID id) {access.owner(actor,w);return current(w,id);}
-    public Map<String,Object> getVersion(Actor actor,UUID w,UUID id,UUID version) {access.owner(actor,w);return view(doc(w,id,false),version(w,id,version));}
-    public List<Map<String,Object>> versions(Actor actor,UUID w,UUID id) {access.owner(actor,w);var d=doc(w,id,false);return db.queryForList("select * from document_version where workspace_id=? and document_id=? order by version_number desc",w,id).stream().map(v->view(d,v)).toList();}
+    public Map<String,Object> get(Actor actor,UUID w,UUID id) {access.resource(actor,w,"equipment_document",id,"DOCUMENT_VIEW");return current(w,id);}
+    public Map<String,Object> getVersion(Actor actor,UUID w,UUID id,UUID version) {access.resource(actor,w,"equipment_document",id,"DOCUMENT_VIEW");return view(doc(w,id,false),version(w,id,version));}
+    public List<Map<String,Object>> versions(Actor actor,UUID w,UUID id) {access.resource(actor,w,"equipment_document",id,"DOCUMENT_VIEW");var d=doc(w,id,false);return db.queryForList("select * from document_version where workspace_id=? and document_id=? order by version_number desc",w,id).stream().map(v->view(d,v)).toList();}
     public List<Map<String,Object>> list(Actor actor,UUID w,UUID equipment,boolean archived) {
-        access.owner(actor,w);equipment(w,equipment);
+        access.equipment(actor,w,equipment,"DOCUMENT_VIEW");equipment(w,equipment);
         return db.queryForList("select id from equipment_document where workspace_id=? and equipment_id=? and archived_at is "+(archived?"not null":"null")+" order by created_at desc,id desc",w,equipment).stream().map(r->current(w,(UUID)r.get("id"))).toList();
     }
     public List<Map<String,Object>> incomplete(Actor actor,UUID w) {
-        access.owner(actor,w);
-        return db.queryForList("select d.id from equipment_document d join equipment e on e.workspace_id=d.workspace_id and e.id=d.equipment_id join document_version v on v.workspace_id=d.workspace_id and v.id=d.current_version_id where d.workspace_id=? and d.archived_at is null and e.archived_at is null and v.expiry_date is null order by d.created_at desc",w).stream().map(r->current(w,(UUID)r.get("id"))).toList();
+        Access.Member member=access.require(actor,w,"DOCUMENT_VIEW");
+        return db.queryForList("select d.id from equipment_document d join equipment e on e.workspace_id=d.workspace_id and e.id=d.equipment_id join document_version v on v.workspace_id=d.workspace_id and v.id=d.current_version_id where d.workspace_id=? and d.archived_at is null and e.archived_at is null and v.expiry_date is null order by d.created_at desc",w).stream().filter(r->access.contains(member,w,(UUID)db.queryForMap("select equipment_id from equipment_document where workspace_id=? and id=?",w,r.get("id")).get("equipment_id"))).toList().stream().map(r->current(w,(UUID)r.get("id"))).toList();
     }
     private void equipment(UUID w,UUID id) {Boolean found=db.queryForObject("select exists(select 1 from equipment where workspace_id=? and id=?)",Boolean.class,w,id);if(!Boolean.TRUE.equals(found))throw ApiException.missing();}
     public List<Map<String,Object>> duplicate(Actor actor,UUID w,UUID equipment,String requestedType,String name) {
-        access.owner(actor,w);equipment(w,equipment);String t=type(requestedType),c=custom(t,name);
+        access.equipment(actor,w,equipment,"DOCUMENT_VIEW");equipment(w,equipment);String t=type(requestedType),c=custom(t,name);
         return db.queryForList("select id from equipment_document where workspace_id=? and equipment_id=? and type=? and custom_type_name is not distinct from ? and archived_at is null order by created_at desc",w,equipment,t,c).stream().map(r->current(w,(UUID)r.get("id"))).toList();
     }
     @Transactional
     public Map<String,Object> create(Actor actor,UUID w,UUID equipment,String key,Input input) {
-        access.owner(actor,w);equipment(w,equipment);
+        access.equipment(actor,w,equipment,"DOCUMENT_MANAGE");equipment(w,equipment);
         if(db.queryForObject("select archived_at is not null from equipment where workspace_id=? and id=? for update",Boolean.class,w,equipment))throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل إضافة مستند");
         String t=type(input.type()),c=custom(t,input.customTypeName());Fields f=fields(input.documentNumber(),input.issueDate(),input.expiryDate(),input.notes(),false);
         UUID id=retries.execute(w,actor.userId(),"document.create:"+equipment,key,Values.payload(t,c,f.number(),f.issue(),f.expiry(),f.notes()),()->{
@@ -93,7 +93,7 @@ public class DocumentService {
     }
     @Transactional
     public Map<String,Object> edit(Actor actor,UUID w,UUID id,Edit input) {
-        access.owner(actor,w);var d=doc(w,id,true);if(d.get("archived_at")!=null)throw new ApiException(409,"DOCUMENT_ARCHIVED","استعد المستند قبل تعديله");
+        access.resource(actor,w,"equipment_document",id,"DOCUMENT_MANAGE");var d=doc(w,id,true);if(d.get("archived_at")!=null)throw new ApiException(409,"DOCUMENT_ARCHIVED","استعد المستند قبل تعديله");
         if(d.get("equipment_archived_at")!=null)throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل تعديل المستند");
         if(input.expectedVersionId()==null || !input.expectedVersionId().equals(d.get("current_version_id")))throw new ApiException(409,"DOCUMENT_VERSION_CHANGED","تغيرت النسخة الحالية. حدّث الصفحة قبل التعديل");
         String t=type(input.type()),c=custom(t,input.customTypeName());
@@ -109,7 +109,7 @@ public class DocumentService {
     private String jsonDate(Object value) {return value==null?"null":"\""+value+"\"";}
     @Transactional
     public Map<String,Object> renew(Actor actor,UUID w,UUID id,Renew input) {
-        access.owner(actor,w);var d=doc(w,id,true);if(d.get("archived_at")!=null)throw new ApiException(409,"DOCUMENT_ARCHIVED","استعد المستند قبل التجديد");
+        access.resource(actor,w,"equipment_document",id,"DOCUMENT_MANAGE");var d=doc(w,id,true);if(d.get("archived_at")!=null)throw new ApiException(409,"DOCUMENT_ARCHIVED","استعد المستند قبل التجديد");
         if(d.get("equipment_archived_at")!=null)throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل تجديد المستند");
         if(input.expectedVersionId()==null || !input.expectedVersionId().equals(d.get("current_version_id")))throw new ApiException(409,"DOCUMENT_ALREADY_RENEWED","تم تجديد هذا المستند بالفعل. حدّث الصفحة لمشاهدة النسخة الحالية");
         Fields f=fields(input.documentNumber(),input.issueDate(),input.expiryDate(),input.notes(),true);
@@ -119,13 +119,13 @@ public class DocumentService {
     }
     @Transactional
     public Map<String,Object> archive(Actor actor,UUID w,UUID id,String reason) {
-        access.owner(actor,w);var d=doc(w,id,true);if(d.get("archived_at")!=null)return current(w,id);
+        access.resource(actor,w,"equipment_document",id,"DOCUMENT_MANAGE");var d=doc(w,id,true);if(d.get("archived_at")!=null)return current(w,id);
         db.update("update equipment_document set archived_at=now(),archived_by=?,archive_reason=? where workspace_id=? and id=?",actor.userId(),Values.note(reason),w,id);
         audit.record(w,actor.userId(),"DOCUMENT_ARCHIVED",id);return current(w,id);
     }
     @Transactional
     public Map<String,Object> restore(Actor actor,UUID w,UUID id) {
-        access.owner(actor,w);var d=doc(w,id,true);if(d.get("equipment_archived_at")!=null)throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل المستند");
+        access.resource(actor,w,"equipment_document",id,"DOCUMENT_MANAGE");var d=doc(w,id,true);if(d.get("equipment_archived_at")!=null)throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل المستند");
         if(d.get("archived_at")==null)return current(w,id);
         db.update("update equipment_document set archived_at=null,archived_by=null,archive_reason=null where workspace_id=? and id=?",w,id);
         audit.record(w,actor.userId(),"DOCUMENT_RESTORED",id);notifications.currentState(w,id);return current(w,id);

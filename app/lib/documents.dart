@@ -7,6 +7,7 @@ import 'api.dart';
 import 'file_export.dart';
 import 'localization.dart';
 import 'maintenance.dart';
+import 'team.dart';
 
 const documentTypeCodes = [
   'REGISTRATION',
@@ -76,6 +77,11 @@ String localizedDocumentStatus(BuildContext context, Map<String, dynamic> doc) {
       loc.notificationWeeklyTitle,
       loc.weeklyExpiredCount('${params['count'] ?? 0}'),
     ),
+    'DRIVER_ASSIGNED' => (loc.m5NotificationDriverAssigned, equipment),
+    'DRIVER_ISSUE' => (loc.m5NotificationDriverIssue, equipment),
+    'SUBMISSION_PENDING' => (loc.m5NotificationSubmissionPending, equipment),
+    'SUBMISSION_APPROVED' => (loc.m5NotificationSubmissionApproved, equipment),
+    'SUBMISSION_REJECTED' => (loc.m5NotificationSubmissionRejected, equipment),
     _ => (
       item['title'] as String? ?? loc.notifications,
       item['body'] as String? ?? '',
@@ -349,10 +355,12 @@ class _EquipmentDocumentsCardState extends State<EquipmentDocumentsCard> {
                 key: const Key('openEquipmentDocuments'),
                 onPressed: openList,
                 icon: Icon(
-                  docs.isEmpty ? Icons.add : Icons.description_outlined,
+                  docs.isEmpty && widget.api.can('DOCUMENT_MANAGE')
+                      ? Icons.add
+                      : Icons.description_outlined,
                 ),
                 label: Text(
-                  docs.isEmpty
+                  docs.isEmpty && widget.api.can('DOCUMENT_MANAGE')
                       ? l10n(context).addDocument
                       : l10n(context).uiViewDocuments,
                 ),
@@ -505,15 +513,16 @@ class _DocumentListPageState extends State<DocumentListPage> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: FilledButton.icon(
-                    key: const Key('addDocument'),
-                    onPressed: add,
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n(context).addDocument),
+                if (widget.api.can('DOCUMENT_MANAGE'))
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FilledButton.icon(
+                      key: const Key('addDocument'),
+                      onPressed: add,
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n(context).addDocument),
+                    ),
                   ),
-                ),
                 if (current.isEmpty)
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
@@ -1208,7 +1217,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         ),
                       ),
                     const SizedBox(height: 16),
-                    if (!archived) ...[
+                    if (!archived && widget.api.can('DOCUMENT_MANAGE')) ...[
                       if (expired)
                         FilledButton.icon(
                           key: const Key('renewDocument'),
@@ -1238,13 +1247,15 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         icon: const Icon(Icons.archive_outlined),
                         label: Text(l10n(context).uiArchiveDocument),
                       ),
-                    ] else if (d['equipmentArchived'] != true)
+                    ] else if (archived &&
+                        widget.api.can('DOCUMENT_MANAGE') &&
+                        d['equipmentArchived'] != true)
                       FilledButton(
                         key: const Key('restoreDocument'),
                         onPressed: busy ? null : () => action('restore'),
                         child: Text(l10n(context).restoreDocument),
                       )
-                    else
+                    else if (archived && widget.api.can('DOCUMENT_MANAGE'))
                       Text(
                         l10n(context)
                             .uiRestoreTheEquipmentBeforeRestoringThisDocument,
@@ -1271,14 +1282,16 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             : null,
                       ),
                     ),
-                    if (!archived)
+                    if (!archived && widget.api.can('DOCUMENT_MANAGE'))
                       OutlinedButton.icon(
                         key: const Key('addDocumentAttachment'),
                         onPressed: busy ? null : addAttachment,
                         icon: const Icon(Icons.attach_file),
                         label: Text(l10n(context).uiAddAttachment),
                       ),
-                    if (upload != null && uploadError != null)
+                    if (widget.api.can('DOCUMENT_MANAGE') &&
+                        upload != null &&
+                        uploadError != null)
                       TextButton(
                         key: const Key('retryDocumentAttachment'),
                         onPressed: busy ? null : retryUpload,
@@ -1597,7 +1610,9 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                 .map(
                   (d) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: d['entityType'] == 'ISSUE'
+                    leading: d['entityType'] == 'FINANCIAL_REVIEW'
+                        ? const Icon(Icons.fact_check_outlined)
+                        : d['entityType'] == 'ISSUE'
                         ? Icon(
                             Icons.report_outlined,
                             color: d['equipmentStopped'] == true
@@ -1606,14 +1621,20 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                           )
                         : null,
                     title: Text(
-                      d['entityType'] == 'ISSUE'
+                      d['entityType'] == 'FINANCIAL_REVIEW'
+                          ? l10n(context).m5PendingReviewsCount(
+                              '${d['pendingCount'] ?? 0}',
+                            )
+                          : d['entityType'] == 'ISSUE'
                           ? (d['equipmentStopped'] == true
                                 ? l10n(context).m4StoppedBadge
                                 : l10n(context).m4AttentionOpenIssue)
                           : localizedDocumentName(context, d),
                     ),
                     subtitle: Text(
-                      d['entityType'] == 'ISSUE'
+                      d['entityType'] == 'FINANCIAL_REVIEW'
+                          ? ''
+                          : d['entityType'] == 'ISSUE'
                           ? '${d['equipmentName']} • ${d['description']}'
                           : localizedAttentionBody(context, d),
                     ),
@@ -1621,7 +1642,9 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => d['entityType'] == 'ISSUE'
+                          builder: (_) => d['entityType'] == 'FINANCIAL_REVIEW'
+                              ? ReviewQueuePage(api: widget.api)
+                              : d['entityType'] == 'ISSUE'
                               ? IssueDetailPage(
                                   api: widget.api,
                                   id: d['issueId'] as String,
@@ -1742,7 +1765,9 @@ class _AttentionPageState extends State<AttentionPage> {
               ...items.map(
                 (d) => Card(
                   child: ListTile(
-                    leading: d['entityType'] == 'ISSUE'
+                    leading: d['entityType'] == 'FINANCIAL_REVIEW'
+                        ? const Icon(Icons.fact_check_outlined)
+                        : d['entityType'] == 'ISSUE'
                         ? Icon(
                             Icons.report_outlined,
                             color: d['equipmentStopped'] == true
@@ -1751,14 +1776,20 @@ class _AttentionPageState extends State<AttentionPage> {
                           )
                         : null,
                     title: Text(
-                      d['entityType'] == 'ISSUE'
+                      d['entityType'] == 'FINANCIAL_REVIEW'
+                          ? l10n(context).m5PendingReviewsCount(
+                              '${d['pendingCount'] ?? 0}',
+                            )
+                          : d['entityType'] == 'ISSUE'
                           ? (d['equipmentStopped'] == true
                                 ? l10n(context).m4StoppedBadge
                                 : l10n(context).m4AttentionOpenIssue)
                           : localizedDocumentName(context, d),
                     ),
                     subtitle: Text(
-                      d['entityType'] == 'ISSUE'
+                      d['entityType'] == 'FINANCIAL_REVIEW'
+                          ? ''
+                          : d['entityType'] == 'ISSUE'
                           ? '${d['equipmentName']} • ${d['description']}'
                           : localizedAttentionBody(context, d),
                     ),
@@ -1766,7 +1797,9 @@ class _AttentionPageState extends State<AttentionPage> {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => d['entityType'] == 'ISSUE'
+                          builder: (_) => d['entityType'] == 'FINANCIAL_REVIEW'
+                              ? ReviewQueuePage(api: widget.api)
+                              : d['entityType'] == 'ISSUE'
                               ? IssueDetailPage(
                                   api: widget.api,
                                   id: d['issueId'] as String,
@@ -1878,11 +1911,13 @@ class _IncompleteDocumentsPageState extends State<IncompleteDocumentsPage> {
                   child: ListTile(
                     title: Text(localizedDocumentName(context, d)),
                     subtitle: Text(l10n(context).docMissingExpiry),
-                    trailing: TextButton(
-                      key: Key('addExpiry-${d['id']}'),
-                      onPressed: () => addExpiry(d),
-                      child: Text(l10n(context).addExpiryDate),
-                    ),
+                    trailing: widget.api.can('DOCUMENT_MANAGE')
+                        ? TextButton(
+                            key: Key('addExpiry-${d['id']}'),
+                            onPressed: () => addExpiry(d),
+                            child: Text(l10n(context).addExpiryDate),
+                          )
+                        : null,
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -2021,6 +2056,36 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
             ),
           ),
         );
+      } else if (item['entityType'] == 'FINANCIAL_SUBMISSION' &&
+          item['entityId'] != null) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SubmissionDetailPage(
+              api: widget.api,
+              id: item['entityId'] as String,
+              reviewer: item['templateKey'] == 'SUBMISSION_PENDING',
+            ),
+          ),
+        );
+      } else if (item['templateKey'] == 'SUBMISSION_PENDING') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ReviewQueuePage(api: widget.api)),
+        );
+      } else if (item['entityType'] == 'ISSUE' && item['entityId'] != null) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => IssueDetailPage(
+              api: widget.api,
+              id: item['entityId'] as String,
+            ),
+          ),
+        );
+      } else if (item['templateKey'] == 'DRIVER_ASSIGNED') {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        return;
       } else {
         await Navigator.push(
           context,

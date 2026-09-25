@@ -1,5 +1,5 @@
 # Delivery backlog
-Status 2026-09-25: M0/M1, M2 and M3 are functionally complete for local V1 development. The owner's newly approved M4 issues and maintenance scope is implemented on `feat/m4-maintenance-issues` and is undergoing final connected verification and PR review; see `HANDOFF.md`. Private production object storage, malware scanning and live Push remain deferred. This is not production readiness.
+Status 2026-09-25: M0–M4 are merged in `main` for local V1 development. M5 team, drivers and scoped permissions are implemented on `feat/m5-team-drivers-permissions`, pending PR/CI review; see `HANDOFF.md`. Private production object storage, malware scanning, live Push and production OTP remain deferred. This is not production readiness.
 
 Localization foundation before M4 is merged into main: `ar`, `en`, `ur` resources, user-level saved preference, localized app UI and semantic notification templates. Arabic remains fallback. Urdu copy requires native-speaker review before public release.
 
@@ -53,17 +53,14 @@ connected acceptance evidence are required before marking M3 functionally comple
 General/shared expenses were completed in M2. Period financial reporting remains future scope, not silently part of M3.
 
 ## M4 — Issues and maintenance (owner's 2026-09-25 scope)
-Implemented on `feat/m4-maintenance-issues`: optional issue type/stopped flag; OPEN → IN_PROGRESS/CLOSED and reopening; resolution history; independent completed-work maintenance records with optional issue link; cancellation without deleting financial entries; protected attachments; multiple eligible M2 expenses per maintenance record; derived financial summary; global/equipment lists and issue Attention; ar/en/ur UI. Flyway V13, backend/Flutter regression and connected web acceptance are recorded in `HANDOFF.md`.
+Merged into `main`: optional issue type/stopped flag; OPEN → IN_PROGRESS/CLOSED and reopening; resolution history; independent completed-work maintenance records with optional issue link; cancellation without deleting financial entries; protected attachments; multiple eligible M2 expenses per maintenance record; derived financial summary; global/equipment lists and issue Attention; ar/en/ur UI. Flyway V13 and acceptance evidence are recorded in `HANDOFF.md`.
 Gate: three owner journeys (linked repair, direct maintenance, simple issue), workspace isolation, and no duplicated financial value. Work orders, preventive schedules, readings, issue priorities and independently stored maintenance costs are outside M4.
 
-## Later scope — not started here
-Older backlog wording placed corrections/refunds in M4 and issues/maintenance in M5. The owner's later explicit M4 assignment supersedes that ordering. Corrections/refunds are already in M2; future milestone numbering and remaining team/product work require a separate task and are not started by this branch.
+## M5 — Team, drivers and permissions (owner's 2026-09-25 scope)
+Implemented on `feat/m5-team-drivers-permissions`: seven-day invitations and acceptance/decline, owner/manager/accountant/driver presets, capability overrides, equipment scope, direct/review financial modes, revocation, workspace switching, single active driver assignment with history, expense-only driver submissions and review, semantic notifications, and ar/en/ur UI. Rejected submissions can create a new linked request without rewriting review history; approved submissions leave later money changes to M2. Flyway V14–V17 and negative authorization tests cover existing M0–M4 routes. Gate: local tests and connected acceptance, then PR/CI review; production identity and storage are still deferred.
 
-## M6 — Optional team and multi-workspace experience
-Invitations and acceptance, owner/manager/accountant/driver role presets, resource scope and customization,
-submission/review with Q-03/Q-12 resolved, honest entered-by/source distinction,
-driver assignment history, membership revocation, tenant switching and team-aware notification recipients.
-Gate: all tenant and permission-negative tests pass, including shared originals and hidden totals; owner still works alone.
+## Later scope — not started here
+Older backlog wording placed corrections/refunds in M4 and issues/maintenance in M5, and team in M6. The owner's subsequent explicit assignments supersede that ordering. Corrections/refunds are M2; issues/maintenance are M4; team/driver work is M5. No M6 implementation is authorized by this branch.
 
 ## M7 — Optional organization/project features and launch blockers
 Basic organizations/associations; project/contract details after Q-04/Q-05 approval.

@@ -67,6 +67,8 @@ class Api {
   String? token;
   String? csrf;
   String? workspace;
+  Set<String>? capabilities;
+  String? financialMode;
   VoidCallback? expired;
   Api({
     http.Client? client,
@@ -113,6 +115,8 @@ class Api {
   Future<void> clear() async {
     csrf = null;
     workspace = null;
+    capabilities = null;
+    financialMode = null;
     await setToken(null);
   }
 
@@ -207,7 +211,34 @@ class Api {
   Future<Map<String, dynamic>> me() async {
     final data = await json('GET', '/auth/me') as Map<String, dynamic>;
     csrf = data['csrfToken'];
-    workspace = data['workspaces'][0]['id'];
+    final spaces = data['workspaces'] as List<dynamic>? ?? [];
+    final last = data['lastWorkspaceId'];
+    workspace = spaces.any((space) => space['id'] == last)
+        ? last as String
+        : spaces.isEmpty
+        ? null
+        : spaces.first['id'] as String;
+    final active = spaces
+        .where((space) => space['id'] == workspace)
+        .firstOrNull;
+    capabilities = active == null
+        ? <String>{}
+        : (active['capabilities'] as List<dynamic>? ?? [])
+              .cast<String>()
+              .toSet();
+    financialMode = active?['financialMode'] as String?;
     return data;
+  }
+
+  bool can(String capability) => capabilities?.contains(capability) ?? true;
+  bool get canPostFinance =>
+      can('FINANCE_MANAGE') &&
+      (financialMode == null || financialMode == 'DIRECT');
+
+  Future<void> selectWorkspace(String id) async {
+    await json('PUT', '/workspaces/$id/selection');
+    workspace = id;
+    capabilities = {};
+    financialMode = null;
   }
 }
