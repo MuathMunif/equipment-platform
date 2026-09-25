@@ -3,6 +3,7 @@ package com.equipment.attachments;
 import com.equipment.audit.Audit;
 import com.equipment.common.*;
 import com.equipment.finance.FinanceService;
+import com.equipment.documents.DocumentService;
 import com.equipment.identity.Actor;
 import com.equipment.workspaces.Access;
 import java.io.IOException;
@@ -13,16 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AttachmentService {
-    private final JdbcTemplate db; private final Access access; private final FinanceService finance; private final Idempotency retries; private final Audit audit; private final ObjectStorageService storage; private final ContentValidator validator;
-    public AttachmentService(JdbcTemplate db,Access access,FinanceService finance,Idempotency retries,Audit audit,ObjectStorageService storage,ContentValidator validator) { this.db=db;this.access=access;this.finance=finance;this.retries=retries;this.audit=audit;this.storage=storage;this.validator=validator; }
+    private final JdbcTemplate db; private final Access access; private final FinanceService finance; private final DocumentService documents; private final Idempotency retries; private final Audit audit; private final ObjectStorageService storage; private final ContentValidator validator;
+    public AttachmentService(JdbcTemplate db,Access access,FinanceService finance,DocumentService documents,Idempotency retries,Audit audit,ObjectStorageService storage,ContentValidator validator) { this.db=db;this.access=access;this.finance=finance;this.documents=documents;this.retries=retries;this.audit=audit;this.storage=storage;this.validator=validator; }
     public record Initiate(String filename,String mediaType,Long size) {}
-    public record Attachment(UUID id,UUID entryId,String filename,String mediaType,long size,String state,String scanStatus) {}
+    public record Attachment(UUID id,UUID entryId,UUID documentVersionId,String filename,String mediaType,long size,String state,String scanStatus) {}
     public record Download(byte[] bytes,String mediaType,String filename) {}
     private Map<String,Object> require(UUID workspace,UUID id,boolean lock) {
-        var rows=db.queryForList("select a.* from attachment a join financial_entry f on f.workspace_id=a.workspace_id and f.id=a.entry_id where a.workspace_id=? and a.id=? and f.lifecycle<>'DISCARDED'"+(lock?" for update of a":""),workspace,id);
+        var rows=db.queryForList("select a.* from attachment a left join financial_entry f on f.workspace_id=a.workspace_id and f.id=a.entry_id left join document_version v on v.workspace_id=a.workspace_id and v.id=a.document_version_id left join equipment_document d on d.workspace_id=v.workspace_id and d.id=v.document_id where a.workspace_id=? and a.id=? and (f.lifecycle<>'DISCARDED' or d.id is not null)"+(lock?" for update of a":""),workspace,id);
         if(rows.isEmpty()) throw ApiException.missing(); return rows.getFirst();
     }
-    private Attachment view(Map<String,Object> row) { return new Attachment((UUID)row.get("id"),(UUID)row.get("entry_id"),(String)row.get("original_name"),(String)row.get("declared_type"),((Number)row.get("declared_size")).longValue(),(String)row.get("state"),(String)row.get("scan_status")); }
+    private Attachment view(Map<String,Object> row) { return new Attachment((UUID)row.get("id"),(UUID)row.get("entry_id"),(UUID)row.get("document_version_id"),(String)row.get("original_name"),(String)row.get("declared_type"),((Number)row.get("declared_size")).longValue(),(String)row.get("state"),(String)row.get("scan_status")); }
     public Attachment get(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return view(require(workspace,id,false)); }
     public List<Attachment> list(Actor actor,UUID workspace,UUID entry) {
         access.owner(actor,workspace); finance.requireAttachable(workspace,entry);
@@ -43,12 +44,38 @@ public class AttachmentService {
             UUID created=UUID.randomUUID(); db.update("insert into attachment(id,workspace_id,entry_id,original_name,declared_type,declared_size,state,created_by) values(?,?,?,?,?,?,'PENDING',?)",created,workspace,entry,filename,request.mediaType(),request.size(),actor.userId());return created;
         });return view(require(workspace,id,false));
     }
+    public List<Attachment> listDocument(Actor actor,UUID workspace,UUID document,UUID version) {
+        access.owner(actor,workspace);documents.requireVersion(workspace,document,version);
+        return db.queryForList("select * from attachment where workspace_id=? and document_version_id=? order by created_at,id",workspace,version).stream().map(this::view).toList();
+    }
+    @Transactional
+    public Attachment initiateDocument(Actor actor,UUID workspace,UUID document,UUID version,String key,Initiate request) {
+        access.owner(actor,workspace);documents.requireVersion(workspace,document,version);
+        String filename=Values.text(request.filename(),200,"اسم الملف");
+        if(filename.contains("/") || filename.contains("\\") || filename.chars().anyMatch(c->c<32 || c==127)) throw ApiException.invalid("اختر اسم ملف دون رموز مسار");
+        if(request.mediaType()==null || !ContentValidator.TYPES.contains(request.mediaType())) throw new ApiException(400,"UNSUPPORTED_FILE","الصيغ المدعومة: PNG وJPEG وPDF. حوّل HEIC إلى JPEG قبل الرفع");
+        if(request.size()==null || request.size()<=0 || request.size()>ContentValidator.MAX_BYTES) throw new ApiException(413,"FILE_TOO_LARGE","اختر ملفًا لا يتجاوز 10 ميغابايت");
+        UUID id=retries.execute(workspace,actor.userId(),"document.attachment.create:"+version,key,Values.payload(filename,request.mediaType(),request.size()),()->{
+            var parent=db.queryForList("select d.current_version_id,d.archived_at from equipment_document d join document_version v on v.workspace_id=d.workspace_id and v.document_id=d.id where d.workspace_id=? and d.id=? and v.id=? for update of d",workspace,document,version);
+            if(parent.isEmpty())throw ApiException.missing();
+            if(parent.getFirst().get("archived_at")!=null || !version.equals(parent.getFirst().get("current_version_id")))throw new ApiException(409,"HISTORICAL_VERSION","المرفقات الجديدة للنسخة الحالية فقط");
+            Long count=db.queryForObject("select count(*) from attachment where workspace_id=? and document_version_id=?",Long.class,workspace,version);
+            if(count>=10)throw new ApiException(409,"ATTACHMENT_LIMIT","الحد التطويري 10 مرفقات للمستند");
+            UUID created=UUID.randomUUID();db.update("insert into attachment(id,workspace_id,document_version_id,original_name,declared_type,declared_size,state,created_by) values(?,?,?,?,?,?,'PENDING',?)",created,workspace,version,filename,request.mediaType(),request.size(),actor.userId());
+            audit.record(workspace,actor.userId(),"DOCUMENT_ATTACHMENT_ADDED",created);return created;
+        });return view(require(workspace,id,false));
+    }
     @Transactional(noRollbackFor=ApiException.class)
     public Attachment upload(Actor actor,UUID workspace,UUID id,String mediaType,byte[] bytes) {
         access.owner(actor,workspace);var row=require(workspace,id,true);String checksum=Values.hash(bytes);
         if(row.get("state").equals("READY")) {
             if(checksum.equals(row.get("checksum"))) return view(row);
             throw new ApiException(409,"IMMUTABLE_ATTACHMENT","المرفق محفوظ؛ أضف مرفقًا جديدًا إذا احتجت ملفًا آخر");
+        }
+        if(row.get("document_version_id")!=null) {
+            var parent=db.queryForList("select d.current_version_id,d.archived_at from document_version v join equipment_document d on d.workspace_id=v.workspace_id and d.id=v.document_id where v.workspace_id=? and v.id=? for update of d",workspace,row.get("document_version_id"));
+            if(parent.isEmpty() || parent.getFirst().get("archived_at")!=null || !row.get("document_version_id").equals(parent.getFirst().get("current_version_id")))
+                throw new ApiException(409,"HISTORICAL_VERSION","المرفقات الجديدة للنسخة الحالية فقط");
         }
         try {
             if(bytes.length!=((Number)row.get("declared_size")).longValue() || !Objects.equals(mediaType,row.get("declared_type"))) throw ApiException.invalid("حجم الملف أو صيغته لا يطابقان الملف المحدد؛ أعد رفع الملف نفسه");

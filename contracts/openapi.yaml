@@ -419,6 +419,127 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
         '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{equipment}/documents:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    get:
+      description: Active document list by default; archived=true lists archived documents. Status is derived in Asia/Riyadh.
+      responses:
+        '200': {description: Document array}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      description: Create a document and version 1 with Idempotency-Key. Expiry is optional. A duplicate type is allowed after client warning.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentInput'}}}}
+      responses:
+        '200': {description: Created current document}
+        '400': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{equipment}/documents/duplicates:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    get:
+      description: List active same-type documents for an explicit warning; separate creation remains allowed.
+      parameters:
+        - {in: query, name: type, required: true, schema: {type: string}}
+        - {in: query, name: customTypeName, schema: {type: string}}
+      responses:
+        '200': {description: Matching documents}
+  /workspaces/{workspace}/documents/incomplete:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      description: Active documents with no current expiry on active equipment.
+      responses:
+        '200': {description: Incomplete document array}
+  /workspaces/{workspace}/documents/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Current document with derived status}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      description: Edit current version and type only before first renewal.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentInput'}}}}
+      responses:
+        '200': {description: Updated current document}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/documents/{id}/renewals:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Atomically create successor only when expectedVersionId still identifies current version; expiry required.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentRenewal'}}}}
+      responses:
+        '200': {description: New current version}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/documents/{id}/versions:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Versions newest first}
+  /workspaces/{workspace}/documents/{id}/versions/{version}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      - {in: path, name: version, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Read-only version detail and derived previous marker}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/documents/{id}/archive:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Archive without deleting versions or attachments; optional reason in JSON body.
+      responses:
+        '200': {description: Archived document}
+  /workspaces/{workspace}/documents/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Restore only while equipment is active; status is re-evaluated.
+      responses:
+        '200': {description: Restored document}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{id}/archive:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      responses:
+        '200': {description: Archived equipment; history remains}
+  /workspaces/{workspace}/equipment/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      responses:
+        '200': {description: Restored equipment}
+  /workspaces/{workspace}/documents/{document}/versions/{version}/attachments:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: document, required: true, schema: {type: string, format: uuid}}
+      - {in: path, name: version, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Version-scoped attachment metadata}
+    post:
+      description: Initiate attachment on current unarchived version; then use existing content PUT endpoint.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [filename, mediaType, size], properties: {filename: {type: string}, mediaType: {type: string}, size: {type: integer}}}}}}
+      responses:
+        '200': {description: Pending attachment metadata}
+        '409': {$ref: '#/components/responses/Error'}
   /workspaces/{workspace}/entries/{entry}/attachments:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -509,6 +630,27 @@ components:
         page: {type: integer}
         pageSize: {type: integer, const: 30}
         total: {type: integer}
+    DocumentInput:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
+        customTypeName: {type: [string, 'null'], maxLength: 100}
+        documentNumber: {type: [string, 'null'], maxLength: 100}
+        issueDate: {type: [string, 'null'], format: date}
+        expiryDate: {type: [string, 'null'], format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
+    DocumentRenewal:
+      type: object
+      additionalProperties: false
+      required: [expectedVersionId, expiryDate]
+      properties:
+        expectedVersionId: {type: string, format: uuid}
+        documentNumber: {type: [string, 'null'], maxLength: 100}
+        issueDate: {type: [string, 'null'], format: date}
+        expiryDate: {type: string, format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
     Equipment:
       type: object
       required: [id, reference, name, model, createdAt]
@@ -518,6 +660,7 @@ components:
         name: {type: string}
         model: {type: string}
         createdAt: {type: string, format: date-time}
+        archivedAt: {type: [string, 'null'], format: date-time}
     Draft:
       type: object
       required: [id, equipmentId, equipmentName, note, lifecycle, createdBy, createdAt, discardedBy, discardedAt]
@@ -602,10 +745,11 @@ components:
               createdAt: {type: string, format: date-time}
     Attachment:
       type: object
-      required: [id, entryId, filename, mediaType, size, state, scanStatus]
+      required: [id, entryId, documentVersionId, filename, mediaType, size, state, scanStatus]
       properties:
         id: {type: string, format: uuid}
-        entryId: {type: string, format: uuid}
+        entryId: {type: [string, 'null'], format: uuid}
+        documentVersionId: {type: [string, 'null'], format: uuid}
         filename: {type: string}
         mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
         size: {type: integer}

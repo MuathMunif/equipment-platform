@@ -41,6 +41,9 @@ import tools.jackson.databind.json.JsonMapper;
  "spring.datasource.username=equipment_test","spring.datasource.password=isolated-test-only"})
 @ActiveProfiles({"dev","test"})
 class OwnerSliceTest {
+ @org.springframework.boot.test.context.TestConfiguration static class FixedDocumentClock {
+  @org.springframework.context.annotation.Bean @org.springframework.context.annotation.Primary java.time.Clock fixedDocumentClock() {return java.time.Clock.fixed(java.time.Instant.parse("2026-09-24T21:00:00Z"),java.time.ZoneId.of("Asia/Riyadh"));}
+ }
  @LocalServerPort int port; @Autowired JdbcTemplate db; @Autowired ContentValidator validator; @Autowired TransactionTemplate transactions;
  static final JsonMapper JSON=JsonMapper.builder().build();
  final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
@@ -600,5 +603,67 @@ class OwnerSliceTest {
   assertEquals(200,request("GET",path(owner,"/attachments/"+draftFile+"/content"),null,owner.token,null).status);
   assertEquals(200,request("GET",path(owner,"/attachments/"+cancelledFile+"/content"),null,owner.token,null).status);
   var again=cleanup.clean(now);assertEquals(0,again.recordsRemoved());assertEquals(0,again.objectsRemoved());assertEquals(0,again.failures());
+ }
+
+ @Test void documentLifecycleVersionIsolationAndEquipmentArchive() throws Exception {
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),base=path(owner,"/equipment/"+eq+"/documents");
+  var bad=request("POST",base,Map.of("type","OTHER"),owner.token,key());assertEquals(400,bad.status);
+  assertEquals(400,request("POST",base,Map.of("type","INSURANCE","issueDate","2026-10-02","expiryDate","2026-10-01"),owner.token,key()).status);
+  assertEquals(404,request("POST",path(other,"/equipment/"+eq+"/documents"),Map.of("type","INSURANCE"),other.token,key()).status);
+  String documentKey=key();var initial=Map.of("type","INSURANCE","documentNumber","OLD","notes","first");
+  var created=request("POST",base,initial,owner.token,documentKey);assertEquals(200,created.status);
+  assertEquals(created.json.get("id"),request("POST",base,initial,owner.token,documentKey).json.get("id"));
+  String id=created.json.get("id").asString(),first=created.json.get("versionId").asString(),detail=path(owner,"/documents/"+id);
+  assertEquals("MISSING_EXPIRY",created.json.get("status").asString());
+  assertEquals(1,request("GET",base+"/duplicates?type=INSURANCE",null,owner.token,null).json.size());
+  assertEquals(1,request("GET",path(owner,"/documents/incomplete"),null,owner.token,null).json.size());
+  assertEquals(404,request("GET",path(other,"/documents/"+id),null,other.token,null).status);
+  var edited=request("PUT",detail,Map.of("type","INSURANCE","documentNumber","EDIT","expiryDate","2026-10-20"),owner.token,null);assertEquals(200,edited.status);assertEquals("EDIT",edited.json.get("documentNumber").asString());assertEquals("EXPIRING_SOON",edited.json.get("status").asString());
+  var second=request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"expiryDate","2027-01-01","documentNumber","NEW"),owner.token,null);assertEquals(200,second.status);
+  String next=second.json.get("versionId").asString();assertNotEquals(first,next);assertEquals(2,request("GET",detail+"/versions",null,owner.token,null).json.size());
+  assertEquals("PREVIOUS_VERSION",request("GET",detail+"/versions/"+first,null,owner.token,null).json.get("status").asString());
+  assertEquals(409,request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"expiryDate","2028-01-01"),owner.token,null).status);
+  assertEquals(409,request("PUT",detail,Map.of("type","REGISTRATION"),owner.token,null).status);
+  assertEquals(400,request("POST",detail+"/renewals",Map.of("expectedVersionId",next),owner.token,null).status);
+  assertEquals(200,request("POST",detail+"/archive",Map.of("reason","replaced"),owner.token,null).status);
+  assertEquals(0,request("GET",base,null,owner.token,null).json.size());
+  assertEquals(1,request("GET",base+"?archived=true",null,owner.token,null).json.size());
+  assertEquals(200,request("POST",path(owner,"/equipment/"+eq+"/archive"),null,owner.token,null).status);
+  assertEquals(409,request("POST",detail+"/restore",null,owner.token,null).status);
+  assertEquals(200,request("POST",path(owner,"/equipment/"+eq+"/restore"),null,owner.token,null).status);
+  assertEquals(200,request("POST",detail+"/restore",null,owner.token,null).status);
+  assertEquals(1,request("GET",base,null,owner.token,null).json.size());
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where action='DOCUMENT_RENEWED' and resource_id=?",Integer.class,UUID.fromString(id)));
+ }
+ @Test void concurrentDocumentRenewalAndVersionAttachments() throws Exception {
+  User user=login("0500000001");String eq=equipment(user),base=path(user,"/equipment/"+eq+"/documents");
+  var created=request("POST",base,Map.of("type","OTHER","customTypeName","بطاقة تشغيل","expiryDate","2026-10-01"),user.token,key());assertEquals(200,created.status);
+  String id=created.json.get("id").asString(),first=created.json.get("versionId").asString(),detail=path(user,"/documents/"+id);
+  byte[] bytes=image("png");String attach=detail+"/versions/"+first+"/attachments";
+  var pending=request("POST",attach,Map.of("filename","old.png","mediaType","image/png","size",bytes.length),user.token,key());assertEquals(200,pending.status);
+  String attachment=pending.json.get("id").asString();assertEquals(200,raw("PUT",path(user,"/attachments/"+attachment+"/content"),bytes,"image/png",user.token,null,Map.of()).status);
+  var body=Map.of("expectedVersionId",first,"expiryDate","2027-01-01");
+  try(var pool=Executors.newVirtualThreadPerTaskExecutor()) {
+   var a=pool.submit(()->request("POST",detail+"/renewals",body,user.token,null));var b=pool.submit(()->request("POST",detail+"/renewals",body,user.token,null));assertEquals(Set.of(200,409),Set.of(a.get().status,b.get().status));
+  }
+  assertEquals(2,db.queryForObject("select count(*) from document_version where document_id=?",Integer.class,UUID.fromString(id)));
+  String next=request("GET",detail,null,user.token,null).json.get("versionId").asString();
+  assertEquals(1,request("GET",attach,null,user.token,null).json.size());
+  assertEquals(0,request("GET",detail+"/versions/"+next+"/attachments",null,user.token,null).json.size());
+  assertEquals(409,request("POST",attach,Map.of("filename","late.png","mediaType","image/png","size",bytes.length),user.token,key()).status);
+  assertArrayEquals(bytes,request("GET",path(user,"/attachments/"+attachment+"/content"),null,user.token,null).raw.body());
+  User other=login("0500000002");assertEquals(404,request("GET",path(other,"/attachments/"+attachment+"/content"),null,other.token,null).status);
+ }
+ @Test void documentStatusUsesFixedWorkspaceDate() {
+  var day=java.time.LocalDate.of(2026,9,25);
+  assertEquals("VALID",com.equipment.documents.DocumentService.status(day.plusDays(31),day,false,false));
+  assertEquals("EXPIRING_SOON",com.equipment.documents.DocumentService.status(day.plusDays(30),day,false,false));
+  assertEquals("EXPIRING_SOON",com.equipment.documents.DocumentService.status(day.plusDays(7),day,false,false));
+  assertEquals("EXPIRING_SOON",com.equipment.documents.DocumentService.status(day.plusDays(1),day,false,false));
+  assertEquals("EXPIRES_TODAY",com.equipment.documents.DocumentService.status(day,day,false,false));
+  assertEquals("EXPIRED",com.equipment.documents.DocumentService.status(day.minusDays(1),day,false,false));
+  assertEquals("MISSING_EXPIRY",com.equipment.documents.DocumentService.status(null,day,false,false));
+  assertEquals("PREVIOUS_VERSION",com.equipment.documents.DocumentService.status(day,day,false,true));
+  assertEquals("ARCHIVED",com.equipment.documents.DocumentService.status(day,day,true,false));
  }
 }
