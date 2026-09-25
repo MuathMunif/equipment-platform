@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Equipment Platform — isolated development M1
-  version: 0.1.0
+  title: Equipment Platform — isolated development M3
+  version: 0.3.0
   description: |
     Owner-only local slice. Production startup is intentionally rejected.
     Every protected resource checks active OWNER membership before lookup and replay.
@@ -419,6 +419,165 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
         '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{equipment}/documents:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    get:
+      description: Active document list by default; archived=true lists archived documents. Status is derived in Asia/Riyadh.
+      responses:
+        '200': {description: Document array}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      description: Create a document and version 1 with Idempotency-Key. Expiry is optional. A duplicate type is allowed after client warning.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentInput'}}}}
+      responses:
+        '200': {description: Created current document}
+        '400': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{equipment}/documents/duplicates:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    get:
+      description: List active same-type documents for an explicit warning; separate creation remains allowed.
+      parameters:
+        - {in: query, name: type, required: true, schema: {type: string}}
+        - {in: query, name: customTypeName, schema: {type: string}}
+      responses:
+        '200': {description: Matching documents}
+  /workspaces/{workspace}/documents/incomplete:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      description: Active documents with no current expiry on active equipment.
+      responses:
+        '200': {description: Incomplete document array}
+  /workspaces/{workspace}/documents/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Current document with derived status}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      description: Edit only the expected current version; type can change only before first renewal.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentEdit'}}}}
+      responses:
+        '200': {description: Updated current document}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/documents/{id}/renewals:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Atomically create successor only when expectedVersionId still identifies current version; expiry required.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentRenewal'}}}}
+      responses:
+        '200': {description: New current version}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/documents/{id}/versions:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Versions newest first}
+  /workspaces/{workspace}/documents/{id}/versions/{version}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      - {in: path, name: version, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Read-only version detail and derived previous marker}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/documents/{id}/archive:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Archive without deleting versions or attachments; optional reason in JSON body.
+      responses:
+        '200': {description: Archived document}
+  /workspaces/{workspace}/documents/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Restore only while equipment is active; status is re-evaluated.
+      responses:
+        '200': {description: Restored document}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{id}/archive:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      responses:
+        '200': {description: Archived equipment; history remains}
+  /workspaces/{workspace}/equipment/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      responses:
+        '200': {description: Restored equipment}
+  /workspaces/{workspace}/documents/{document}/versions/{version}/attachments:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: document, required: true, schema: {type: string, format: uuid}}
+      - {in: path, name: version, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses:
+        '200': {description: Version-scoped attachment metadata}
+    post:
+      description: Initiate attachment on current unarchived version; then use existing content PUT endpoint.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [filename, mediaType, size], properties: {filename: {type: string}, mediaType: {type: string}, size: {type: integer}}}}}}
+      responses:
+        '200': {description: Pending attachment metadata}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/attention/documents:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Current active document attention ordered by urgency, excluding missing expiry; reading a notification never changes this list.
+      parameters:
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Document attention items, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/DocumentAttention'}}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/notifications:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Persistent notification history newest first; 30 per page. DOCUMENT items link via entityId to current document detail.
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses:
+        '200': {description: Notification page, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationPage'}}}}
+  /workspaces/{workspace}/notifications/unread-count:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      responses:
+        '200': {description: Unread count, content: {application/json: {schema: {type: object, required: [unreadCount], properties: {unreadCount: {type: integer}}}}}}
+  /workspaces/{workspace}/notifications/{id}/read:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Idempotently mark this recipient's notification read; document attention is unchanged.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      responses:
+        '200': {description: Updated notification, content: {application/json: {schema: {$ref: '#/components/schemas/Notification'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/notifications/read-all:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    post:
+      description: Mark all current recipient notifications read; attention is unchanged.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      responses:
+        '200': {description: Number newly marked read, content: {application/json: {schema: {type: object, required: [markedRead], properties: {markedRead: {type: integer}}}}}}
   /workspaces/{workspace}/entries/{entry}/attachments:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -509,6 +668,72 @@ components:
         page: {type: integer}
         pageSize: {type: integer, const: 30}
         total: {type: integer}
+    DocumentAttention:
+      type: object
+      required: [documentId, equipmentId, equipmentName, type, expiryDate, daysRemaining, status, body]
+      properties:
+        documentId: {type: string, format: uuid}
+        equipmentId: {type: string, format: uuid}
+        equipmentName: {type: string}
+        type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
+        customTypeName: {type: [string, 'null']}
+        expiryDate: {type: string, format: date}
+        daysRemaining: {type: integer, description: Negative after expiry}
+        status: {type: string, enum: [EXPIRED, EXPIRES_TODAY, EXPIRING_SOON]}
+        body: {type: string}
+    Notification:
+      type: object
+      required: [id, type, entityType, entityId, title, body, createdAt, readAt]
+      properties:
+        id: {type: string, format: uuid}
+        type: {type: string, enum: [DOCUMENT_CURRENT_STATE, DOCUMENT_30D, DOCUMENT_7D, DOCUMENT_1D, DOCUMENT_TODAY, DOCUMENT_EXPIRED_WEEKLY]}
+        entityType: {type: string, enum: [DOCUMENT, DOCUMENT_SUMMARY]}
+        entityId: {type: [string, 'null'], format: uuid, description: Current document ID for individual alerts}
+        title: {type: string}
+        body: {type: string}
+        createdAt: {type: string, format: date-time}
+        readAt: {type: [string, 'null'], format: date-time}
+    NotificationPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Notification'}}
+        page: {type: integer}
+        pageSize: {type: integer, const: 30}
+        total: {type: integer}
+    DocumentInput:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
+        customTypeName: {type: [string, 'null'], maxLength: 100}
+        documentNumber: {type: [string, 'null'], maxLength: 100}
+        issueDate: {type: [string, 'null'], format: date}
+        expiryDate: {type: [string, 'null'], format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
+    DocumentEdit:
+      type: object
+      additionalProperties: false
+      required: [expectedVersionId, type]
+      properties:
+        expectedVersionId: {type: string, format: uuid}
+        type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
+        customTypeName: {type: [string, 'null'], maxLength: 100}
+        documentNumber: {type: [string, 'null'], maxLength: 100}
+        issueDate: {type: [string, 'null'], format: date}
+        expiryDate: {type: [string, 'null'], format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
+    DocumentRenewal:
+      type: object
+      additionalProperties: false
+      required: [expectedVersionId, expiryDate]
+      properties:
+        expectedVersionId: {type: string, format: uuid}
+        documentNumber: {type: [string, 'null'], maxLength: 100}
+        issueDate: {type: [string, 'null'], format: date}
+        expiryDate: {type: string, format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
     Equipment:
       type: object
       required: [id, reference, name, model, createdAt]
@@ -518,6 +743,7 @@ components:
         name: {type: string}
         model: {type: string}
         createdAt: {type: string, format: date-time}
+        archivedAt: {type: [string, 'null'], format: date-time}
     Draft:
       type: object
       required: [id, equipmentId, equipmentName, note, lifecycle, createdBy, createdAt, discardedBy, discardedAt]
@@ -602,10 +828,11 @@ components:
               createdAt: {type: string, format: date-time}
     Attachment:
       type: object
-      required: [id, entryId, filename, mediaType, size, state, scanStatus]
+      required: [id, entryId, documentVersionId, filename, mediaType, size, state, scanStatus]
       properties:
         id: {type: string, format: uuid}
-        entryId: {type: string, format: uuid}
+        entryId: {type: [string, 'null'], format: uuid}
+        documentVersionId: {type: [string, 'null'], format: uuid}
         filename: {type: string}
         mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
         size: {type: integer}

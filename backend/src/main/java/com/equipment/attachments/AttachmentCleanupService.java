@@ -41,7 +41,7 @@ public class AttachmentCleanupService {
     public synchronized Result clean(Instant now) {
         Instant cutoff=Objects.requireNonNull(now).minus(retention);
         List<StaleAttachment> removed=transactions.execute(status->{
-            var rows=db.queryForList("select a.workspace_id,a.id,a.object_key from attachment a join financial_entry f on f.workspace_id=a.workspace_id and f.id=a.entry_id where ((a.state in ('PENDING','FAILED') and a.updated_at<?) or (f.lifecycle='DISCARDED' and f.discarded_at<?)) order by a.updated_at,a.id limit 100 for update of a skip locked",Timestamp.from(cutoff),Timestamp.from(cutoff));
+            var rows=db.queryForList("select a.workspace_id,a.id,a.object_key from attachment a where ((a.state in ('PENDING','FAILED') and a.updated_at<?) or exists (select 1 from financial_entry f where f.workspace_id=a.workspace_id and f.id=a.entry_id and f.lifecycle='DISCARDED' and f.discarded_at<?)) order by a.updated_at,a.id limit 100 for update of a skip locked",Timestamp.from(cutoff),Timestamp.from(cutoff));
             var deleted=new ArrayList<StaleAttachment>();
             for(var row:rows) {
                 UUID workspace=(UUID)row.get("workspace_id"),id=(UUID)row.get("id");

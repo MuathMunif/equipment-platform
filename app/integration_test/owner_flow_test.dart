@@ -1,4 +1,5 @@
 import 'package:equipment_app/api.dart';
+import 'package:equipment_app/documents.dart';
 import 'package:equipment_app/main.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -646,4 +647,177 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('لا توجد عمليات تطابق البحث'), findsNothing);
   });
+
+  testWidgets(
+    'connected M3 document attention, notification, renewal and isolation',
+    (tester) async {
+      final owner = await loginOwner('0500000002');
+      final other = await loginOwner('0500000001');
+      String date(int days) {
+        final now = DateTime.parse(todayRiyadh());
+        final day = DateTime.utc(
+          now.year,
+          now.month,
+          now.day,
+        ).add(Duration(days: days));
+        return day.toIso8601String().split('T').first;
+      }
+
+      final marker = 'قبول مستند ${DateTime.now().microsecondsSinceEpoch}';
+      final eq = await owner.json(
+        'POST',
+        owner.scoped('/equipment'),
+        key: requestKey(),
+        body: {'name': marker, 'model': 'FH16'},
+      );
+      final equipmentId = eq['id'] as String;
+      final insurance = await owner.json(
+        'POST',
+        owner.scoped('/equipment/$equipmentId/documents'),
+        key: requestKey(),
+        body: {'type': 'INSURANCE', 'expiryDate': date(7)},
+      );
+      final documentId = insurance['id'] as String;
+      final oldVersion = insurance['versionId'] as String;
+      expect(insurance['status'], 'EXPIRING_SOON');
+      final attention = await owner.json(
+        'GET',
+        owner.scoped('/attention/documents'),
+      ) as List<dynamic>;
+      expect(attention.any((e) => e['documentId'] == documentId), isTrue);
+      final notifications = await owner.json(
+        'GET',
+        owner.scoped('/notifications'),
+      );
+      expect(
+        (notifications['items'] as List).any(
+          (e) => e['entityId'] == documentId,
+        ),
+        isTrue,
+      );
+      await rejects(
+        404,
+        () => other.json('GET', other.scoped('/documents/$documentId')),
+      );
+
+      final missing = await owner.json(
+        'POST',
+        owner.scoped('/equipment/$equipmentId/documents'),
+        key: requestKey(),
+        body: {'type': 'REGISTRATION'},
+      );
+      final missingId = missing['id'] as String;
+      expect(missing['status'], 'MISSING_EXPIRY');
+      final incomplete = await owner.json(
+        'GET',
+        owner.scoped('/documents/incomplete'),
+      ) as List<dynamic>;
+      expect(incomplete.any((e) => e['id'] == missingId), isTrue);
+      final amended = await owner.json(
+        'PUT',
+        owner.scoped('/documents/$missingId'),
+        body: {'type': 'REGISTRATION', 'expiryDate': date(5)},
+      );
+      expect(amended['status'], 'EXPIRING_SOON');
+      final changedNotifications = await owner.json(
+        'GET',
+        owner.scoped('/notifications'),
+      );
+      expect(
+        (changedNotifications['items'] as List).any(
+          (e) => e['entityId'] == missingId,
+        ),
+        isTrue,
+      );
+
+      final fixture = (await rootBundle.load(
+        'integration_test/fixtures/synthetic-receipt.png',
+      )).buffer.asUint8List();
+      Future<String> attach(String version) async {
+        final pending = await owner.json(
+          'POST',
+          owner.scoped('/documents/$documentId/versions/$version/attachments'),
+          key: requestKey(),
+          body: {
+            'filename': 'synthetic-receipt.png',
+            'mediaType': 'image/png',
+            'size': fixture.length,
+          },
+        );
+        await owner.send(
+          'PUT',
+          owner.scoped('/attachments/${pending['id']}/content'),
+          bytes: fixture,
+          type: 'image/png',
+        );
+        return pending['id'] as String;
+      }
+
+      final originalAttachment = await attach(oldVersion);
+      final renewed = await owner.json(
+        'POST',
+        owner.scoped('/documents/$documentId/renewals'),
+        body: {'expectedVersionId': oldVersion, 'expiryDate': date(90)},
+      );
+      final newVersion = renewed['versionId'] as String;
+      expect(newVersion, isNot(oldVersion));
+      expect(renewed['status'], 'VALID');
+      expect(
+        (await owner.json(
+          'GET',
+          owner.scoped('/documents/$documentId/versions'),
+        ) as List).length,
+        2,
+      );
+      expect(
+        (await owner.json(
+          'GET',
+          owner.scoped(
+            '/documents/$documentId/versions/$oldVersion/attachments',
+          ),
+        ) as List).single['id'],
+        originalAttachment,
+      );
+      expect(
+        (await owner.json(
+          'GET',
+          owner.scoped(
+            '/documents/$documentId/versions/$newVersion/attachments',
+          ),
+        ) as List),
+        isEmpty,
+      );
+      final newAttachment = await attach(newVersion);
+      expect(newAttachment, isNot(originalAttachment));
+      expect(
+        (await owner.json('GET', owner.scoped('/attention/documents')) as List)
+            .any((e) => e['documentId'] == documentId),
+        isFalse,
+      );
+      await rejects(
+        404,
+        () => other.send(
+          'GET',
+          other.scoped('/attachments/$originalAttachment/content'),
+        ),
+      );
+      await owner.json('POST', owner.scoped('/documents/$documentId/archive'));
+      expect(
+        (await owner.json('GET', owner.scoped('/attention/documents')) as List)
+            .any((e) => e['documentId'] == documentId),
+        isFalse,
+      );
+      await owner.json('POST', owner.scoped('/documents/$documentId/restore'));
+
+      await tester.pumpWidget(EquipmentApp(api: owner));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('openNotifications')));
+      await tester.pumpAndSettle();
+      expect(find.text('الإشعارات'), findsWidgets);
+      await tester.tap(find.text('التأمين').last);
+      await tester.pumpAndSettle();
+      expect(find.byType(DocumentDetailPage), findsOneWidget);
+      expect(find.textContaining('ينتهي في'), findsWidgets);
+    },
+  );
 }

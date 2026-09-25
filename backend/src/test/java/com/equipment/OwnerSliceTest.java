@@ -41,7 +41,10 @@ import tools.jackson.databind.json.JsonMapper;
  "spring.datasource.username=equipment_test","spring.datasource.password=isolated-test-only"})
 @ActiveProfiles({"dev","test"})
 class OwnerSliceTest {
- @LocalServerPort int port; @Autowired JdbcTemplate db; @Autowired ContentValidator validator; @Autowired TransactionTemplate transactions;
+ @org.springframework.boot.test.context.TestConfiguration static class FixedDocumentClock {
+  @org.springframework.context.annotation.Bean @org.springframework.context.annotation.Primary java.time.Clock fixedDocumentClock() {return java.time.Clock.fixed(java.time.Instant.parse("2026-09-24T21:00:00Z"),java.time.ZoneId.of("Asia/Riyadh"));}
+ }
+ @LocalServerPort int port; @Autowired JdbcTemplate db; @Autowired com.equipment.notifications.NotificationService notifications; @Autowired ContentValidator validator; @Autowired TransactionTemplate transactions;
  static final JsonMapper JSON=JsonMapper.builder().build();
  final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
  @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {registry.add("app.storage-root",()->"../.local/test-objects/"+UUID.randomUUID());}
@@ -600,5 +603,157 @@ class OwnerSliceTest {
   assertEquals(200,request("GET",path(owner,"/attachments/"+draftFile+"/content"),null,owner.token,null).status);
   assertEquals(200,request("GET",path(owner,"/attachments/"+cancelledFile+"/content"),null,owner.token,null).status);
   var again=cleanup.clean(now);assertEquals(0,again.recordsRemoved());assertEquals(0,again.objectsRemoved());assertEquals(0,again.failures());
+ }
+
+ @Test void documentLifecycleVersionIsolationAndEquipmentArchive() throws Exception {
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),base=path(owner,"/equipment/"+eq+"/documents");
+  var bad=request("POST",base,Map.of("type","OTHER"),owner.token,key());assertEquals(400,bad.status);
+  assertEquals(400,request("POST",base,Map.of("type","INSURANCE","issueDate","2026-10-02","expiryDate","2026-10-01"),owner.token,key()).status);
+  assertEquals(404,request("POST",path(other,"/equipment/"+eq+"/documents"),Map.of("type","INSURANCE"),other.token,key()).status);
+  String documentKey=key();var initial=Map.of("type","INSURANCE","documentNumber","OLD","notes","first");
+  var created=request("POST",base,initial,owner.token,documentKey);assertEquals(200,created.status);
+  assertEquals(created.json.get("id"),request("POST",base,initial,owner.token,documentKey).json.get("id"));
+  String id=created.json.get("id").asString(),first=created.json.get("versionId").asString(),detail=path(owner,"/documents/"+id);
+  assertEquals("MISSING_EXPIRY",created.json.get("status").asString());
+  assertEquals(1,request("GET",base+"/duplicates?type=INSURANCE",null,owner.token,null).json.size());
+  assertEquals(1,request("GET",path(owner,"/documents/incomplete"),null,owner.token,null).json.size());
+  assertEquals(404,request("GET",path(other,"/documents/"+id),null,other.token,null).status);
+  var edited=request("PUT",detail,Map.of("expectedVersionId",first,"type","INSURANCE","documentNumber","EDIT","expiryDate","2026-10-20"),owner.token,null);assertEquals(200,edited.status);assertEquals("EDIT",edited.json.get("documentNumber").asString());assertEquals("EXPIRING_SOON",edited.json.get("status").asString());
+  var second=request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"expiryDate","2027-01-01","documentNumber","NEW"),owner.token,null);assertEquals(200,second.status);
+  String next=second.json.get("versionId").asString();assertNotEquals(first,next);assertEquals(2,request("GET",detail+"/versions",null,owner.token,null).json.size());
+  assertEquals("PREVIOUS_VERSION",request("GET",detail+"/versions/"+first,null,owner.token,null).json.get("status").asString());
+  assertEquals(409,request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"expiryDate","2028-01-01"),owner.token,null).status);
+  assertEquals(409,request("PUT",detail,Map.of("expectedVersionId",first,"type","INSURANCE","documentNumber","STALE"),owner.token,null).status);
+  assertEquals("NEW",request("GET",detail,null,owner.token,null).json.get("documentNumber").asString());
+  assertEquals(409,request("PUT",detail,Map.of("expectedVersionId",next,"type","REGISTRATION"),owner.token,null).status);
+  assertEquals(400,request("POST",detail+"/renewals",Map.of("expectedVersionId",next),owner.token,null).status);
+  assertEquals(200,request("POST",detail+"/archive",Map.of("reason","replaced"),owner.token,null).status);
+  assertEquals(0,request("GET",base,null,owner.token,null).json.size());
+  assertEquals(1,request("GET",base+"?archived=true",null,owner.token,null).json.size());
+  assertEquals(200,request("POST",path(owner,"/equipment/"+eq+"/archive"),null,owner.token,null).status);
+  assertEquals(409,request("POST",detail+"/restore",null,owner.token,null).status);
+  assertEquals(200,request("POST",path(owner,"/equipment/"+eq+"/restore"),null,owner.token,null).status);
+  assertEquals(200,request("POST",detail+"/restore",null,owner.token,null).status);
+  assertEquals(1,request("GET",base,null,owner.token,null).json.size());
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where action='DOCUMENT_RENEWED' and resource_id=?",Integer.class,UUID.fromString(id)));
+ }
+ @Test void concurrentDocumentRenewalAndVersionAttachments() throws Exception {
+  User user=login("0500000001");String eq=equipment(user),base=path(user,"/equipment/"+eq+"/documents");
+  var created=request("POST",base,Map.of("type","OTHER","customTypeName","بطاقة تشغيل","expiryDate","2026-10-01"),user.token,key());assertEquals(200,created.status);
+  String id=created.json.get("id").asString(),first=created.json.get("versionId").asString(),detail=path(user,"/documents/"+id);
+  byte[] bytes=image("png");String attach=detail+"/versions/"+first+"/attachments";
+  var pending=request("POST",attach,Map.of("filename","old.png","mediaType","image/png","size",bytes.length),user.token,key());assertEquals(200,pending.status);
+  String attachment=pending.json.get("id").asString();assertEquals(200,raw("PUT",path(user,"/attachments/"+attachment+"/content"),bytes,"image/png",user.token,null,Map.of()).status);
+  var body=Map.of("expectedVersionId",first,"expiryDate","2027-01-01");
+  try(var pool=Executors.newVirtualThreadPerTaskExecutor()) {
+   var a=pool.submit(()->request("POST",detail+"/renewals",body,user.token,null));var b=pool.submit(()->request("POST",detail+"/renewals",body,user.token,null));assertEquals(Set.of(200,409),Set.of(a.get().status,b.get().status));
+  }
+  assertEquals(2,db.queryForObject("select count(*) from document_version where document_id=?",Integer.class,UUID.fromString(id)));
+  String next=request("GET",detail,null,user.token,null).json.get("versionId").asString();
+  assertEquals(1,request("GET",attach,null,user.token,null).json.size());
+  assertEquals(0,request("GET",detail+"/versions/"+next+"/attachments",null,user.token,null).json.size());
+  assertEquals(409,request("POST",attach,Map.of("filename","late.png","mediaType","image/png","size",bytes.length),user.token,key()).status);
+  assertArrayEquals(bytes,request("GET",path(user,"/attachments/"+attachment+"/content"),null,user.token,null).raw.body());
+  User other=login("0500000002");assertEquals(404,request("GET",path(other,"/attachments/"+attachment+"/content"),null,other.token,null).status);
+ }
+ @Test void documentStatusUsesFixedWorkspaceDate() {
+  var day=java.time.LocalDate.of(2026,9,25);
+  assertEquals("VALID",com.equipment.documents.DocumentService.status(day.plusDays(31),day,false,false));
+  assertEquals("EXPIRING_SOON",com.equipment.documents.DocumentService.status(day.plusDays(30),day,false,false));
+  assertEquals("EXPIRING_SOON",com.equipment.documents.DocumentService.status(day.plusDays(7),day,false,false));
+  assertEquals("EXPIRING_SOON",com.equipment.documents.DocumentService.status(day.plusDays(1),day,false,false));
+  assertEquals("EXPIRES_TODAY",com.equipment.documents.DocumentService.status(day,day,false,false));
+  assertEquals("EXPIRED",com.equipment.documents.DocumentService.status(day.minusDays(1),day,false,false));
+  assertEquals("MISSING_EXPIRY",com.equipment.documents.DocumentService.status(null,day,false,false));
+  assertEquals("PREVIOUS_VERSION",com.equipment.documents.DocumentService.status(day,day,false,true));
+  assertEquals("ARCHIVED",com.equipment.documents.DocumentService.status(day,day,true,false));
+ }
+
+ @Test void documentAttentionAndCurrentStateNotificationStayIndependent() throws Exception {
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),base=path(owner,"/equipment/"+eq+"/documents");
+  var urgent=request("POST",base,Map.of("type","INSURANCE","expiryDate","2026-09-30"),owner.token,key());assertEquals(200,urgent.status);
+  String id=urgent.json.get("id").asString(),detail=path(owner,"/documents/"+id);
+  assertEquals(1,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  var list=request("GET",path(owner,"/notifications"),null,owner.token,null);assertEquals(1,list.json.get("total").asInt());
+  assertEquals("DOCUMENT_CURRENT_STATE",list.json.get("items").get(0).get("type").asString());
+  assertEquals(id,list.json.get("items").get(0).get("entityId").asString());
+  String notification=list.json.get("items").get(0).get("id").asString();
+  assertEquals(1,request("GET",path(owner,"/notifications/unread-count"),null,owner.token,null).json.get("unreadCount").asInt());
+  assertEquals(404,request("POST",path(other,"/notifications/"+notification+"/read"),null,other.token,null).status);
+  assertEquals(200,request("POST",path(owner,"/notifications/"+notification+"/read"),null,owner.token,null).status);
+  assertEquals(0,request("GET",path(owner,"/notifications/unread-count"),null,owner.token,null).json.get("unreadCount").asInt());
+  assertEquals(1,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  assertEquals(404,request("GET",path(other,"/attention/documents?equipmentId="+eq),null,other.token,null).status);
+  assertEquals(0,request("GET",path(other,"/notifications"),null,other.token,null).json.get("total").asInt());
+  assertEquals(200,request("POST",detail+"/archive",Map.of(),owner.token,null).status);
+  assertEquals(0,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  assertEquals(1,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  assertEquals(200,request("POST",detail+"/restore",null,owner.token,null).status);
+  assertEquals(1,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  assertEquals(1,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  assertEquals(200,request("PUT",detail,Map.of("expectedVersionId",urgent.json.get("versionId").asString(),"type","INSURANCE","expiryDate","2027-01-01"),owner.token,null).status);
+  assertEquals(0,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  assertEquals(1,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  assertEquals(200,request("PUT",detail,Map.of("expectedVersionId",urgent.json.get("versionId").asString(),"type","INSURANCE","expiryDate","2026-09-27"),owner.token,null).status);
+  assertEquals(2,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  assertEquals(1,request("POST",path(owner,"/notifications/read-all"),null,owner.token,null).json.get("markedRead").asInt());
+  assertEquals(1,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+ }
+ @Test void documentReminderThresholdsDeduplicateAndWeeklyExpiredAggregate() throws Exception {
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),base=path(owner,"/equipment/"+eq+"/documents");
+  String first=request("POST",base,Map.of("type","REGISTRATION","expiryDate","2026-12-01"),owner.token,key()).json.get("id").asString();
+  String second=request("POST",base,Map.of("type","INSURANCE","expiryDate","2026-12-01"),owner.token,key()).json.get("id").asString();
+  assertEquals(0,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  var expiry=java.time.LocalDate.of(2026,12,1);
+  assertEquals(2,notifications.runDaily(expiry.minusDays(30)));
+  assertEquals(0,notifications.runDaily(expiry.minusDays(30)));
+  assertEquals(0,notifications.runDaily(expiry.minusDays(29)));
+  assertEquals(2,notifications.runDaily(expiry.minusDays(7)));
+  assertEquals(0,notifications.runDaily(expiry.minusDays(6)));
+  assertEquals(2,notifications.runDaily(expiry.minusDays(1)));
+  assertEquals(2,notifications.runDaily(expiry));
+  assertEquals(0,notifications.runDaily(expiry));
+  var sunday=java.time.LocalDate.of(2026,12,6);assertEquals(java.time.DayOfWeek.SUNDAY,sunday.getDayOfWeek());
+  assertEquals(1,notifications.runWeekly(sunday));assertEquals(0,notifications.runWeekly(sunday));
+  var items=request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("items");assertEquals(9,items.size());
+  assertEquals("DOCUMENT_EXPIRED_WEEKLY",items.get(0).get("type").asString());
+  assertEquals("DOCUMENT_SUMMARY",items.get(0).get("entityType").asString());
+  assertTrue(items.get(0).get("body").asString().contains("2"));
+  assertEquals(0,request("GET",path(other,"/notifications"),null,other.token,null).json.get("total").asInt());
+  request("POST",path(owner,"/documents/"+first+"/archive"),Map.of(),owner.token,null);
+  assertEquals(0,notifications.runWeekly(sunday));
+  assertEquals(0,notifications.runDaily(expiry));
+  assertEquals(9,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+ }
+ @Test void missedThresholdUsesOneCurrentStateAndNoHistoricalBackfill() throws Exception {
+  User owner=login("0500000001");String eq=equipment(owner);String id=request("POST",path(owner,"/equipment/"+eq+"/documents"),Map.of("type","LICENSE_PERMIT","expiryDate","2027-01-01"),owner.token,key()).json.get("id").asString();
+  var expiry=java.time.LocalDate.of(2027,1,1);
+  assertEquals(1,notifications.runDaily(expiry.minusDays(6)));
+  assertEquals(0,notifications.runDaily(expiry.minusDays(5)));
+  assertEquals(0,db.queryForObject("select count(*) from notification where type='DOCUMENT_7D'",Integer.class));
+  assertEquals(1,notifications.runDaily(expiry.minusDays(1)));
+  request("POST",path(owner,"/equipment/"+eq+"/archive"),null,owner.token,null);
+  assertEquals(0,notifications.runDaily(expiry));
+  assertEquals(0,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  assertEquals(2,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  request("POST",path(owner,"/equipment/"+eq+"/restore"),null,owner.token,null);
+  assertEquals(0,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+ }
+
+ @Test void missingExpiryNeverNotifiesAndRenewalStopsOldVersionReminders() throws Exception {
+  User owner=login("0500000001");String eq=equipment(owner),base=path(owner,"/equipment/"+eq+"/documents");
+  var missing=request("POST",base,Map.of("type","OTHER","customTypeName","سجل اختبار"),owner.token,key());assertEquals(200,missing.status);
+  assertEquals("MISSING_EXPIRY",missing.json.get("status").asString());
+  assertEquals(1,request("GET",path(owner,"/documents/incomplete"),null,owner.token,null).json.size());
+  assertEquals(0,notifications.runDaily(java.time.LocalDate.of(2026,9,25)));
+  assertEquals(0,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  var created=request("POST",base,Map.of("type","INSURANCE","expiryDate","2027-01-01"),owner.token,key());
+  String id=created.json.get("id").asString(),version=created.json.get("versionId").asString(),detail=path(owner,"/documents/"+id);
+  var renewed=request("POST",detail+"/renewals",Map.of("expectedVersionId",version,"expiryDate","2027-02-01"),owner.token,null);assertEquals(200,renewed.status);
+  assertEquals(0,notifications.runDaily(java.time.LocalDate.of(2026,12,2)));
+  assertEquals(1,notifications.runDaily(java.time.LocalDate.of(2027,1,2)));
+  assertEquals(0,notifications.runDaily(java.time.LocalDate.of(2027,1,2)));
+  assertEquals(1,request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("total").asInt());
+  assertEquals(0,db.queryForObject("select count(*) from notification where dedupe_key like ?",Integer.class,"%"+version+"%"));
  }
 }
