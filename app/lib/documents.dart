@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'api.dart';
 import 'file_export.dart';
 import 'localization.dart';
+import 'maintenance.dart';
 
 const documentTypeCodes = [
   'REGISTRATION',
@@ -1549,7 +1550,7 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
     try {
       final attention = await widget.api.json(
         'GET',
-        widget.api.scoped('/attention/documents'),
+        widget.api.scoped('/attention'),
       ) as List<dynamic>;
       final missing = await widget.api.json(
         'GET',
@@ -1590,35 +1591,63 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
               child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain),
             ),
           if (!loading && error == null) ...[
-            if (items.isEmpty)
-              Text(l10n(context).uiNoDocumentsNeedAttentionNow),
+            if (items.isEmpty) Text(l10n(context).m4AttentionEmpty),
             ...items
                 .take(3)
                 .map(
                   (d) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(localizedDocumentName(context, d)),
-                    subtitle: Text(localizedAttentionBody(context, d)),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DocumentDetailPage(
-                          api: widget.api,
-                          id: d['documentId'] as String,
-                        ),
-                      ),
+                    leading: d['entityType'] == 'ISSUE'
+                        ? Icon(
+                            Icons.report_outlined,
+                            color: d['equipmentStopped'] == true
+                                ? Colors.red
+                                : Colors.orange,
+                          )
+                        : null,
+                    title: Text(
+                      d['entityType'] == 'ISSUE'
+                          ? (d['equipmentStopped'] == true
+                                ? l10n(context).m4StoppedBadge
+                                : l10n(context).m4AttentionOpenIssue)
+                          : localizedDocumentName(context, d),
                     ),
+                    subtitle: Text(
+                      d['entityType'] == 'ISSUE'
+                          ? '${d['equipmentName']} • ${d['description']}'
+                          : localizedAttentionBody(context, d),
+                    ),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => d['entityType'] == 'ISSUE'
+                              ? IssueDetailPage(
+                                  api: widget.api,
+                                  id: d['issueId'] as String,
+                                )
+                              : DocumentDetailPage(
+                                  api: widget.api,
+                                  id: d['documentId'] as String,
+                                ),
+                        ),
+                      );
+                      if (mounted) load();
+                    },
                   ),
                 ),
             if (items.isNotEmpty)
               TextButton(
                 key: const Key('openAttention'),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AttentionPage(api: widget.api),
-                  ),
-                ),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AttentionPage(api: widget.api),
+                    ),
+                  );
+                  if (mounted) load();
+                },
                 child: Text(l10n(context).viewAll),
               ),
             const Divider(),
@@ -1674,7 +1703,7 @@ class _AttentionPageState extends State<AttentionPage> {
     try {
       final result = await widget.api.json(
         'GET',
-        widget.api.scoped('/attention/documents'),
+        widget.api.scoped('/attention'),
       ) as List<dynamic>;
       if (mounted) {
         setState(
@@ -1709,21 +1738,43 @@ class _AttentionPageState extends State<AttentionPage> {
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              if (items.isEmpty)
-                Text(l10n(context).uiNoDocumentsNeedAttentionNow),
+              if (items.isEmpty) Text(l10n(context).m4AttentionEmpty),
               ...items.map(
                 (d) => Card(
                   child: ListTile(
-                    title: Text(localizedDocumentName(context, d)),
-                    subtitle: Text(localizedAttentionBody(context, d)),
+                    leading: d['entityType'] == 'ISSUE'
+                        ? Icon(
+                            Icons.report_outlined,
+                            color: d['equipmentStopped'] == true
+                                ? Colors.red
+                                : Colors.orange,
+                          )
+                        : null,
+                    title: Text(
+                      d['entityType'] == 'ISSUE'
+                          ? (d['equipmentStopped'] == true
+                                ? l10n(context).m4StoppedBadge
+                                : l10n(context).m4AttentionOpenIssue)
+                          : localizedDocumentName(context, d),
+                    ),
+                    subtitle: Text(
+                      d['entityType'] == 'ISSUE'
+                          ? '${d['equipmentName']} • ${d['description']}'
+                          : localizedAttentionBody(context, d),
+                    ),
                     onTap: () async {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => DocumentDetailPage(
-                            api: widget.api,
-                            id: d['documentId'] as String,
-                          ),
+                          builder: (_) => d['entityType'] == 'ISSUE'
+                              ? IssueDetailPage(
+                                  api: widget.api,
+                                  id: d['issueId'] as String,
+                                )
+                              : DocumentDetailPage(
+                                  api: widget.api,
+                                  id: d['documentId'] as String,
+                                ),
                         ),
                       );
                       if (context.mounted) load();

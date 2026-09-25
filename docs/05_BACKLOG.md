@@ -1,7 +1,7 @@
 # Delivery backlog
-Status 2026-09-25: M0/M1, M2, and the owner's latest M3 scope (equipment documents, attention, in-app notifications) are functionally complete for local V1 development on `feat/m3-documents-alerts`, as evidenced in `HANDOFF.md`. Private production object storage, malware scanning and live Push remain deferred. This is not production readiness. M4 and later work have not started under this task.
+Status 2026-09-25: M0/M1, M2 and M3 are functionally complete for local V1 development. The owner's newly approved M4 issues and maintenance scope is implemented on `feat/m4-maintenance-issues` and is undergoing final connected verification and PR review; see `HANDOFF.md`. Private production object storage, malware scanning and live Push remain deferred. This is not production readiness.
 
-Localization foundation before M4 is implemented on `feat/localization-foundation`: `ar`, `en`, `ur` resources, user-level saved preference, localized app UI and semantic notification templates. Arabic remains fallback. Urdu copy requires native-speaker review before public release. M4 has not started.
+Localization foundation before M4 is merged into main: `ar`, `en`, `ur` resources, user-level saved preference, localized app UI and semantic notification templates. Arabic remains fallback. Urdu copy requires native-speaker review before public release.
 
 M2 also implements the D-08 general/shared expense model with V6 allocation backfill, explicit amounts, active workspace/equipment totals, and deterministic proportional shares. D-20 locks all entry totals after movement but permits audited expense allocation/classification corrections at unchanged total.
 
@@ -52,14 +52,12 @@ Backend-derived status with Asia/Riyadh dates; attention and incomplete-data vie
 connected acceptance evidence are required before marking M3 functionally complete. Live Push remains pre-Beta.
 General/shared expenses were completed in M2. Period financial reporting remains future scope, not silently part of M3.
 
-## M4 — Corrections, refunds and archive lifecycle
-Q-01 is resolved by D-19 and Q-02 by D-20; linked refunds and audited classification corrections are implemented in M2.
-Complete any additional correction/refund policy paths, equipment archive and old balance settlement.
-Gate: history preserved, business meaning explicit, no silent retrospective rewrite or erased obligation.
+## M4 — Issues and maintenance (owner's 2026-09-25 scope)
+Implemented on `feat/m4-maintenance-issues`: optional issue type/stopped flag; OPEN → IN_PROGRESS/CLOSED and reopening; resolution history; independent completed-work maintenance records with optional issue link; cancellation without deleting financial entries; protected attachments; multiple eligible M2 expenses per maintenance record; derived financial summary; global/equipment lists and issue Attention; ar/en/ur UI. Flyway V13, backend/Flutter regression and connected web acceptance are recorded in `HANDOFF.md`.
+Gate: three owner journeys (linked repair, direct maintenance, simple issue), workspace isolation, and no duplicated financial value. Work orders, preventive schedules, readings, issue priorities and independently stored maintenance costs are outside M4.
 
-## M5 — Issues and maintenance (future scope)
-Issues and simple statuses, one financial expense linked to maintenance, and the remaining maintenance rules.
-Equipment documents and owner document notifications moved to the approved M3 scope. No M5 implementation has started.
+## Later scope — not started here
+Older backlog wording placed corrections/refunds in M4 and issues/maintenance in M5. The owner's later explicit M4 assignment supersedes that ordering. Corrections/refunds are already in M2; future milestone numbering and remaining team/product work require a separate task and are not started by this branch.
 
 ## M6 — Optional team and multi-workspace experience
 Invitations and acceptance, owner/manager/accountant/driver role presets, resource scope and customization,

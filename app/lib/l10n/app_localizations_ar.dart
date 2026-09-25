@@ -1311,4 +1311,240 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sarUnit => 'ر.س';
+
+  @override
+  String get m4Hub => 'الصيانة والبلاغات';
+
+  @override
+  String get m4Issues => 'البلاغات';
+
+  @override
+  String get m4Maintenance => 'سجلات الصيانة';
+
+  @override
+  String get m4NewIssue => 'بلاغ جديد';
+
+  @override
+  String get m4AddMaintenance => 'إضافة صيانة';
+
+  @override
+  String get m4Problem => 'وش المشكلة؟';
+
+  @override
+  String get m4WorkDone => 'وش تم؟';
+
+  @override
+  String get m4IssueType => 'نوع المشكلة (اختياري)';
+
+  @override
+  String get m4MaintenanceType => 'نوع الصيانة (اختياري)';
+
+  @override
+  String get m4Stopped => 'المشكلة أوقفت المعدة عن العمل';
+
+  @override
+  String get m4StoppedBadge => 'المعدة متوقفة';
+
+  @override
+  String get m4Open => 'مفتوح';
+
+  @override
+  String get m4InProgress => 'جارٍ العمل';
+
+  @override
+  String get m4Closed => 'مغلق';
+
+  @override
+  String get m4Start => 'بدء المعالجة';
+
+  @override
+  String get m4Close => 'إغلاق البلاغ';
+
+  @override
+  String get m4Reopen => 'إعادة فتح البلاغ';
+
+  @override
+  String get m4Resolution => 'وصف الحل';
+
+  @override
+  String get m4ResolutionRequired => 'اكتب ما تم لحل المشكلة';
+
+  @override
+  String get m4Mechanical => 'ميكانيكي';
+
+  @override
+  String get m4Electrical => 'كهربائي';
+
+  @override
+  String get m4Tires => 'إطارات';
+
+  @override
+  String get m4Accident => 'حادث أو ضرر';
+
+  @override
+  String get m4Repair => 'إصلاح';
+
+  @override
+  String get m4Periodic => 'خدمة دورية';
+
+  @override
+  String get m4Inspection => 'فحص';
+
+  @override
+  String get m4Unclassified => 'دون تصنيف';
+
+  @override
+  String get m4Description => 'وصف العمل المنجز';
+
+  @override
+  String get m4Date => 'تاريخ الصيانة';
+
+  @override
+  String get m4Workshop => 'الورشة أو مقدم الخدمة (اختياري)';
+
+  @override
+  String get m4LinkedIssue => 'البلاغ المرتبط (اختياري)';
+
+  @override
+  String get m4IssueHistory => 'سجل الإغلاقات';
+
+  @override
+  String get m4RelatedMaintenance => 'الصيانة المرتبطة';
+
+  @override
+  String get m4NoIssues => 'لا توجد بلاغات لهذه المعدة';
+
+  @override
+  String get m4NoMaintenance => 'لا توجد سجلات صيانة لهذه المعدة';
+
+  @override
+  String get m4NoResults => 'لا توجد نتائج مطابقة';
+
+  @override
+  String get m4IssueSearch => 'ابحث في البلاغات';
+
+  @override
+  String get m4MaintenanceSearch => 'ابحث في الصيانة';
+
+  @override
+  String get m4AllStatuses => 'كل الحالات';
+
+  @override
+  String get m4AllTypes => 'كل الأنواع';
+
+  @override
+  String get m4OnlyStopped => 'المعدات المتوقفة فقط';
+
+  @override
+  String get m4Cancelled => 'سجل ملغى';
+
+  @override
+  String get m4ShowCancelled => 'عرض الملغى';
+
+  @override
+  String get m4CancelMaintenance => 'إلغاء سجل الصيانة';
+
+  @override
+  String get m4CancelWarning => 'إلغاء سجل الصيانة لن يلغي المصروفات المرتبطة.';
+
+  @override
+  String get m4CancellationReason => 'سبب الإلغاء';
+
+  @override
+  String get m4Expenses => 'المصروفات المرتبطة';
+
+  @override
+  String get m4AddExpense => 'إضافة مصروف';
+
+  @override
+  String get m4LinkExpense => 'ربط مصروف موجود';
+
+  @override
+  String get m4UnlinkExpense => 'فصل المصروف';
+
+  @override
+  String get m4ExpenseTotal => 'إجمالي المصروفات النشطة';
+
+  @override
+  String get m4NetPaid => 'الصافي المدفوع';
+
+  @override
+  String get m4Remaining => 'المتبقي';
+
+  @override
+  String get m4NoEligible => 'لا توجد مصروفات مناسبة للربط';
+
+  @override
+  String get m4NoAttachments => 'لا توجد مرفقات';
+
+  @override
+  String get m4CreateIssue => 'حفظ البلاغ';
+
+  @override
+  String get m4SaveMaintenance => 'حفظ الصيانة';
+
+  @override
+  String get m4IssueUpdated => 'تم تحديث البلاغ';
+
+  @override
+  String get m4AttentionEmpty =>
+      'لا توجد بلاغات أو مستندات تحتاج انتباهًا الآن';
+
+  @override
+  String get m4AttentionOpenIssue => 'بلاغ مفتوح';
+
+  @override
+  String get m4ArchivedWarning =>
+      'ستبقى البلاغات والصيانة محفوظة، لكن البلاغات المفتوحة ستختفي من الانتباه حتى استعادة المعدة.';
+
+  @override
+  String get m4SelectEquipment => 'اختر المعدة';
+
+  @override
+  String get m4IssueDetails => 'تفاصيل البلاغ';
+
+  @override
+  String get m4MaintenanceDetails => 'تفاصيل الصيانة';
+
+  @override
+  String get m4EditIssue => 'تعديل البلاغ';
+
+  @override
+  String get m4EditMaintenance => 'تعديل الصيانة';
+
+  @override
+  String get m4Required => 'هذا الحقل مطلوب';
+
+  @override
+  String get m4AllEquipment => 'كل المعدات';
+
+  @override
+  String get m4LinkedCount => 'مصروفات مرتبطة';
+
+  @override
+  String get m4ViewHistory => 'عرض السجل';
+
+  @override
+  String get m4RemoveAttachment => 'إزالة المرفق';
+
+  @override
+  String get m4NoLinkedIssue => 'دون بلاغ مرتبط';
+
+  @override
+  String get m4DateRange => 'الفترة الزمنية';
+
+  @override
+  String get m4ClearDateRange => 'مسح الفترة';
+
+  @override
+  String get m4NoIssuesGlobal => 'لا توجد بلاغات بعد';
+
+  @override
+  String get m4NoMaintenanceGlobal => 'لا توجد سجلات صيانة بعد';
+
+  @override
+  String get m4SelectIssue => 'اختيار بلاغ';
+
+  @override
+  String get m4ClearIssue => 'إزالة ربط البلاغ';
 }

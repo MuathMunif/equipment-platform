@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Equipment Platform — isolated development M3
-  version: 0.3.0
+  title: Equipment Platform — isolated development M4
+  version: 0.4.0
   description: |
     Owner-only local slice. Production startup is intentionally rejected.
     Every protected resource checks active OWNER membership before lookup and replay.
@@ -656,6 +656,142 @@ paths:
         '404': {$ref: '#/components/responses/Error'}
         '409': {$ref: '#/components/responses/Error'}
         '503': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/issues:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Bounded issue list, ordered active first; closed history remains searchable.
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+        - {in: query, name: status, schema: {type: string, enum: [OPEN, IN_PROGRESS, CLOSED]}}
+        - {in: query, name: equipmentStopped, schema: {type: boolean}}
+        - {in: query, name: fromDate, schema: {type: string, format: date}}
+        - {in: query, name: toDate, schema: {type: string, format: date}}
+        - {in: query, name: search, schema: {type: string, maxLength: 100}}
+      responses:
+        '200': {description: Issue page, content: {application/json: {schema: {$ref: '#/components/schemas/IssuePage'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/equipment/{equipment}/issues:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}]
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/IssueInput'}}}}
+      responses:
+        '200': {description: Created issue, content: {application/json: {schema: {$ref: '#/components/schemas/Issue'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/issues/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses:
+        '200': {description: Issue with closure and maintenance history, content: {application/json: {schema: {$ref: '#/components/schemas/Issue'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      description: Only OPEN or IN_PROGRESS may be edited.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/IssueInput'}}}}
+      responses:
+        '200': {description: Updated issue}
+        '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/issues/{id}/start:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: OPEN to IN_PROGRESS.
+      responses: {'200': {description: Updated issue}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/issues/{id}/close:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: OPEN or IN_PROGRESS to CLOSED; resolution is required, without maintenance or expense.
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [resolution], properties: {resolution: {type: string, minLength: 1, maxLength: 2000}}}}}}
+      responses: {'200': {description: Closed issue}, '400': {$ref: '#/components/responses/Error'}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/issues/{id}/reopen:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: CLOSED to OPEN; prior resolution stays in closures and audit.
+      responses: {'200': {description: Reopened issue}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/maintenance:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Bounded active maintenance history; cancelled=true selects cancelled history.
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+        - {in: query, name: type, schema: {type: string, enum: [REPAIR, PERIODIC_SERVICE, INSPECTION, OTHER]}}
+        - {in: query, name: cancelled, schema: {type: boolean}}
+        - {in: query, name: fromDate, schema: {type: string, format: date}}
+        - {in: query, name: toDate, schema: {type: string, format: date}}
+        - {in: query, name: search, schema: {type: string, maxLength: 100}}
+      responses: {'200': {description: Maintenance page, content: {application/json: {schema: {$ref: '#/components/schemas/MaintenancePage'}}}}}
+  /workspaces/{workspace}/equipment/{equipment}/maintenance:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}]
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MaintenanceInput'}}}}
+      responses: {'200': {description: Created maintenance record}, '400': {$ref: '#/components/responses/Error'}, '404': {$ref: '#/components/responses/Error'}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/maintenance/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses: {'200': {description: Maintenance detail with linked M2 expenses and derived summary}, '404': {$ref: '#/components/responses/Error'}}
+    put:
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MaintenanceInput'}}}}
+      responses: {'200': {description: Updated active maintenance record}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/maintenance/{id}/cancellation:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: Cancels the maintenance record only; linked expenses and their movements are unchanged.
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [reason], properties: {reason: {type: string, minLength: 1, maxLength: 1000}}}}}}
+      responses: {'200': {description: Cancelled record}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/maintenance/{id}/eligible-expenses:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      description: Unlinked POSTED single-equipment expenses on the same workspace and equipment.
+      parameters: [{$ref: '#/components/parameters/Page'}, {in: query, name: search, schema: {type: string, maxLength: 100}}]
+      responses: {'200': {description: Eligible expense page}}
+  /workspaces/{workspace}/maintenance/{id}/expenses:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      description: Creates an ordinary M2 expense using the existing entry body, then links it atomically. Same equipment and SINGLE scope required.
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object}}}}
+      responses: {'200': {description: Maintenance detail with new expense}, '400': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/maintenance/{id}/expenses/{entryId}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}, {in: path, name: entryId, required: true, schema: {type: string, format: uuid}}]
+    post:
+      description: Link existing eligible expense, idempotent for the same maintenance record.
+      responses: {'200': {description: Maintenance detail}, '400': {$ref: '#/components/responses/Error'}, '409': {$ref: '#/components/responses/Error'}}
+    delete:
+      description: Remove association only; no financial history changes.
+      responses: {'200': {description: Maintenance detail}, '404': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/issues/{id}/attachments:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses: {'200': {description: Issue PNG/JPEG attachment array}}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [filename, mediaType, size]}}}}
+      responses: {'200': {description: Initiated issue photo}}
+  /workspaces/{workspace}/issues/{id}/attachments/{attachmentId}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}, {in: path, name: attachmentId, required: true, schema: {type: string, format: uuid}}]
+    delete:
+      responses: {'200': {description: Attachment removed from editable issue}}
+  /workspaces/{workspace}/maintenance/{id}/attachments:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses: {'200': {description: Maintenance PNG/JPEG/PDF attachment array}}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}, {$ref: '#/components/parameters/Csrf'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [filename, mediaType, size]}}}}
+      responses: {'200': {description: Initiated maintenance attachment}}
+  /workspaces/{workspace}/maintenance/{id}/attachments/{attachmentId}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}, {in: path, name: attachmentId, required: true, schema: {type: string, format: uuid}}]
+    delete:
+      responses: {'200': {description: Attachment removed from active maintenance record}}
+  /workspaces/{workspace}/attention:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Current issues and documents ordered by priorityRank 1–7. Archived equipment and non-OPEN issues are excluded. Existing document-only endpoint stays available.
+      parameters: [{in: query, name: equipmentId, schema: {type: string, format: uuid}}]
+      responses: {'200': {description: Derived current Attention array}}
 components:
   securitySchemes:
     bearerSession: {type: http, scheme: bearer}
@@ -679,6 +815,57 @@ components:
               message: {type: string}
   schemas:
     Money: {type: string, pattern: '^(0|[1-9][0-9]{0,8})\.[0-9]{2}$', example: '350.00'}
+    IssueInput:
+      type: object
+      additionalProperties: false
+      required: [description]
+      properties:
+        description: {type: string, minLength: 1, maxLength: 2000}
+        type: {type: [string, 'null'], enum: [MECHANICAL, ELECTRICAL, TIRES, ACCIDENT_DAMAGE, OTHER, null]}
+        equipmentStopped: {type: boolean, default: false}
+    Issue:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        reference: {type: string}
+        equipmentId: {type: string, format: uuid}
+        equipmentName: {type: string}
+        description: {type: string}
+        type: {type: [string, 'null']}
+        equipmentStopped: {type: boolean}
+        status: {type: string, enum: [OPEN, IN_PROGRESS, CLOSED]}
+        resolution: {type: [string, 'null']}
+        closedAt: {type: [string, 'null'], format: date-time}
+        closures: {type: array, items: {type: object}}
+        maintenance: {type: array, items: {type: object}}
+    IssuePage:
+      allOf: [{$ref: '#/components/schemas/Page'}, {type: object, properties: {items: {type: array, items: {$ref: '#/components/schemas/Issue'}}}}]
+    MaintenanceInput:
+      type: object
+      additionalProperties: false
+      required: [description, maintenanceDate]
+      properties:
+        description: {type: string, minLength: 1, maxLength: 2000}
+        maintenanceDate: {type: string, format: date}
+        type: {type: [string, 'null'], enum: [REPAIR, PERIODIC_SERVICE, INSPECTION, OTHER, null]}
+        workshop: {type: [string, 'null'], maxLength: 200}
+        issueId: {type: [string, 'null'], format: uuid}
+    Maintenance:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        equipmentId: {type: string, format: uuid}
+        issueId: {type: [string, 'null'], format: uuid}
+        description: {type: string}
+        maintenanceDate: {type: string, format: date}
+        type: {type: [string, 'null']}
+        workshop: {type: [string, 'null']}
+        cancelledAt: {type: [string, 'null'], format: date-time}
+        cancellationReason: {type: [string, 'null']}
+        expenses: {type: array, items: {$ref: '#/components/schemas/Entry'}}
+        financialSummary: {type: object, description: Derived from linked M2 entries only}
+    MaintenancePage:
+      allOf: [{$ref: '#/components/schemas/Page'}, {type: object, properties: {items: {type: array, items: {$ref: '#/components/schemas/Maintenance'}}}}]
     Page:
       type: object
       required: [items, page, pageSize, total]
@@ -848,11 +1035,13 @@ components:
               createdAt: {type: string, format: date-time}
     Attachment:
       type: object
-      required: [id, entryId, documentVersionId, filename, mediaType, size, state, scanStatus]
+      required: [id, entryId, documentVersionId, issueId, maintenanceId, filename, mediaType, size, state, scanStatus]
       properties:
         id: {type: string, format: uuid}
         entryId: {type: [string, 'null'], format: uuid}
         documentVersionId: {type: [string, 'null'], format: uuid}
+        issueId: {type: [string, 'null'], format: uuid}
+        maintenanceId: {type: [string, 'null'], format: uuid}
         filename: {type: string}
         mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
         size: {type: integer}

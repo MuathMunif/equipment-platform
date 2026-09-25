@@ -1319,4 +1319,241 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get sarUnit => 'سعودی ریال';
+
+  @override
+  String get m4Hub => 'مرمت اور مسائل';
+
+  @override
+  String get m4Issues => 'مسائل';
+
+  @override
+  String get m4Maintenance => 'مرمت کے ریکارڈ';
+
+  @override
+  String get m4NewIssue => 'نیا مسئلہ';
+
+  @override
+  String get m4AddMaintenance => 'مرمت شامل کریں';
+
+  @override
+  String get m4Problem => 'مسئلہ کیا ہے؟';
+
+  @override
+  String get m4WorkDone => 'کیا کام کیا گیا؟';
+
+  @override
+  String get m4IssueType => 'مسئلے کی قسم (اختیاری)';
+
+  @override
+  String get m4MaintenanceType => 'مرمت کی قسم (اختیاری)';
+
+  @override
+  String get m4Stopped => 'اس مسئلے سے سامان کا کام رک گیا';
+
+  @override
+  String get m4StoppedBadge => 'سامان بند ہے';
+
+  @override
+  String get m4Open => 'کھلا';
+
+  @override
+  String get m4InProgress => 'کام جاری ہے';
+
+  @override
+  String get m4Closed => 'بند';
+
+  @override
+  String get m4Start => 'کام شروع کریں';
+
+  @override
+  String get m4Close => 'مسئلہ بند کریں';
+
+  @override
+  String get m4Reopen => 'مسئلہ دوبارہ کھولیں';
+
+  @override
+  String get m4Resolution => 'حل کی تفصیل';
+
+  @override
+  String get m4ResolutionRequired => 'لکھیں کہ مسئلہ کیسے حل ہوا';
+
+  @override
+  String get m4Mechanical => 'مکینیکل';
+
+  @override
+  String get m4Electrical => 'برقی';
+
+  @override
+  String get m4Tires => 'ٹائر';
+
+  @override
+  String get m4Accident => 'حادثہ یا نقصان';
+
+  @override
+  String get m4Repair => 'مرمت';
+
+  @override
+  String get m4Periodic => 'دورانیہ خدمت';
+
+  @override
+  String get m4Inspection => 'معائنہ';
+
+  @override
+  String get m4Unclassified => 'بغیر درجہ بندی';
+
+  @override
+  String get m4Description => 'کیا گیا کام';
+
+  @override
+  String get m4Date => 'مرمت کی تاریخ';
+
+  @override
+  String get m4Workshop => 'ورکشاپ یا خدمت فراہم کنندہ (اختیاری)';
+
+  @override
+  String get m4LinkedIssue => 'منسلک مسئلہ (اختیاری)';
+
+  @override
+  String get m4IssueHistory => 'بندش کی تاریخ';
+
+  @override
+  String get m4RelatedMaintenance => 'متعلقہ مرمت';
+
+  @override
+  String get m4NoIssues => 'اس سامان کے لیے کوئی مسئلہ نہیں';
+
+  @override
+  String get m4NoMaintenance => 'اس سامان کے لیے مرمت کا کوئی ریکارڈ نہیں';
+
+  @override
+  String get m4NoResults => 'کوئی مماثل ریکارڈ نہیں';
+
+  @override
+  String get m4IssueSearch => 'مسائل تلاش کریں';
+
+  @override
+  String get m4MaintenanceSearch => 'مرمت تلاش کریں';
+
+  @override
+  String get m4AllStatuses => 'تمام حالتیں';
+
+  @override
+  String get m4AllTypes => 'تمام اقسام';
+
+  @override
+  String get m4OnlyStopped => 'صرف بند سامان';
+
+  @override
+  String get m4Cancelled => 'منسوخ ریکارڈ';
+
+  @override
+  String get m4ShowCancelled => 'منسوخ دکھائیں';
+
+  @override
+  String get m4CancelMaintenance => 'مرمت کا ریکارڈ منسوخ کریں';
+
+  @override
+  String get m4CancelWarning =>
+      'مرمت منسوخ کرنے سے منسلک اخراجات منسوخ نہیں ہوں گے۔';
+
+  @override
+  String get m4CancellationReason => 'منسوخی کی وجہ';
+
+  @override
+  String get m4Expenses => 'منسلک اخراجات';
+
+  @override
+  String get m4AddExpense => 'خرچ شامل کریں';
+
+  @override
+  String get m4LinkExpense => 'موجودہ خرچ منسلک کریں';
+
+  @override
+  String get m4UnlinkExpense => 'خرچ الگ کریں';
+
+  @override
+  String get m4ExpenseTotal => 'فعال اخراجات کا کل';
+
+  @override
+  String get m4NetPaid => 'خالص ادا شدہ';
+
+  @override
+  String get m4Remaining => 'باقی';
+
+  @override
+  String get m4NoEligible => 'منسلک کرنے کے لیے مناسب اخراجات نہیں';
+
+  @override
+  String get m4NoAttachments => 'کوئی منسلک فائل نہیں';
+
+  @override
+  String get m4CreateIssue => 'مسئلہ محفوظ کریں';
+
+  @override
+  String get m4SaveMaintenance => 'مرمت محفوظ کریں';
+
+  @override
+  String get m4IssueUpdated => 'مسئلہ تازہ کر دیا گیا';
+
+  @override
+  String get m4AttentionEmpty =>
+      'ابھی کسی مسئلے یا دستاویز کو توجہ کی ضرورت نہیں';
+
+  @override
+  String get m4AttentionOpenIssue => 'کھلا مسئلہ';
+
+  @override
+  String get m4ArchivedWarning =>
+      'مسائل اور مرمت محفوظ رہیں گے۔ سامان کی بحالی تک کھلے مسائل توجہ سے ہٹ جائیں گے۔';
+
+  @override
+  String get m4SelectEquipment => 'سامان منتخب کریں';
+
+  @override
+  String get m4IssueDetails => 'مسئلے کی تفصیل';
+
+  @override
+  String get m4MaintenanceDetails => 'مرمت کی تفصیل';
+
+  @override
+  String get m4EditIssue => 'مسئلہ تبدیل کریں';
+
+  @override
+  String get m4EditMaintenance => 'مرمت تبدیل کریں';
+
+  @override
+  String get m4Required => 'یہ خانہ ضروری ہے';
+
+  @override
+  String get m4AllEquipment => 'تمام سامان';
+
+  @override
+  String get m4LinkedCount => 'منسلک اخراجات';
+
+  @override
+  String get m4ViewHistory => 'تاریخ دیکھیں';
+
+  @override
+  String get m4RemoveAttachment => 'منسلک فائل ہٹائیں';
+
+  @override
+  String get m4NoLinkedIssue => 'کوئی منسلک مسئلہ نہیں';
+
+  @override
+  String get m4DateRange => 'تاریخ کی حد';
+
+  @override
+  String get m4ClearDateRange => 'تاریخ کی حد صاف کریں';
+
+  @override
+  String get m4NoIssuesGlobal => 'ابھی کوئی مسئلہ نہیں';
+
+  @override
+  String get m4NoMaintenanceGlobal => 'ابھی مرمت کا کوئی ریکارڈ نہیں';
+
+  @override
+  String get m4SelectIssue => 'مسئلہ منتخب کریں';
+
+  @override
+  String get m4ClearIssue => 'منسلک مسئلہ ہٹائیں';
 }

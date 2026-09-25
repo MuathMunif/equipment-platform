@@ -8,7 +8,7 @@ At initial inspection the folder contained specifications only. It now contains 
 | Git / repository / user author config | Git 2.50.1; initial folder not a repository; author already configured | `git status`, `git --version`, author config presence | Initialized local `work/m0-m1`; original package commit `8aae033`; no remote |
 | Java / Maven or wrapper | Host default Java 24.0.1 at latest check; Microsoft Java 21.0.7 installed; Maven Wrapper uses Maven 3.9.11 | `java -version`, JDK 21 `java -version`, backend test command | Set `JAVA_HOME` to Java 21 per command; no global configuration change; wrapper 3.3.4 / Maven 3.9.11 tested |
 | Flutter / Dart | Flutter 3.47.2 stable (d3b14c8769), Dart 3.13.2 | `flutter --version`, `flutter doctor -v` | Existing SDK at `/opt/homebrew/share/flutter`; no upgrade |
-| PostgreSQL / test database | PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2), aarch64; dev/test containers healthy at latest check | `docker compose -f infra/compose.yaml ps`, `psql ... select version()`, backend tests | Isolated databases on loopback 55432/55433; Flyway V1–V12 validated; dev DB upgraded to V12 without reset |
+| PostgreSQL / test database | PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2), aarch64; dev/test containers healthy at latest check | `docker compose -f infra/compose.yaml ps`, `psql ... select version()`, backend tests | Isolated databases on loopback 55432/55433; Flyway V1–V13 validated; dev DB upgraded to V13 without reset |
 | Docker / test runtime | Docker 28.0.4, Compose 2.34.0; initially stopped, now running linux/aarch64 | `docker --version`, `docker compose version`, `docker info` | Docker started via approved `open -a Docker`; do not touch unrelated services |
 | S3-compatible local test storage | NOT CONFIGURED / NOT TESTED | No provider provisioned | Explicit dev filesystem adapter under project; S3 integration remains open for M2 |
 | File type validation / scanning | PNG/JPEG via ImageIO; PDFBox 3.0.8; real content/size checks tested | Backend regression and live HTTP tests | Malware scanner NOT CONFIGURED; DEV_NOT_SCANNED explicit |
@@ -50,8 +50,8 @@ Dependency resolution, Flyway V1–V3, backend tests, Flutter analysis/tests/web
 - Simulator listing initially failed on sandbox CoreSimulator/log access; approved retry succeeded. Listing is not an app build/device validation.
 
 ## Current validation checkpoint — 2026-09-25
-- Backend: Boot 4.1.1 targets Java 21, real PostgreSQL 17.11; Flyway V1–V12 validated in test, existing dev DB upgraded to V12; 52 tests / 0 failures / 0 errors / 0 skipped in the latest run.
-- Flutter: analyze PASS; 55 unit/widget tests PASS; release web build PASS; localization widget tests on Chrome 11/11 PASS; M3 iOS simulator integration 1/1 PASS with local API/PostgreSQL (M2 prior 2/2). Browser-based live API flow was blocked by the in-app browser client policy for local API paths; Android not run.
+- Backend: Boot 4.1.1 targets Java 21, real PostgreSQL 17.11; Flyway V1–V13 validated in test, existing dev DB upgraded to V13; 56 tests / 0 failures / 0 errors / 0 skipped in the latest run.
+- Flutter: analyze PASS; 67 unit/widget tests PASS; release web build PASS. M4 live web journey against local API/PostgreSQL PASS in Chrome. Earlier M3 iOS simulator integration 1/1 PASS (M2 prior 2/2); M4 iOS and Android not run.
 - Native build warning: open_filex currently falls back to CocoaPods rather than Swift Package Manager. Build succeeded; future Flutter migration is untested. No SDK upgrades were performed.
 - Web build warning about unused CupertinoIcons font was non-fatal; current app uses Material icons.
 - Exact earlier setup/restart evidence: evidence/M1_ACCEPTANCE.md; current M2 test and flow evidence: evidence/M2_EXPENSE_SETTLEMENTS.md and evidence/M2_INCOME_SETTLEMENTS.md.
@@ -59,7 +59,7 @@ Dependency resolution, Flyway V1–V3, backend tests, Flutter analysis/tests/web
 
 ## Local ports and startup requirements
 - Docker Compose publishes PostgreSQL dev on `127.0.0.1:55432` and isolated test on `127.0.0.1:55433`; no external database is needed.
-- `JAVA_HOME=/Users/muath/Library/Java/JavaVirtualMachines/ms-21.0.7/Contents/Home ./scripts/backend-dev.sh` from the repository root starts the current source on `127.0.0.1:8080` and applies pending Flyway migrations. Stop or restart an older API process before relying on current M2 behavior.
+- `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/backend-dev.sh` from the repository root starts the current source on `127.0.0.1:8080` and applies pending Flyway migrations. Stop or restart an older API process before relying on current M4 behavior.
 - `./scripts/web-dev.sh` builds the current Flutter web source against `http://127.0.0.1:8080/api/v1` and serves it on `127.0.0.1:8081`; stop or restart an older web server to serve the rebuilt files. Flutter and Dart versions above were rechecked locally.
 - The `8082/8083` pair in M2 evidence was temporary for verification and is not a required port pair. Current health or HTTP 200 on `8080/8081` alone does not identify the running commit.
 

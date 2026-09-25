@@ -286,7 +286,7 @@ void main() {
   ) async {
     final api = apiWith((request) async {
       final path = request.url.path;
-      if (path.endsWith('/attention/documents')) {
+      if (path.endsWith('/attention')) {
         return reply([
           {
             'documentId': 'd',

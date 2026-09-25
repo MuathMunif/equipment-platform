@@ -1,6 +1,18 @@
 # Acceptance and regression test catalog
 Status: broader acceptance catalog; a tested local M2 subset is documented below.
 
+## M4 local acceptance — 2026-09-25
+
+- ISSUE-01: A description-only issue saves with a unique generated reference, optional type and default `equipmentStopped=false`; a stopped OPEN issue appears first in Attention, while IN_PROGRESS/CLOSED issues do not.
+- ISSUE-02: OPEN may start or close directly; closing requires a resolution, preserves actor/time/history, and reopening returns to OPEN without erasing the prior closure. CLOSED is otherwise read-only.
+- MAINT-01: Completed-work maintenance saves directly from equipment or from an issue on the same equipment; another equipment's issue is rejected. Cancellation requires a reason, keeps history and leaves linked expenses untouched.
+- MAINT-02: Multiple eligible M2 EXPENSE entries can link to one maintenance record, but each expense has at most one maintenance link. INCOME, general/shared, another equipment/workspace and duplicate links are rejected. Unlinking changes only the association.
+- MAINT-03: Total, net paid and remaining are derived from active linked M2 entries; later settlement/refund changes the display, while cancelled expenses are excluded from active totals.
+- MAINT-04: Issue images and maintenance images/PDF are protected by workspace authorization and normal attachment validation. Archived equipment keeps history but rejects new operational records and removes issue Attention until restored.
+- UI-04: AR/EN/UR use RTL/LTR appropriately; forms omit title, priority, meter and independent cost fields. Web and mobile present issue/maintenance lists, state-specific actions, error/loading/empty states, and finance links.
+
+Backend HTTP/PostgreSQL regression and Flutter widget tests cover selected paths. A connected web journey covered issue → IN_PROGRESS → maintenance → linked M2 expense → close; other connected journeys and native-device M4 checks must be recorded separately if run. Passing a build does not prove every journey.
+
 # تنفيذ قبول M2 المحلي بتاريخ 2026-09-24: اختبارات Backend HTTP/PostgreSQL ‏43/43، Flutter unit/widget ‏29/29، وiOS simulator integration ‏2/2 تغطي رحلات A–J المذكورة في HANDOFF؛ بعضها عبر API حي داخل اختبار Flutter. Web release وفحص سجل/مرشحات حي بعرضين نجحا. Web E2E آلي وAndroid والإنتاج غير متحققين. حالات القبول التالية تبقى مواصفات للمنتج الأشمل؛ وجود اختبار مرتبط لا يعني اكتمال كل المسارات الإنتاجية.
 Automate progressively and map each ID to actual test names/evidence. Passing mocks is not proof of live integrations.
 

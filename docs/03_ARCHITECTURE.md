@@ -1,5 +1,7 @@
 # Technical implementation baseline
-Status: BASELINE for broader architecture; current M0/M1/M2 local implementation is described below and in HANDOFF.
+Status: BASELINE for broader architecture; current M0–M4 local implementation and limits are described in HANDOFF.
+
+M4 local implementation (2026-09-25): Flyway V13 adds workspace-scoped equipment issues, maintenance records, issue closure history and maintenance-expense links. Issues and maintenance are separate records; neither requires the other. Maintenance is completed-work history, not a work order. Each maintenance record may link multiple existing single-equipment EXPENSE entries; each expense links to at most one maintenance record. FinanceService/M2 remains authoritative for original amounts, settlements, refunds and cancellation. M4 stores no independent cost/paid/remaining values; summaries are derived on read. Issue and maintenance attachments reuse ObjectStorageService, and issue Attention is derived from active OPEN issues rather than stored reminders. No preventive schedule, meter reading or priority taxonomy was added.
 
 # تنفيذ M2 المحلي بتاريخ 2026-09-24: PostgreSQL/Flyway V1–V9، تطبيق Flutter، وتخزين ملفات تطويري محلي خلف ObjectStorageService. V6 expense_allocation يحفظ أصل المصروف الواحد، وV7 DRAFT/DISCARDED تستكمل الصف نفسه مع مرفقاته، وV8 ينظف الملفات المحلية المؤقتة القديمة في dev فقط، وV9 يقوي شكل السجل المنشور. بحث السجل محدود الصفحات (30). التخزين S3 الخاص والفحص الإنتاجي المذكوران أدناه خط أساس معماري ولم يُنفّذا بعد.
 Use the owner's confirmed business rules unchanged. Record reversible implementation choices in ADRs;

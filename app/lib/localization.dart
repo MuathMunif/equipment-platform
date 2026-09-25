@@ -72,6 +72,12 @@ String localizedErrorForLocale(Locale locale, Object error) {
     'DOCUMENT_ARCHIVED' ||
     'EQUIPMENT_ARCHIVED' ||
     'HISTORICAL_VERSION' ||
+    'HISTORICAL_RECORD' ||
+    'ISSUE_CLOSED' ||
+    'ISSUE_STATE' ||
+    'MAINTENANCE_CANCELLED' ||
+    'EXPENSE_ALREADY_LINKED' ||
+    'MAINTENANCE_EXPENSE_LINKED' ||
     'TYPE_LOCKED' => loc.documentLocked,
     'FILE_NOT_READY' || 'FILE_UNAVAILABLE' => loc.fileUnavailable,
     'ATTACHMENT_LIMIT' => loc.attachmentLimit,

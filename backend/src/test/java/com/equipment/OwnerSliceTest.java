@@ -77,6 +77,52 @@ class OwnerSliceTest {
  byte[] image(String type)throws Exception{var output=new ByteArrayOutputStream();var image=new BufferedImage(12,12,BufferedImage.TYPE_INT_RGB);assertTrue(ImageIO.write(image,type,output));return output.toByteArray();}
  String initiate(User user,String entry,byte[] bytes,String type)throws Exception{var r=request("POST",path(user,"/entries/"+entry+"/attachments"),Map.of("filename","synthetic-receipt."+(type.equals("application/pdf")?"pdf":"png"),"mediaType",type,"size",bytes.length),user.token,key());assertEquals(200,r.status);return r.json.get("id").asString();}
 
+ @Test void issueLifecycleAttentionHistoryAndArchive()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner);Map<String,Object> input=Map.of("description","حرارة المكينة مرتفعة","equipmentStopped",true);
+  var created=request("POST",path(owner,"/equipment/"+eq+"/issues"),input,owner.token,key());assertEquals(200,created.status);String id=created.json.get("id").asString();assertTrue(created.json.get("reference").asString().startsWith("IS-"));assertEquals("OPEN",created.json.get("status").asString());
+  assertEquals(404,request("GET",path(other,"/issues/"+id),null,other.token,null).status);assertEquals("ISSUE",request("GET",path(owner,"/attention"),null,owner.token,null).json.get(0).get("entityType").asString());
+  assertEquals(400,request("POST",path(owner,"/issues/"+id+"/close"),Map.of(),owner.token,null).status);assertEquals(200,request("POST",path(owner,"/issues/"+id+"/start"),null,owner.token,null).status);assertEquals(0,request("GET",path(owner,"/attention"),null,owner.token,null).json.size());
+  assertEquals(200,request("POST",path(owner,"/issues/"+id+"/close"),Map.of("resolution","تم تغيير الرديتر"),owner.token,null).status);assertEquals(409,request("PUT",path(owner,"/issues/"+id),input,owner.token,null).status);
+  var reopened=request("POST",path(owner,"/issues/"+id+"/reopen"),null,owner.token,null);assertEquals(200,reopened.status);assertEquals(1,reopened.json.get("closures").size());assertEquals("تم تغيير الرديتر",reopened.json.get("closures").get(0).get("resolution").asString());
+  assertEquals(200,request("POST",path(owner,"/equipment/"+eq+"/archive"),null,owner.token,null).status);assertEquals(0,request("GET",path(owner,"/attention"),null,owner.token,null).json.size());assertEquals(409,request("POST",path(owner,"/equipment/"+eq+"/issues"),input,owner.token,key()).status);
+  assertEquals(200,request("POST",path(owner,"/equipment/"+eq+"/restore"),null,owner.token,null).status);assertEquals(1,request("GET",path(owner,"/attention"),null,owner.token,null).json.size());
+ }
+ @Test void maintenanceExpenseLinkUsesM2TotalsAndCancellationPreservesExpense()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner),otherEq=equipment(owner);
+  var issue=request("POST",path(owner,"/equipment/"+eq+"/issues"),Map.of("description","تهريب زيت"),owner.token,key());String issueId=issue.json.get("id").asString();assertFalse(issue.json.get("equipmentStopped").asBoolean());
+  var invalid=request("POST",path(owner,"/equipment/"+otherEq+"/maintenance"),Map.of("description","تصليح","maintenanceDate","2026-09-25","issueId",issueId),owner.token,key());assertEquals(400,invalid.status);
+  var record=request("POST",path(owner,"/equipment/"+eq+"/maintenance"),Map.of("description","تغيير الرديتر","maintenanceDate","2026-09-25","issueId",issueId),owner.token,key());assertEquals(200,record.status);String id=record.json.get("id").asString();
+  assertEquals("2026-09-25",request("GET",path(owner,"/issues/"+issueId),null,owner.token,null).json.get("maintenance").get(0).get("maintenanceDate").asString());
+  assertEquals(404,request("GET",path(other,"/maintenance/"+id),null,other.token,null).status);
+  String entry=entry(owner,eq),wrong=entry(owner,otherEq);assertEquals(400,request("POST",path(owner,"/maintenance/"+id+"/expenses/"+wrong),null,owner.token,null).status);
+  var linked=request("POST",path(owner,"/maintenance/"+id+"/expenses/"+entry),null,owner.token,null);assertEquals(200,linked.status);assertEquals("350.00",linked.json.get("financialSummary").get("totalActiveExpenseAmount").asString());
+  var second=request("POST",path(owner,"/equipment/"+eq+"/maintenance"),Map.of("description","فحص","maintenanceDate","2026-09-25"),owner.token,key());String secondId=second.json.get("id").asString();assertEquals(409,request("POST",path(owner,"/maintenance/"+secondId+"/expenses/"+entry),null,owner.token,null).status);
+  assertEquals(400,request("POST",path(owner,"/maintenance/"+id+"/cancellation"),Map.of(),owner.token,null).status);assertEquals(200,request("POST",path(owner,"/maintenance/"+id+"/cancellation"),Map.of("reason","مكرر"),owner.token,null).status);assertEquals("POSTED",request("GET",path(owner,"/entries/"+entry),null,owner.token,null).json.get("lifecycle").asString());
+  assertEquals(0,request("GET",path(owner,"/maintenance?equipmentId="+eq),null,owner.token,null).json.get("items").size()-1);assertEquals(1,request("GET",path(owner,"/maintenance?cancelled=true"),null,owner.token,null).json.get("items").size());
+ }
+ @Test void maintenanceSummaryReflectsRefundAndNewExpenseIsAtomic()throws Exception{
+  User owner=login("0500000001");String eq=equipment(owner);
+  String id=request("POST",path(owner,"/equipment/"+eq+"/maintenance"),Map.of("description","صيانة مباشرة","maintenanceDate","2026-09-25"),owner.token,key()).json.get("id").asString();
+  var created=request("POST",path(owner,"/maintenance/"+id+"/expenses"),expense(eq),owner.token,key());assertEquals(200,created.status);assertEquals("350.00",created.json.get("financialSummary").get("netPaid").asString());String entry=created.json.get("expenses").get(0).get("id").asString();
+  assertEquals(200,request("POST",path(owner,"/entries/"+entry+"/refunds"),Map.of("amount","50.00","refundedOn","2026-10-02","reason","مرتجع","partyName","مورد"),owner.token,key()).status);
+  var refreshed=request("GET",path(owner,"/maintenance/"+id),null,owner.token,null).json.get("financialSummary");assertEquals("300.00",refreshed.get("netPaid").asString());assertEquals("50.00",refreshed.get("remaining").asString());
+  assertEquals(200,request("DELETE",path(owner,"/maintenance/"+id+"/expenses/"+entry),null,owner.token,null).status);assertEquals("POSTED",request("GET",path(owner,"/entries/"+entry),null,owner.token,null).json.get("lifecycle").asString());
+ }
+ @Test void issueAndMaintenanceAttachmentsTypesIsolationAndSearch()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");String eq=equipment(owner);
+  String issue=request("POST",path(owner,"/equipment/"+eq+"/issues"),Map.of("description","تهريب زيت","type","MECHANICAL"),owner.token,key()).json.get("id").asString();
+  String maintenance=request("POST",path(owner,"/equipment/"+eq+"/maintenance"),Map.of("description","تغيير خرطوم","maintenanceDate","2026-09-25","workshop","ورشة النور"),owner.token,key()).json.get("id").asString();
+  assertEquals(1,request("GET",path(owner,"/issues?search=تهريب&status=OPEN&equipmentId="+eq),null,owner.token,null).json.get("total").asInt());assertEquals(1,request("GET",path(owner,"/maintenance?search=النور"),null,owner.token,null).json.get("total").asInt());
+  byte[] png=image("png");var init=request("POST",path(owner,"/issues/"+issue+"/attachments"),Map.of("filename","evidence.png","mediaType","image/png","size",png.length),owner.token,key());assertEquals(200,init.status);String attachment=init.json.get("id").asString();
+  assertEquals(400,request("POST",path(owner,"/issues/"+issue+"/attachments"),Map.of("filename","report.pdf","mediaType","application/pdf","size",png.length),owner.token,key()).status);
+  assertEquals(404,request("GET",path(other,"/attachments/"+attachment+"/content"),null,other.token,null).status);
+  assertEquals(200,raw("PUT",path(owner,"/attachments/"+attachment+"/content"),png,"image/png",owner.token,null,Map.of()).status);
+  assertEquals(200,request("GET",path(owner,"/attachments/"+attachment+"/content"),null,owner.token,null).status);
+  assertEquals(200,request("DELETE",path(owner,"/issues/"+issue+"/attachments/"+attachment),null,owner.token,null).status);
+  assertEquals(0,request("GET",path(owner,"/issues/"+issue+"/attachments"),null,owner.token,null).json.size());
+  assertEquals(404,request("GET",path(other,"/maintenance/"+maintenance+"/attachments"),null,other.token,null).status);
+ }
+
  @Test void authExpiredWrongReusedOtpThrottlingAndSingleOwner()throws Exception{
   String c=challenge("0500000001");assertEquals(429,request("POST","/auth/challenges",Map.of("phone","0500000001"),null,null).status);
   for(int i=0;i<5;i++)assertEquals(401,request("POST","/auth/verify",Map.of("challengeId",c,"code","000000","client","NATIVE"),null,null).status);

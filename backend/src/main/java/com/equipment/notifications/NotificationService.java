@@ -144,4 +144,16 @@ public class NotificationService {
         }
         items.sort(Comparator.comparingLong(i->(long)i.get("daysRemaining")));return items;
     }
+    public List<Map<String,Object>> operationalAttention(Actor actor,UUID workspace,UUID equipment){
+        access.owner(actor,workspace);
+        List<Map<String,Object>> result=new ArrayList<>();
+        for(var row:db.queryForList("select i.id,i.equipment_id,i.description,i.equipment_stopped,i.created_at,e.name as equipment_name from equipment_issue i join equipment e on e.workspace_id=i.workspace_id and e.id=i.equipment_id where i.workspace_id=? and i.status='OPEN' and e.archived_at is null"+(equipment==null?"":" and i.equipment_id=?")+" order by i.equipment_stopped desc,i.created_at desc,i.id desc",equipment==null?new Object[]{workspace}:new Object[]{workspace,equipment})){
+            Map<String,Object> item=new LinkedHashMap<>();item.put("entityType","ISSUE");item.put("issueId",row.get("id"));item.put("equipmentId",row.get("equipment_id"));item.put("equipmentName",row.get("equipment_name"));item.put("description",row.get("description"));item.put("equipmentStopped",row.get("equipment_stopped"));item.put("status","OPEN");item.put("priorityRank",Boolean.TRUE.equals(row.get("equipment_stopped"))?1:4);item.put("createdAt",((Timestamp)row.get("created_at")).toInstant().toString());result.add(item);
+        }
+        for(var document:attention(actor,workspace,equipment)){
+            Map<String,Object> item=new LinkedHashMap<>(document);long days=(long)item.get("daysRemaining");item.put("entityType","DOCUMENT");item.put("priorityRank",days<0?2:days==0?3:days<=1?5:days<=7?6:7);result.add(item);
+        }
+        result.sort(Comparator.comparingInt(i->(int)i.get("priorityRank")));
+        return result;
+    }
 }
