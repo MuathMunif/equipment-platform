@@ -73,10 +73,20 @@ public class IdentityService {
         return new Actor((UUID)rows.getFirst().get("user_id"),hash,(String)rows.getFirst().get("csrf_token"));
     }
     public Map<String,Object> me(Actor actor) {
-        var rows=db.queryForList("select u.id,u.name,w.id as workspace_id,w.name as workspace_name from app_user u join membership m on m.user_id=u.id and m.active=true and m.role='OWNER' join workspace w on w.id=m.workspace_id where u.id=? order by w.created_at",actor.userId());
+        var rows=db.queryForList("select u.id,u.name,u.preferred_locale,w.id as workspace_id,w.name as workspace_name from app_user u join membership m on m.user_id=u.id and m.active=true and m.role='OWNER' join workspace w on w.id=m.workspace_id where u.id=? order by w.created_at",actor.userId());
         if(rows.isEmpty()) throw new ApiException(403,"MEMBERSHIP_REQUIRED","لم تعد لديك صلاحية الوصول إلى مساحة العمل");
         var first=rows.getFirst();
-        return Map.of("userId",actor.userId(),"name",first.get("name"),"csrfToken",actor.csrfToken(),"workspaces",rows.stream().map(r->Map.of("id",r.get("workspace_id"),"name",r.get("workspace_name"))).toList(),"development",true);
+        Map<String,Object> result=new LinkedHashMap<>();
+        result.put("userId",actor.userId());result.put("name",first.get("name"));result.put("preferredLocale",first.get("preferred_locale"));
+        result.put("csrfToken",actor.csrfToken());result.put("workspaces",rows.stream().map(r->Map.of("id",r.get("workspace_id"),"name",r.get("workspace_name"))).toList());result.put("development",true);
+        return result;
+    }
+    @Transactional
+    public Map<String,Object> updatePreferredLocale(Actor actor,String locale) {
+        if(locale==null || !Set.of("ar","en","ur").contains(locale))throw new ApiException(400,"UNSUPPORTED_LOCALE","اختر لغة مدعومة");
+        int changed=db.update("update app_user set preferred_locale=? where id=?",locale,actor.userId());
+        if(changed!=1)throw ApiException.missing();
+        return me(actor);
     }
     public void logout(Actor actor) { db.update("delete from app_session where token_hash=?",actor.sessionHash()); }
 }

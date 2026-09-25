@@ -102,10 +102,11 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [userId, name, workspaces, csrfToken, development]
+                required: [userId, name, preferredLocale, workspaces, csrfToken, development]
                 properties:
                   userId: {type: string, format: uuid}
                   name: {type: string}
+                  preferredLocale: {type: [string, 'null'], enum: [ar, en, ur, null], description: Null uses a supported device locale then Arabic fallback}
                   csrfToken: {type: string}
                   development: {const: true}
                   workspaces:
@@ -117,6 +118,23 @@ paths:
                         name: {type: string}
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
+  /auth/me/locale:
+    put:
+      description: Save the authenticated user's language preference across workspaces.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preferredLocale]
+              properties:
+                preferredLocale: {type: string, enum: [ar, en, ur]}
+      responses:
+        '200': {description: Updated /auth/me representation}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
   /auth/logout:
     post:
       parameters: [{$ref: '#/components/parameters/Csrf'}]
@@ -683,7 +701,7 @@ components:
         body: {type: string}
     Notification:
       type: object
-      required: [id, type, entityType, entityId, title, body, createdAt, readAt]
+      required: [id, type, entityType, entityId, title, body, templateKey, params, createdAt, readAt]
       properties:
         id: {type: string, format: uuid}
         type: {type: string, enum: [DOCUMENT_CURRENT_STATE, DOCUMENT_30D, DOCUMENT_7D, DOCUMENT_1D, DOCUMENT_TODAY, DOCUMENT_EXPIRED_WEEKLY]}
@@ -691,6 +709,8 @@ components:
         entityId: {type: [string, 'null'], format: uuid, description: Current document ID for individual alerts}
         title: {type: string}
         body: {type: string}
+        templateKey: {type: [string, 'null'], enum: [DOCUMENT_EXPIRY, DOCUMENT_EXPIRED_WEEKLY, null], description: Null only for legacy notifications}
+        params: {type: [object, 'null'], description: Semantic template parameters; legacy rows may be null}
         createdAt: {type: string, format: date-time}
         readAt: {type: [string, 'null'], format: date-time}
     NotificationPage:

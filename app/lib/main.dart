@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:file_selector/file_selector.dart';
 
 import 'api.dart';
 import 'file_export.dart';
 import 'documents.dart';
+import 'localization.dart';
+import 'l10n/app_localizations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,12 +14,32 @@ void main() {
 }
 
 const brand = Color(0xff176c66);
-const categories = {'FUEL': 'وقود', 'MAINTENANCE': 'صيانة', 'OTHER': 'أخرى'};
+const categoryCodes = ['FUEL', 'MAINTENANCE', 'OTHER'];
 
-String riyadhDateTime(String value) {
-  final date = DateTime.parse(value).toUtc().add(const Duration(hours: 3));
-  String two(int number) => number.toString().padLeft(2, '0');
-  return '${date.year}-${two(date.month)}-${two(date.day)} ${two(date.hour)}:${two(date.minute)}';
+String localizedCategory(BuildContext context, Object? code) => switch (code) {
+  'FUEL' => l10n(context).categoryFuel,
+  'MAINTENANCE' => l10n(context).categoryMaintenance,
+  _ => l10n(context).other,
+};
+
+String localizedFinancialStatus(
+  BuildContext context,
+  bool income,
+  Object? code,
+) {
+  final loc = l10n(context);
+  if (income) {
+    return switch (code) {
+      'PAID' => loc.receivedFull,
+      'PARTIAL' => loc.receivedPartial,
+      _ => loc.unreceived,
+    };
+  }
+  return switch (code) {
+    'PAID' => loc.paidFull,
+    'PARTIAL' => loc.paidPartial,
+    _ => loc.unpaid,
+  };
 }
 
 class EquipmentApp extends StatefulWidget {
@@ -33,6 +54,10 @@ class _EquipmentAppState extends State<EquipmentApp> {
   Map<String, dynamic>? user;
   bool loading = true;
   String? startupError;
+  late Locale locale = initialLocale(
+    null,
+    WidgetsBinding.instance.platformDispatcher.locale,
+  );
   @override
   void initState() {
     super.initState();
@@ -55,17 +80,39 @@ class _EquipmentAppState extends State<EquipmentApp> {
     try {
       await widget.api.restore();
       user = await widget.api.me();
+      locale = initialLocale(
+        user?['preferredLocale'] as String?,
+        WidgetsBinding.instance.platformDispatcher.locale,
+      );
     } on ApiError catch (e) {
-      if (e.status != 401) startupError = e.message;
+      if (e.status != 401) startupError = localizedErrorForLocale(locale, e);
     } catch (_) {
-      startupError = 'تعذر استعادة الجلسة؛ أعد المحاولة';
+      startupError = lookupAppLocalizations(locale).restoreFailed;
     }
     if (mounted) setState(() => loading = false);
   }
 
   Future<void> loggedIn() async {
     final current = await widget.api.me();
-    if (mounted) setState(() => user = current);
+    if (mounted) {
+      setState(() {
+        user = current;
+        locale = initialLocale(
+          current['preferredLocale'] as String?,
+          WidgetsBinding.instance.platformDispatcher.locale,
+        );
+      });
+    }
+  }
+
+  Future<void> changeLocale(String languageCode) async {
+    final updated = await widget.api.updatePreferredLocale(languageCode);
+    if (mounted) {
+      setState(() {
+        user = updated;
+        locale = Locale(languageCode);
+      });
+    }
   }
 
   Future<void> logout() async {
@@ -76,7 +123,7 @@ class _EquipmentAppState extends State<EquipmentApp> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(navigator.currentContext!)
-            .showSnackBar(SnackBar(content: Text('$e')));
+            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
       }
     }
   }
@@ -85,10 +132,10 @@ class _EquipmentAppState extends State<EquipmentApp> {
   Widget build(BuildContext context) => MaterialApp(
     navigatorKey: navigator,
     debugShowCheckedModeBanner: false,
-    title: 'إدارة المعدات',
-    locale: const Locale('ar'),
-    supportedLocales: const [Locale('ar')],
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    onGenerateTitle: (context) => l10n(context).appTitle,
+    locale: locale,
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
     theme: ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(seedColor: brand),
@@ -128,7 +175,12 @@ class _EquipmentAppState extends State<EquipmentApp> {
           )
         : user == null
         ? LoginPage(api: widget.api, completed: loggedIn)
-        : WorkspacePage(api: widget.api, user: user!, logout: logout),
+        : WorkspacePage(
+            api: widget.api,
+            user: user!,
+            logout: logout,
+            changeLocale: changeLocale,
+          ),
   );
 }
 
@@ -139,8 +191,8 @@ class DevNotice extends StatelessWidget {
     width: double.infinity,
     color: const Color(0xffeef3de),
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: const Text(
-      'بيئة تطوير محلية • لا تُرسل رسائل SMS',
+    child: Text(
+      l10n(context).devNotice,
       textAlign: TextAlign.center,
       style: TextStyle(fontSize: 12, color: Color(0xff52612f)),
     ),
@@ -162,7 +214,7 @@ class ErrorPanel extends StatelessWidget {
           const SizedBox(height: 16),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: retry, child: const Text('إعادة المحاولة')),
+          OutlinedButton(onPressed: retry, child: Text(l10n(context).retry)),
         ],
       ),
     ),
@@ -223,7 +275,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> submit() async {
     if (needsName && name.text.trim().isEmpty) {
-      setState(() => error = 'اكتب الاسم للمتابعة');
+      setState(() => error = l10n(context).uiEnterYourNameToContinue);
       return;
     }
     setState(() {
@@ -258,7 +310,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -281,22 +333,22 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'إدارة المعدات',
+                  l10n(context).appTitle,
                   style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'معداتك ومصروفاتك في مكان واحد',
+                Text(
+                  l10n(context).uiYourEquipmentAndExpensesInOnePlace,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
                 Text(
                   needsName
-                      ? 'بماذا نناديك؟'
+                      ? l10n(context).uiWhatShouldWeCallYou
                       : challenge == null
-                      ? 'ابدأ برقم جوالك'
-                      : 'أدخل رمز التحقق',
+                      ? l10n(context).uiStartWithYourMobileNumber
+                      : l10n(context).uiEnterTheVerificationCode,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
@@ -306,15 +358,15 @@ class _LoginPageState extends State<LoginPage> {
                     controller: phone,
                     keyboardType: TextInputType.phone,
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم الجوال',
+                    decoration: InputDecoration(
+                      labelText: l10n(context).phoneNumber,
                       hintText: '0500000001',
                     ),
                     onSubmitted: (_) => busy ? null : submit(),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'الأرقام التجريبية: 0500000001 أو 0500000002',
+                  Text(
+                    l10n(context).uiDevelopmentNumbers0500000001Or0500000002,
                     textDirection: TextDirection.rtl,
                   ),
                 ] else if (needsName)
@@ -323,11 +375,11 @@ class _LoginPageState extends State<LoginPage> {
                     controller: name,
                     autofocus: true,
                     maxLength: 100,
-                    decoration: const InputDecoration(labelText: 'الاسم'),
+                    decoration: InputDecoration(labelText: l10n(context).name),
                     onSubmitted: (_) => busy ? null : submit(),
                   )
                 else ...[
-                  Text('التحقق من ${phone.text}'),
+                  Text(l10n(context).verifyPhone(phone.text)),
                   const SizedBox(height: 12),
                   TextField(
                     key: const Key('otp'),
@@ -335,9 +387,9 @@ class _LoginPageState extends State<LoginPage> {
                     keyboardType: TextInputType.number,
                     textDirection: TextDirection.ltr,
                     autofillHints: const [AutofillHints.oneTimeCode],
-                    decoration: const InputDecoration(
-                      labelText: 'رمز التحقق',
-                      helperText: 'رمز التطوير فقط: 123456',
+                    decoration: InputDecoration(
+                      labelText: l10n(context).signInCode,
+                      helperText: l10n(context).uiDevelopmentCodeOnly123456,
                     ),
                     onSubmitted: (_) => busy ? null : submit(),
                   ),
@@ -349,12 +401,12 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: busy ? null : submit,
                   child: Text(
                     busy
-                        ? 'جارٍ التحقق…'
+                        ? l10n(context).uiVerifying
                         : needsName
-                        ? 'ابدأ بإضافة معداتك'
+                        ? l10n(context).uiStartByAddingYourEquipment
                         : challenge == null
-                        ? 'طلب رمز التحقق'
-                        : 'تأكيد الرمز',
+                        ? l10n(context).uiRequestVerificationCode
+                        : l10n(context).uiConfirmCode,
                   ),
                 ),
                 if (challenge != null)
@@ -367,7 +419,7 @@ class _LoginPageState extends State<LoginPage> {
                             error = null;
                             code.clear();
                           }),
-                    child: const Text('تغيير الرقم أو طلب رمز جديد'),
+                    child: Text(l10n(context).uiChangeNumberOrRequestANewCode),
                   ),
               ],
             ),
@@ -382,11 +434,13 @@ class WorkspacePage extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> user;
   final VoidCallback logout;
+  final Future<void> Function(String)? changeLocale;
   const WorkspacePage({
     super.key,
     required this.api,
     required this.user,
     required this.logout,
+    this.changeLocale,
   });
   @override
   State<WorkspacePage> createState() => _WorkspacePageState();
@@ -408,21 +462,59 @@ class _WorkspacePageState extends State<WorkspacePage> {
           );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة المعدات'),
+        title: Text(l10n(context).appTitle),
         actions: [
           NotificationButton(
             key: ValueKey('notifications-$revision'),
             api: widget.api,
           ),
           IconButton(
-            tooltip: 'تحديث البيانات',
+            tooltip: l10n(context).refresh,
             onPressed: () => setState(() => revision++),
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
-            tooltip: 'تسجيل الخروج',
+            tooltip: l10n(context).logout,
             onPressed: widget.logout,
             icon: const Icon(Icons.logout),
+          ),
+          IconButton(
+            key: const Key('languageSettings'),
+            tooltip: l10n(context).language,
+            onPressed: () async {
+              final choice = await showDialog<String>(
+                context: context,
+                builder: (dialog) => SimpleDialog(
+                  title: Text(l10n(dialog).language),
+                  children: [
+                    for (final (code, name) in [
+                      ('ar', l10n(context).uiText102),
+                      ('en', 'English'),
+                      ('ur', l10n(context).uiText054),
+                    ])
+                      SimpleDialogOption(
+                        onPressed: () => Navigator.pop(dialog, code),
+                        child: Text(name),
+                      ),
+                  ],
+                ),
+              );
+              if (!context.mounted) return;
+              if (choice == null ||
+                  choice == Localizations.localeOf(context).languageCode) {
+                return;
+              }
+              try {
+                await widget.changeLocale?.call(choice);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(localizedError(context, e))),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.language),
           ),
           const SizedBox(width: 8),
         ],
@@ -438,18 +530,18 @@ class _WorkspacePageState extends State<WorkspacePage> {
                     extended: true,
                     selectedIndex: selected,
                     onDestinationSelected: (i) => setState(() => selected = i),
-                    destinations: const [
+                    destinations: [
                       NavigationRailDestination(
                         icon: Icon(Icons.home_outlined),
-                        label: Text('الرئيسية'),
+                        label: Text(l10n(context).home),
                       ),
                       NavigationRailDestination(
                         icon: Icon(Icons.local_shipping_outlined),
-                        label: Text('المعدات'),
+                        label: Text(l10n(context).equipment),
                       ),
                       NavigationRailDestination(
                         icon: Icon(Icons.receipt_long_outlined),
-                        label: Text('السجل'),
+                        label: Text(l10n(context).ledger),
                       ),
                     ],
                   ),
@@ -464,18 +556,18 @@ class _WorkspacePageState extends State<WorkspacePage> {
           : NavigationBar(
               selectedIndex: selected,
               onDestinationSelected: (i) => setState(() => selected = i),
-              destinations: const [
+              destinations: [
                 NavigationDestination(
                   icon: Icon(Icons.home_outlined),
-                  label: 'الرئيسية',
+                  label: l10n(context).home,
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.local_shipping_outlined),
-                  label: 'المعدات',
+                  label: l10n(context).equipment,
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.receipt_long_outlined),
-                  label: 'السجل',
+                  label: l10n(context).ledger,
                 ),
               ],
             ),
@@ -534,7 +626,7 @@ class _EquipmentListState extends State<EquipmentList> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -562,11 +654,13 @@ class _EquipmentListState extends State<EquipmentList> {
       padding: EdgeInsets.all(MediaQuery.sizeOf(context).width > 850 ? 32 : 20),
       children: [
         Text(
-          widget.home ? 'مرحبًا، ${widget.name}' : 'المعدات',
+          widget.home
+              ? '${l10n(context).home} • ${widget.name}'
+              : l10n(context).equipment,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
-        const Text('كل معدة وسجلها، من أول عملية'),
+        Text(l10n(context).equipmentSubtitle),
         const SizedBox(height: 24),
         if (widget.home) ...[
           HomeDocumentAttention(api: widget.api),
@@ -577,8 +671,8 @@ class _EquipmentListState extends State<EquipmentList> {
             Expanded(
               child: TextField(
                 controller: search,
-                decoration: const InputDecoration(
-                  labelText: 'ابحث بالاسم أو الرقم الداخلي',
+                decoration: InputDecoration(
+                  labelText: l10n(context).searchEquipment,
                   prefixIcon: Icon(Icons.search),
                 ),
                 onSubmitted: (_) {
@@ -589,7 +683,7 @@ class _EquipmentListState extends State<EquipmentList> {
             ),
             const SizedBox(width: 12),
             IconButton.filledTonal(
-              tooltip: 'بحث',
+              tooltip: l10n(context).uiSearch,
               onPressed: () {
                 page = 0;
                 load();
@@ -612,17 +706,17 @@ class _EquipmentListState extends State<EquipmentList> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'أضف أول معدة',
+                    l10n(context).addFirstEquipment,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  const Text('ابدأ باسم المعدة وموديلها'),
+                  Text(l10n(context).uiStartWithEquipmentNameAndModel),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     key: const Key('addEquipment'),
                     onPressed: add,
                     icon: const Icon(Icons.add),
-                    label: const Text('إضافة معدة'),
+                    label: Text(l10n(context).addEquipment),
                   ),
                 ],
               ),
@@ -635,11 +729,11 @@ class _EquipmentListState extends State<EquipmentList> {
               key: const Key('addEquipment'),
               onPressed: add,
               icon: const Icon(Icons.add),
-              label: const Text('إضافة معدة'),
+              label: Text(l10n(context).addEquipment),
             ),
           ),
           const SizedBox(height: 20),
-          if (items.isEmpty) const Text('لا توجد معدات مطابقة للبحث'),
+          if (items.isEmpty) Text(l10n(context).uiNoMatchingEquipment),
           LayoutBuilder(
             builder: (context, constraints) => Wrap(
               spacing: 16,
@@ -678,7 +772,9 @@ class _EquipmentListState extends State<EquipmentList> {
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                                 const SizedBox(height: 8),
-                                Text('الموديل: ${item['model']}'),
+                                Text(
+                                  l10n(context).modelValue('${item['model']}'),
+                                ),
                                 const SizedBox(height: 12),
                                 Text(
                                   item['reference'],
@@ -688,8 +784,8 @@ class _EquipmentListState extends State<EquipmentList> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  'عرض السجل والعمليات ←',
+                                Text(
+                                  l10n(context).uiViewRecordsAndEntries,
                                   style: TextStyle(color: brand),
                                 ),
                               ],
@@ -733,14 +829,14 @@ class Pager extends StatelessWidget {
           children: [
             TextButton(
               onPressed: page > 0 ? () => change(page - 1) : null,
-              child: const Text('السابق'),
+              child: Text(l10n(context).previous),
             ),
             Text('${page + 1}'),
             TextButton(
               onPressed: (page + 1) * 30 < total
                   ? () => change(page + 1)
                   : null,
-              child: const Text('التالي'),
+              child: Text(l10n(context).next),
             ),
           ],
         );
@@ -750,18 +846,16 @@ Future<bool> confirmLeave(BuildContext context) async =>
     await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('هل تريد مغادرة النموذج؟'),
-        content: const Text(
-          'ستفقد البيانات غير المحفوظة. إذا لم يصل تأكيد الحفظ، راجع السجل قبل إنشاء طلب آخر.',
-        ),
+        title: Text(l10n(context).uiLeaveThisForm),
+        content: Text(l10n(context).uiUnsavedDataWillBeLostIfYou),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('متابعة الإدخال'),
+            child: Text(l10n(context).uiContinueEntry),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('مغادرة'),
+            child: Text(l10n(context).uiLeave),
           ),
         ],
       ),
@@ -808,7 +902,7 @@ class _EquipmentFormState extends State<EquipmentForm> {
     } on ApiError catch (e) {
       if (mounted) {
         setState(() {
-          error = e.message;
+          error = localizedError(context, e);
           uncertain = e.status == 0 || e.status == 409 || e.status >= 500;
           if (!uncertain) key = requestKey();
         });
@@ -828,26 +922,25 @@ class _EquipmentFormState extends State<EquipmentForm> {
       }
     },
     child: Scaffold(
-      appBar: AppBar(title: const Text('إضافة معدة')),
+      appBar: AppBar(title: Text(l10n(context).addEquipment)),
       body: Form(
         key: form,
         child: FormBody(
           children: [
-            const Text(
-              'الاسم والموديل يكفيان للبداية. نضيف رقمًا داخليًا تلقائيًا.',
-            ),
+            Text(l10n(context).uiNameAndModelAreEnoughToStart),
             const SizedBox(height: 24),
             TextFormField(
               key: const Key('equipmentName'),
               controller: name,
               enabled: !busy && !uncertain,
               maxLength: 100,
-              decoration: const InputDecoration(
-                labelText: 'اسم المعدة',
-                hintText: 'قلاب ١',
+              decoration: InputDecoration(
+                labelText: l10n(context).uiEquipmentName,
+                hintText: l10n(context).uiTipper1,
               ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'اكتب اسم المعدة' : null,
+              validator: (v) => v == null || v.trim().isEmpty
+                  ? l10n(context).uiEnterEquipmentName
+                  : null,
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
@@ -856,12 +949,13 @@ class _EquipmentFormState extends State<EquipmentForm> {
               controller: model,
               enabled: !busy && !uncertain,
               maxLength: 100,
-              decoration: const InputDecoration(
-                labelText: 'الموديل',
-                hintText: '2021 أو FH16',
+              decoration: InputDecoration(
+                labelText: l10n(context).model,
+                hintText: l10n(context).ui2021OrFh16,
               ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'اكتب الموديل' : null,
+              validator: (v) => v == null || v.trim().isEmpty
+                  ? l10n(context).uiEnterModel
+                  : null,
               onChanged: (_) => setState(() {}),
             ),
             InlineError(error),
@@ -871,10 +965,10 @@ class _EquipmentFormState extends State<EquipmentForm> {
               onPressed: busy ? null : save,
               child: Text(
                 busy
-                    ? 'جارٍ حفظ المعدة…'
+                    ? l10n(context).uiSavingEquipment
                     : uncertain
-                    ? 'إعادة محاولة الحفظ نفسه'
-                    : 'حفظ المعدة',
+                    ? l10n(context).uiRetryTheSameSave
+                    : l10n(context).uiSaveEquipment,
               ),
             ),
           ],
@@ -911,19 +1005,19 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(
-          title: const Text('أرشفة المعدة؟'),
-          content: const Text(
-            'سيبقى سجل المعدة ومستنداتها محفوظًا، وتتوقف تنبيهات انتهاء مستنداتها حتى استعادتها.',
+          title: Text(l10n(context).uiArchiveEquipment007),
+          content: Text(
+            l10n(context).uiEquipmentHistoryAndDocumentsWillRemainSaved,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialog, false),
-              child: const Text('رجوع'),
+              child: Text(l10n(context).back),
             ),
             FilledButton(
               key: const Key('confirmEquipmentArchive'),
               onPressed: () => Navigator.pop(dialog, true),
-              child: const Text('أرشفة المعدة'),
+              child: Text(l10n(context).uiArchiveEquipment),
             ),
           ],
         ),
@@ -942,7 +1036,7 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -958,7 +1052,9 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
           key: const Key('toggleEquipmentArchive'),
           onPressed: busy ? null : toggleArchive,
           child: Text(
-            equipment['archivedAt'] == null ? 'أرشفة المعدة' : 'استعادة المعدة',
+            equipment['archivedAt'] == null
+                ? l10n(context).uiArchiveEquipment
+                : l10n(context).uiRestoreEquipment,
           ),
         ),
       ],
@@ -1067,7 +1163,7 @@ class _LedgerPageState extends State<LedgerPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1078,7 +1174,9 @@ class _LedgerPageState extends State<LedgerPage> {
       MaterialPageRoute(
         builder: (_) => ExpenseForm(
           api: widget.api,
-          equipment: widget.equipment ?? {'id': null, 'name': 'مساحة العمل'},
+          equipment:
+              widget.equipment ??
+              {'id': null, 'name': l10n(context).uiWorkspace},
           income: income,
           initialScope: widget.equipment == null ? 'GENERAL' : 'SINGLE',
         ),
@@ -1174,7 +1272,7 @@ class _LedgerPageState extends State<LedgerPage> {
     decoration: InputDecoration(labelText: label),
     isExpanded: true,
     items: [
-      const DropdownMenuItem(value: '', child: Text('الكل')),
+      DropdownMenuItem(value: '', child: Text(l10n(context).uiAll)),
       ...choices.entries.map(
         (choice) =>
             DropdownMenuItem(value: choice.key, child: Text(choice.value)),
@@ -1186,7 +1284,7 @@ class _LedgerPageState extends State<LedgerPage> {
   Widget historyFilters() => Card(
     child: ExpansionTile(
       key: const Key('historyFilters'),
-      title: const Text('تصفية السجل'),
+      title: Text(l10n(context).uiFilterRecords),
       initiallyExpanded: filtersExpanded,
       onExpansionChanged: (expanded) => filtersExpanded = expanded,
       childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1198,7 +1296,7 @@ class _LedgerPageState extends State<LedgerPage> {
               key: const Key('clearHistoryFilters'),
               onPressed: clearFilters,
               icon: const Icon(Icons.clear_all),
-              label: const Text('مسح المرشحات'),
+              label: Text(l10n(context).uiClearFilters),
             ),
           ),
         LayoutBuilder(
@@ -1212,9 +1310,12 @@ class _LedgerPageState extends State<LedgerPage> {
                   width: width,
                   child: historyDropdown(
                     keyName: 'filterEntryType',
-                    label: 'نوع العملية',
+                    label: l10n(context).uiEntryType,
                     value: entryType,
-                    choices: const {'EXPENSE': 'مصروف', 'INCOME': 'إيراد'},
+                    choices: {
+                      'EXPENSE': l10n(context).expense,
+                      'INCOME': l10n(context).income,
+                    },
                     onChanged: (value) {
                       setState(() => entryType = value);
                       applyFilter();
@@ -1225,9 +1326,12 @@ class _LedgerPageState extends State<LedgerPage> {
                   width: width,
                   child: historyDropdown(
                     keyName: 'filterLifecycle',
-                    label: 'حالة العملية',
+                    label: l10n(context).uiEntryStatus,
                     value: lifecycle,
-                    choices: const {'POSTED': 'نشطة', 'CANCELLED': 'ملغاة'},
+                    choices: {
+                      'POSTED': l10n(context).uiActive,
+                      'CANCELLED': l10n(context).cancelled,
+                    },
                     onChanged: (value) {
                       setState(() => lifecycle = value);
                       applyFilter();
@@ -1238,12 +1342,12 @@ class _LedgerPageState extends State<LedgerPage> {
                   width: width,
                   child: historyDropdown(
                     keyName: 'filterSettlement',
-                    label: 'حالة التسوية',
+                    label: l10n(context).uiSettlementStatus,
                     value: settlementStatus,
-                    choices: const {
-                      'PAID': 'مسوّى كاملًا',
-                      'PARTIAL': 'مسوّى جزئيًا',
-                      'UNPAID': 'غير مسوّى',
+                    choices: {
+                      'PAID': l10n(context).uiFullySettled,
+                      'PARTIAL': l10n(context).uiPartiallySettled,
+                      'UNPAID': l10n(context).uiUnsettled,
                     },
                     onChanged: (value) {
                       setState(() => settlementStatus = value);
@@ -1256,15 +1360,15 @@ class _LedgerPageState extends State<LedgerPage> {
                     width: width,
                     child: historyDropdown(
                       keyName: 'filterGeneral',
-                      label: 'المصروف العام',
+                      label: l10n(context).uiGeneralExpense,
                       value: generalExpense == null
                           ? null
                           : generalExpense!
                           ? 'GENERAL'
                           : 'OTHER',
-                      choices: const {
-                        'GENERAL': 'مصروف عام فقط',
-                        'OTHER': 'استبعاد المصروف العام',
+                      choices: {
+                        'GENERAL': l10n(context).uiGeneralExpensesOnly,
+                        'OTHER': l10n(context).uiExcludeGeneralExpenses,
                       },
                       onChanged: (value) {
                         setState(
@@ -1284,8 +1388,13 @@ class _LedgerPageState extends State<LedgerPage> {
                     icon: const Icon(Icons.calendar_today_outlined),
                     label: Text(
                       fromDate == null
-                          ? 'من تاريخ'
-                          : 'من ${fromDate!.toIso8601String().split('T').first}',
+                          ? l10n(context).uiFromDate
+                          : l10n(context).fromDateValue(
+                              localizedDate(
+                                context,
+                                fromDate!.toIso8601String(),
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -1297,8 +1406,10 @@ class _LedgerPageState extends State<LedgerPage> {
                     icon: const Icon(Icons.event_outlined),
                     label: Text(
                       toDate == null
-                          ? 'إلى تاريخ'
-                          : 'إلى ${toDate!.toIso8601String().split('T').first}',
+                          ? l10n(context).uiToDate
+                          : l10n(context).toDateValue(
+                              localizedDate(context, toDate!.toIso8601String()),
+                            ),
                     ),
                   ),
                 ),
@@ -1309,7 +1420,10 @@ class _LedgerPageState extends State<LedgerPage> {
                       key: const Key('filterEquipment'),
                       onPressed: chooseEquipmentFilter,
                       icon: const Icon(Icons.local_shipping_outlined),
-                      label: Text(filterEquipment?['name'] ?? 'اختر معدة'),
+                      label: Text(
+                        filterEquipment?['name'] ??
+                            l10n(context).uiSelectEquipment051,
+                      ),
                     ),
                   ),
               ],
@@ -1332,14 +1446,14 @@ class _LedgerPageState extends State<LedgerPage> {
             key: const Key('addGeneralExpense'),
             onPressed: () => add(),
             icon: const Icon(Icons.add),
-            label: const Text('إضافة مصروف عام'),
+            label: Text(l10n(context).uiAddGeneralExpense),
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             key: const Key('openDrafts'),
             onPressed: showDrafts,
             icon: const Icon(Icons.pending_actions_outlined),
-            label: const Text('بانتظار الاستكمال'),
+            label: Text(l10n(context).uiAwaitingCompletion),
           ),
           const SizedBox(height: 16),
         ],
@@ -1355,7 +1469,9 @@ class _LedgerPageState extends State<LedgerPage> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 12),
-                  Text('الموديل: ${widget.equipment!['model']}'),
+                  Text(
+                    l10n(context).modelValue('${widget.equipment!['model']}'),
+                  ),
                   Text(
                     widget.equipment!['reference'],
                     textDirection: TextDirection.ltr,
@@ -1365,22 +1481,22 @@ class _LedgerPageState extends State<LedgerPage> {
                     key: const Key('addExpense'),
                     onPressed: () => add(),
                     icon: const Icon(Icons.add),
-                    label: const Text('إضافة مصروف'),
+                    label: Text(l10n(context).addExpense),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     key: const Key('addIncome'),
                     onPressed: () => add(income: true),
                     icon: const Icon(Icons.add),
-                    label: const Text('إضافة إيراد'),
+                    label: Text(l10n(context).addIncome),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     key: const Key('quickCapture'),
                     onPressed: captureDraft,
                     icon: const Icon(Icons.photo_camera_outlined),
-                    label: const Text(
-                      'حفظ الفاتورة الآن وإكمال البيانات لاحقًا',
+                    label: Text(
+                      l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1388,7 +1504,7 @@ class _LedgerPageState extends State<LedgerPage> {
                     key: const Key('openEquipmentDrafts'),
                     onPressed: showDrafts,
                     icon: const Icon(Icons.pending_actions_outlined),
-                    label: const Text('بانتظار الاستكمال'),
+                    label: Text(l10n(context).uiAwaitingCompletion),
                   ),
                 ],
               ),
@@ -1403,19 +1519,21 @@ class _LedgerPageState extends State<LedgerPage> {
           children: [
             Expanded(
               child: Text(
-                widget.equipment == null ? 'السجل العام' : 'سجل المعدة',
+                widget.equipment == null
+                    ? l10n(context).uiGeneralRecords
+                    : l10n(context).uiEquipmentHistory,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
             IconButton(
-              tooltip: 'تحديث السجل',
+              tooltip: l10n(context).uiRefreshRecords,
               onPressed: load,
               icon: const Icon(Icons.refresh),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        const Text('كل عملية ودفعاتها ومرفقاتها في سجل واحد'),
+        Text(l10n(context).uiEachEntryItsPaymentsAndAttachmentsIn),
         const SizedBox(height: 12),
         Card(
           child: Padding(
@@ -1427,9 +1545,10 @@ class _LedgerPageState extends State<LedgerPage> {
                     key: const Key('historySearch'),
                     controller: searchController,
                     textInputAction: TextInputAction.search,
-                    decoration: const InputDecoration(
-                      labelText: 'ابحث في السجل',
-                      hintText: 'اسم المعدة أو مرجعها أو الطرف أو الملاحظة',
+                    decoration: InputDecoration(
+                      labelText: l10n(context).searchLedger,
+                      hintText: l10n(context)
+                          .uiEquipmentNameReferencePartyOrNote,
                       prefixIcon: Icon(Icons.search),
                     ),
                     onSubmitted: (_) {
@@ -1441,7 +1560,7 @@ class _LedgerPageState extends State<LedgerPage> {
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
                   key: const Key('applyHistorySearch'),
-                  tooltip: 'بحث',
+                  tooltip: l10n(context).uiSearch,
                   onPressed: () {
                     setState(() => search = searchController.text.trim());
                     applyFilter();
@@ -1461,8 +1580,8 @@ class _LedgerPageState extends State<LedgerPage> {
               padding: const EdgeInsets.all(28),
               child: Text(
                 hasFilters
-                    ? 'لا توجد عمليات تطابق البحث أو المرشحات. جرّب تغييرها أو مسحها.'
-                    : 'لا توجد عمليات مسجلة بعد',
+                    ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
+                    : l10n(context).noEntries,
               ),
             ),
           ),
@@ -1477,18 +1596,27 @@ class _LedgerPageState extends State<LedgerPage> {
                 child: Icon(Icons.receipt_long_outlined),
               ),
               title: Text(
-                '${entry['entryType'] == 'INCOME' ? 'إيراد' : categories[entry['category']]} • ${entry['expenseScope'] == 'GENERAL'
-                    ? 'مصروف عام'
+                '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
+                    ? l10n(context).generalExpense
                     : entry['expenseScope'] == 'SHARED'
-                    ? 'أكثر من معدة'
+                    ? l10n(context).uiMultipleEquipment
                     : entry['equipmentName']}',
               ),
               subtitle: Text(
-                '${entry['operationDate']} ميلادي\n${entry['lifecycle'] == 'CANCELLED' ? 'عملية ملغاة' : (entry['entryType'] == 'INCOME' ? {'PAID': 'مستلم كاملًا', 'PARTIAL': 'مستلم جزئيًا', 'UNPAID': 'غير مستلم'} : {'PAID': 'مدفوع كاملًا', 'PARTIAL': 'مدفوع جزئيًا', 'UNPAID': 'غير مدفوع'})[entry['settlementStatus']] ?? 'حالة التسوية'}',
+                l10n(context).entryDateStatus(
+                  localizedDate(context, entry['operationDate'] as String),
+                  entry['lifecycle'] == 'CANCELLED'
+                      ? l10n(context).cancelled
+                      : localizedFinancialStatus(
+                          context,
+                          entry['entryType'] == 'INCOME',
+                          entry['settlementStatus'],
+                        ),
+                ),
               ),
               isThreeLine: true,
               trailing: Text(
-                '${entry['amount']}\nريال سعودي',
+                localizedMoney(context, entry['amount']),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
@@ -1554,7 +1682,7 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
       );
       if (mounted) setState(() => items = result['items']);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1562,7 +1690,7 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('اختر المعدة'),
+    title: Text(l10n(context).uiSelectEquipment),
     content: SizedBox(
       width: 520,
       height: 420,
@@ -1572,8 +1700,8 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
             key: const Key('equipmentFilterSearch'),
             controller: controller,
             textInputAction: TextInputAction.search,
-            decoration: const InputDecoration(
-              labelText: 'ابحث باسم المعدة أو مرجعها',
+            decoration: InputDecoration(
+              labelText: l10n(context).uiSearchByEquipmentNameOrReference,
               prefixIcon: Icon(Icons.search),
             ),
             onSubmitted: (_) => load(),
@@ -1585,7 +1713,7 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
                 : error != null
                 ? ErrorPanel(message: error!, retry: load)
                 : items.isEmpty
-                ? const Center(child: Text('لا توجد معدات تطابق البحث'))
+                ? Center(child: Text(l10n(context).noEquipmentMatches))
                 : ListView.builder(
                     itemCount: items.length,
                     itemBuilder: (context, index) {
@@ -1604,16 +1732,16 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('إغلاق'),
+        child: Text(l10n(context).uiClose),
       ),
     ],
   );
 }
 
-Future<XFile?> pickReceiptFile() => openFile(
+Future<XFile?> pickReceiptFile(BuildContext context) => openFile(
   acceptedTypeGroups: [
-    const XTypeGroup(
-      label: 'صور وفواتير PDF',
+    XTypeGroup(
+      label: l10n(context).uiImagesAndInvoicePdfs,
       extensions: ['jpg', 'jpeg', 'png', 'pdf'],
       mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
       uniformTypeIdentifiers: ['public.jpeg', 'public.png', 'com.adobe.pdf'],
@@ -1621,7 +1749,7 @@ Future<XFile?> pickReceiptFile() => openFile(
   ],
 );
 
-String receiptMediaType(XFile file) {
+String receiptMediaType(BuildContext context, XFile file) {
   final extension = file.name.split('.').last.toLowerCase();
   final type = {
     'png': 'image/png',
@@ -1630,11 +1758,7 @@ String receiptMediaType(XFile file) {
     'pdf': 'application/pdf',
   }[extension];
   if (type == null) {
-    throw const ApiError(
-      400,
-      'UNSUPPORTED_FILE',
-      'اختر PNG أو JPEG أو PDF؛ حوّل HEIC إلى JPEG قبل الرفع',
-    );
+    throw ApiError(400, 'UNSUPPORTED_FILE', l10n(context).unsupportedFile);
   }
   return type;
 }
@@ -1668,16 +1792,15 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
 
   Future<void> chooseFile() async {
     try {
-      final file = await (widget.pickFile?.call() ?? pickReceiptFile());
+      final file = await (widget.pickFile?.call() ?? pickReceiptFile(context));
       if (file == null) return;
-      if (await file.length() > 10 * 1024 * 1024) {
-        throw const ApiError(
-          413,
-          'FILE_TOO_LARGE',
-          'اختر ملفًا لا يتجاوز 10 ميغابايت',
-        );
+      final fileSize = await file.length();
+      if (!mounted) return;
+      if (fileSize > 10 * 1024 * 1024) {
+        throw ApiError(413, 'FILE_TOO_LARGE', l10n(context).fileTooLarge);
       }
-      final type = receiptMediaType(file);
+      if (!mounted) return;
+      final type = receiptMediaType(context, file);
       final contents = await file.readAsBytes();
       if (mounted) {
         setState(() {
@@ -1690,7 +1813,7 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     }
   }
 
@@ -1739,8 +1862,8 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
       if (mounted) {
         setState(
           () => error = draftId == null
-              ? '$e'
-              : 'حُفظت المسودة، وتعذر رفع الملف. أعد المحاولة. $e',
+              ? localizedError(context, e)
+              : l10n(context).draftUploadFailed(localizedError(context, e)),
         );
       }
     } finally {
@@ -1750,7 +1873,7 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('حفظ فاتورة الآن')),
+    appBar: AppBar(title: Text(l10n(context).uiSaveInvoiceNow)),
     body: FormBody(
       children: [
         Text(
@@ -1758,16 +1881,16 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        const Text(
-          'بانتظار الاستكمال • لن تُحتسب كعملية مالية حتى تُدخل بياناتها لاحقًا.',
-        ),
+        Text(l10n(context).uiAwaitingCompletionThisWillNotCountAs),
         const SizedBox(height: 24),
         OutlinedButton.icon(
           key: const Key('pickDraftAttachment'),
           onPressed: busy || submittedNote != null ? null : chooseFile,
           icon: const Icon(Icons.attach_file),
           label: Text(
-            filename == null ? 'إضافة صورة أو PDF (اختياري)' : filename!,
+            filename == null
+                ? l10n(context).uiAddImageOrPdfOptional
+                : filename!,
           ),
         ),
         const SizedBox(height: 16),
@@ -1777,7 +1900,7 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
           enabled: !busy && submittedNote == null,
           maxLength: 1000,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+          decoration: InputDecoration(labelText: l10n(context).uiNoteOptional),
         ),
         InlineError(error),
         FilledButton(
@@ -1785,17 +1908,17 @@ class _DraftCapturePageState extends State<DraftCapturePage> {
           onPressed: busy ? null : save,
           child: Text(
             busy
-                ? 'جارٍ الحفظ…'
+                ? l10n(context).uiSaving170
                 : draftId == null
-                ? 'حفظ الفاتورة الآن وإكمال البيانات لاحقًا'
-                : 'إعادة محاولة رفع الملف',
+                ? l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater
+                : l10n(context).uiRetryFileUpload,
           ),
         ),
         if (draftId != null)
           TextButton(
             key: const Key('openSavedDraft'),
             onPressed: () => Navigator.pop(context, draftId),
-            child: const Text('فتح المسودة المحفوظة'),
+            child: Text(l10n(context).uiOpenSavedDraft),
           ),
       ],
     ),
@@ -1840,7 +1963,7 @@ class _DraftListPageState extends State<DraftListPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1848,7 +1971,7 @@ class _DraftListPageState extends State<DraftListPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('بانتظار الاستكمال')),
+    appBar: AppBar(title: Text(l10n(context).uiAwaitingCompletion)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
@@ -1857,10 +1980,10 @@ class _DraftListPageState extends State<DraftListPage> {
             padding: const EdgeInsets.all(24),
             children: [
               if (items.isEmpty)
-                const Card(
+                Card(
                   child: Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text('لا توجد فواتير بانتظار الاستكمال'),
+                    child: Text(l10n(context).uiNoInvoicesAwaitingCompletion),
                   ),
                 ),
               ...items.map(
@@ -1868,7 +1991,9 @@ class _DraftListPageState extends State<DraftListPage> {
                   child: ListTile(
                     title: Text(draft['equipmentName'] as String),
                     subtitle: Text(
-                      'بانتظار الاستكمال${(draft['note'] as String).isEmpty ? '' : '\n${draft['note']}'}',
+                      (draft['note'] as String).isEmpty
+                          ? l10n(context).uiAwaitingCompletion
+                          : l10n(context).draftNote(draft['note'] as String),
                     ),
                     isThreeLine: (draft['note'] as String).isNotEmpty,
                     onTap: () async {
@@ -1946,7 +2071,7 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1954,16 +2079,15 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
 
   Future<void> addAttachment() async {
     try {
-      final file = await (widget.pickFile?.call() ?? pickReceiptFile());
+      final file = await (widget.pickFile?.call() ?? pickReceiptFile(context));
       if (file == null) return;
-      if (await file.length() > 10 * 1024 * 1024) {
-        throw const ApiError(
-          413,
-          'FILE_TOO_LARGE',
-          'اختر ملفًا لا يتجاوز 10 ميغابايت',
-        );
+      final fileSize = await file.length();
+      if (!mounted) return;
+      if (fileSize > 10 * 1024 * 1024) {
+        throw ApiError(413, 'FILE_TOO_LARGE', l10n(context).fileTooLarge);
       }
-      final type = receiptMediaType(file);
+      if (!mounted) return;
+      final type = receiptMediaType(context, file);
       bytes = await file.readAsBytes();
       filename = file.name;
       mediaType = type;
@@ -1971,7 +2095,7 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
       attachmentKey = requestKey();
       await upload();
     } catch (e) {
-      if (mounted) setState(() => uploadError = '$e');
+      if (mounted) setState(() => uploadError = localizedError(context, e));
     }
   }
 
@@ -2004,7 +2128,7 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
       attachmentId = null;
       if (mounted) await load();
     } catch (e) {
-      if (mounted) setState(() => uploadError = '$e');
+      if (mounted) setState(() => uploadError = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -2031,7 +2155,7 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close),
-                      tooltip: 'إغلاق المرفق',
+                      tooltip: l10n(context).closeAttachment,
                     ),
                   ],
                 ),
@@ -2054,7 +2178,7 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
       }
     }
   }
@@ -2087,19 +2211,17 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('استبعاد المسودة؟'),
-        content: const Text(
-          'لن تُحتسب كعملية مالية. ستختفي المرفقات من القائمة بعد الاستبعاد.',
-        ),
+        title: Text(l10n(context).uiDiscardDraft056),
+        content: Text(l10n(context).uiThisWillNotCountAsAFinancial),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('رجوع'),
+            child: Text(l10n(context).back),
           ),
           FilledButton(
             key: const Key('confirmDiscardDraft'),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('استبعاد المسودة'),
+            child: Text(l10n(context).uiDiscardDraft),
           ),
         ],
       ),
@@ -2112,19 +2234,19 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('بانتظار الاستكمال'),
+      title: Text(l10n(context).uiAwaitingCompletion),
       actions: [
         IconButton(
           onPressed: load,
           icon: const Icon(Icons.refresh),
-          tooltip: 'تحديث المسودة',
+          tooltip: l10n(context).uiUpdateDraft,
         ),
       ],
     ),
@@ -2139,26 +2261,27 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'هذه الفاتورة محفوظة بانتظار الاستكمال، ولا تدخل المجاميع المالية بعد.',
-              ),
+              Text(l10n(context).uiThisInvoiceIsSavedForLaterCompletion),
               if ((draft!['note'] as String).isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: Text('ملاحظة: ${draft!['note']}'),
+                  child: Text(l10n(context).noteValue('${draft!['note']}')),
                 ),
               const SizedBox(height: 24),
-              Text('المرفقات', style: Theme.of(context).textTheme.titleLarge),
-              if (attachments.isEmpty) const Text('لا توجد مرفقات بعد'),
+              Text(
+                l10n(context).attachments,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              if (attachments.isEmpty) Text(l10n(context).noAttachments),
               ...attachments.map(
                 (file) => ListTile(
                   title: Text(file['filename'] as String),
                   subtitle: Text(
                     file['state'] == 'READY'
-                        ? 'جاهز للعرض'
+                        ? l10n(context).uiReadyToView
                         : file['state'] == 'FAILED'
-                        ? 'تعثر الرفع؛ أعد المحاولة'
-                        : 'لم يكتمل الرفع',
+                        ? l10n(context).uiUploadFailedTryAgain
+                        : l10n(context).uiUploadIncomplete,
                   ),
                   onTap: file['state'] == 'READY'
                       ? () => openAttachment(Map<String, dynamic>.from(file))
@@ -2170,32 +2293,32 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
                 key: const Key('addDraftAttachment'),
                 onPressed: busy ? null : addAttachment,
                 icon: const Icon(Icons.attach_file),
-                label: const Text('إضافة مرفق'),
+                label: Text(l10n(context).uiAddAttachment),
               ),
               if (bytes != null && uploadError != null)
                 TextButton(
                   key: const Key('retryDraftAttachment'),
                   onPressed: busy ? null : upload,
-                  child: const Text('إعادة محاولة رفع الملف'),
+                  child: Text(l10n(context).uiRetryFileUpload),
                 ),
               InlineError(uploadError),
               const SizedBox(height: 28),
               FilledButton(
                 key: const Key('completeDraftExpense'),
                 onPressed: busy ? null : () => complete(),
-                child: const Text('استكمال كمصروف'),
+                child: Text(l10n(context).uiCompleteAsExpense),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
                 key: const Key('completeDraftIncome'),
                 onPressed: busy ? null : () => complete(income: true),
-                child: const Text('استكمال كإيراد'),
+                child: Text(l10n(context).uiCompleteAsIncome),
               ),
               const SizedBox(height: 12),
               TextButton(
                 key: const Key('discardDraft'),
                 onPressed: busy ? null : discard,
-                child: const Text('استبعاد المسودة'),
+                child: Text(l10n(context).uiDiscardDraft),
               ),
             ],
           ),
@@ -2275,7 +2398,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       }
       if (mounted) setState(() => equipmentChoices = choices);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loadingEquipment = false);
     }
@@ -2358,8 +2481,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
               ) !=
               BigInt.parse(total.replaceAll('.', ''))) {
         setState(
-          () => error =
-              'حدد معدات مختلفة واجعل مجموع مبالغها يساوي إجمالي المصروف',
+          () =>
+              error = l10n(context)
+                  .uiSelectDifferentEquipmentAndMakeTheirAmounts,
         );
         return;
       }
@@ -2410,7 +2534,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
     } on ApiError catch (e) {
       if (mounted) {
         setState(() {
-          error = e.message;
+          error = localizedError(context, e);
           uncertain = e.status == 0 || e.status == 409 || e.status >= 500;
           if (!uncertain) key = requestKey();
         });
@@ -2431,7 +2555,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
     },
     child: Scaffold(
       appBar: AppBar(
-        title: Text(widget.income ? 'إضافة إيراد' : 'إضافة مصروف'),
+        title: Text(
+          widget.income ? l10n(context).addIncome : l10n(context).addExpense,
+        ),
       ),
       body: Form(
         key: form,
@@ -2443,27 +2569,33 @@ class _ExpenseFormState extends State<ExpenseForm> {
             ),
             const SizedBox(height: 8),
             if (widget.income)
-              const Text('يُسجّل هذا الإيراد على هذه المعدة')
+              Text(l10n(context).uiThisIncomeIsRecordedUnderThisEquipment)
             else if (widget.draftId != null)
-              const Text(
-                'استكمل بيانات الفاتورة المحفوظة؛ المرفقات ستبقى معها.',
-              )
+              Text(l10n(context).uiCompleteTheSavedInvoiceDetailsItsAttachments)
             else if (widget.equipment['id'] == null)
-              const Text('مصروف عام لمساحة العمل؛ لا يُحمّل على معدة')
+              Text(l10n(context).uiAWorkspaceExpenseItIsNotAssigned)
             else ...[
-              const Text('اختر المعدات التي يخصها المصروف'),
+              Text(l10n(context).uiSelectTheEquipmentThisExpenseBelongsTo),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 key: const Key('expenseScope'),
                 initialValue: expenseScope,
-                decoration: const InputDecoration(labelText: 'يخص المصروف'),
-                items: const [
-                  DropdownMenuItem(value: 'SINGLE', child: Text('معدة واحدة')),
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiExpenseAppliesTo276,
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'SINGLE',
+                    child: Text(l10n(context).uiOneEquipment),
+                  ),
                   DropdownMenuItem(
                     value: 'SHARED',
-                    child: Text('أكثر من معدة'),
+                    child: Text(l10n(context).uiMultipleEquipment),
                   ),
-                  DropdownMenuItem(value: 'GENERAL', child: Text('مصروف عام')),
+                  DropdownMenuItem(
+                    value: 'GENERAL',
+                    child: Text(l10n(context).generalExpense),
+                  ),
                 ],
                 onChanged: busy || uncertain
                     ? null
@@ -2481,19 +2613,19 @@ class _ExpenseFormState extends State<ExpenseForm> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ (ريال سعودي)',
+              decoration: InputDecoration(
+                labelText: l10n(context).uiAmountSar,
                 hintText: '350.00',
               ),
               validator: (v) => exactMoney(v ?? '') == null
-                  ? 'اكتب مبلغًا أكبر من صفر، حتى منزلتين عشريتين'
+                  ? l10n(context).uiEnterAnAmountAboveZeroUpTo
                   : null,
               onChanged: (_) => setState(() {}),
             ),
             if (!widget.income && expenseScope == 'SHARED') ...[
               const SizedBox(height: 16),
               Text(
-                'مبلغ كل معدة',
+                l10n(context).uiAmountPerEquipment,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               if (loadingEquipment) const LinearProgressIndicator(),
@@ -2504,7 +2636,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
                       child: DropdownButtonFormField<String>(
                         key: Key('allocationEquipment${item.key}'),
                         initialValue: item.value.equipmentId,
-                        decoration: const InputDecoration(labelText: 'المعدة'),
+                        decoration: InputDecoration(
+                          labelText: l10n(context).uiEquipment,
+                        ),
                         items: [
                           if (!equipmentChoices.any(
                             (e) => e['id'] == widget.equipment['id'],
@@ -2525,8 +2659,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
                             : (value) => setState(
                                 () => item.value.equipmentId = value,
                               ),
-                        validator: (value) =>
-                            value == null ? 'اختر معدة' : null,
+                        validator: (value) => value == null
+                            ? l10n(context).uiSelectEquipment051
+                            : null,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -2538,9 +2673,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration: const InputDecoration(labelText: 'المبلغ'),
+                        decoration: InputDecoration(
+                          labelText: l10n(context).uiAmount,
+                        ),
                         validator: (value) => exactMoney(value ?? '') == null
-                            ? 'اكتب مبلغًا صحيحًا'
+                            ? l10n(context).uiEnterAValidAmount
                             : null,
                         onChanged: (_) => setState(() {}),
                       ),
@@ -2548,7 +2685,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
                     if (parts.length > 2)
                       IconButton(
                         key: Key('removeAllocation${item.key}'),
-                        tooltip: 'إزالة المعدة',
+                        tooltip: l10n(context).uiRemoveEquipment,
                         onPressed: busy || uncertain
                             ? null
                             : () => setState(() {
@@ -2566,17 +2703,32 @@ class _ExpenseFormState extends State<ExpenseForm> {
                     ? null
                     : () => setState(() => parts.add(_ExpensePart(null))),
                 icon: const Icon(Icons.add),
-                label: const Text('إضافة معدة'),
+                label: Text(l10n(context).addEquipment),
               ),
               Text(
-                'المتبقي للتوزيع: ${(() {
-                  final total = exactMoney(amount.text);
-                  if (total == null) return '—';
-                  final assigned = parts.map((p) => exactMoney(p.amount.text)).whereType<String>().fold<BigInt>(BigInt.zero, (s, v) => s + BigInt.parse(v.replaceAll('.', '')));
-                  final difference = BigInt.parse(total.replaceAll('.', '')) - assigned;
-                  final absolute = difference.abs().toString().padLeft(3, '0');
-                  return '${difference.isNegative ? '-' : ''}${absolute.substring(0, absolute.length - 2)}.${absolute.substring(absolute.length - 2)}';
-                })()} ريال سعودي',
+                l10n(context).allocationRemaining(
+                  localizedMoney(
+                    context,
+                    (() {
+                      final total = exactMoney(amount.text);
+                      if (total == null) return '—';
+                      final assigned = parts
+                          .map((p) => exactMoney(p.amount.text))
+                          .whereType<String>()
+                          .fold<BigInt>(
+                            BigInt.zero,
+                            (s, v) => s + BigInt.parse(v.replaceAll('.', '')),
+                          );
+                      final difference =
+                          BigInt.parse(total.replaceAll('.', '')) - assigned;
+                      final absolute = difference.abs().toString().padLeft(
+                        3,
+                        '0',
+                      );
+                      return '${difference.isNegative ? '-' : ''}${absolute.substring(0, absolute.length - 2)}.${absolute.substring(absolute.length - 2)}';
+                    })(),
+                  ),
+                ),
                 key: const Key('allocationRemaining'),
               ),
             ],
@@ -2584,11 +2736,15 @@ class _ExpenseFormState extends State<ExpenseForm> {
             if (!widget.income)
               DropdownButtonFormField<String>(
                 initialValue: category,
-                decoration: const InputDecoration(labelText: 'نوع المصروف'),
-                items: categories.entries
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiExpenseType,
+                ),
+                items: categoryCodes
                     .map(
-                      (e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                      (code) => DropdownMenuItem(
+                        value: code,
+                        child: Text(localizedCategory(context, code)),
+                      ),
                     )
                     .toList(),
                 onChanged: busy || uncertain
@@ -2599,42 +2755,46 @@ class _ExpenseFormState extends State<ExpenseForm> {
             OutlinedButton.icon(
               onPressed: busy || uncertain ? null : () => pickDate(false),
               icon: const Icon(Icons.calendar_month_outlined),
-              label: Text('تاريخ العملية: $date ميلادي'),
+              label: Text(
+                l10n(context).operationDate(localizedDate(context, date)),
+              ),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               key: const Key('paymentStatus'),
               initialValue: paymentStatus,
               decoration: InputDecoration(
-                labelText: widget.income ? 'حالة الاستلام' : 'حالة الدفع',
+                labelText: widget.income
+                    ? l10n(context).uiReceiptStatus
+                    : l10n(context).uiPaymentStatus,
               ),
               items: widget.income
-                  ? const [
+                  ? [
                       DropdownMenuItem(
                         value: 'FULL',
-                        child: Text('استلمته كاملًا'),
+                        child: Text(l10n(context).uiReceivedInFull),
                       ),
                       DropdownMenuItem(
                         value: 'PARTIAL',
-                        child: Text('استلمت جزءًا'),
+                        child: Text(l10n(context).uiPartiallyReceived),
                       ),
                       DropdownMenuItem(
                         value: 'UNPAID',
-                        child: Text('لم أستلمه'),
+                        child: Text(l10n(context).uiNotReceived),
                       ),
                     ]
-                  : const [
+                  : [
                       DropdownMenuItem(
                         value: 'FULL',
-                        child: Text('دفعته كاملًا'),
+                        child: Text(l10n(context).uiPaidInFull),
                       ),
                       DropdownMenuItem(
                         value: 'PARTIAL',
-                        child: Text('دفعت جزءًا'),
+                        child: Text(l10n(context).uiPaidPartOfIt),
                       ),
                       DropdownMenuItem(
                         value: 'UNPAID',
-                        child: Text('لم أدفعه'),
+                        child: Text(l10n(context).uiNotPaid),
                       ),
                     ],
               onChanged: busy || uncertain
@@ -2653,8 +2813,8 @@ class _ExpenseFormState extends State<ExpenseForm> {
                 ),
                 decoration: InputDecoration(
                   labelText: widget.income
-                      ? 'المبلغ المستلم أولًا'
-                      : 'المبلغ المدفوع أولًا',
+                      ? l10n(context).uiInitialReceipt
+                      : l10n(context).uiInitialPayment,
                 ),
                 validator: (v) {
                   final first = exactMoney(v ?? '');
@@ -2663,7 +2823,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
                       total == null ||
                       BigInt.parse(first.replaceAll('.', '')) >=
                           BigInt.parse(total.replaceAll('.', ''))) {
-                    return 'اكتب مبلغًا أكبر من صفر وأقل من الإجمالي';
+                    return l10n(context).uiEnterAnAmountAboveZeroAndBelow;
                   }
                   return null;
                 },
@@ -2675,7 +2835,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
                 onPressed: busy || uncertain ? null : () => pickDate(true),
                 icon: const Icon(Icons.calendar_today_outlined),
                 label: Text(
-                  '${widget.income ? 'تاريخ الاستلام' : 'تاريخ الدفع'}: $paidOn ميلادي',
+                  widget.income
+                      ? l10n(context)
+                            .receiptDate(localizedDate(context, paidOn))
+                      : l10n(context)
+                            .paymentDate(localizedDate(context, paidOn)),
                 ),
               ),
             ],
@@ -2688,19 +2852,21 @@ class _ExpenseFormState extends State<ExpenseForm> {
                 maxLength: 100,
                 decoration: InputDecoration(
                   labelText: widget.income
-                      ? 'اسم الطرف الذي سيدفع'
-                      : 'اسم الطرف المستحق',
+                      ? l10n(context).uiNameOfThePartyWhoWillPay
+                      : l10n(context).uiNameOfThePartyOwed,
                 ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'اكتب اسم الطرف' : null,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? l10n(context).uiEnterPartyName
+                    : null,
               ),
               OutlinedButton.icon(
                 onPressed: busy || uncertain ? null : pickDueDate,
                 icon: const Icon(Icons.event_outlined),
                 label: Text(
                   dueDate == null
-                      ? 'موعد الاستحقاق (اختياري)'
-                      : 'موعد الاستحقاق: $dueDate ميلادي',
+                      ? l10n(context).uiDueDateOptional
+                      : l10n(context)
+                            .dueDateValue(localizedDate(context, dueDate)),
                 ),
               ),
             ],
@@ -2711,12 +2877,16 @@ class _ExpenseFormState extends State<ExpenseForm> {
               enabled: !busy && !uncertain,
               maxLength: 1000,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+              decoration: InputDecoration(
+                labelText: l10n(context).uiNoteOptional,
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 8),
             Text(
-              'يمكنك إرفاق صورة أو PDF بعد حفظ ${widget.income ? 'الإيراد' : 'المصروف'}.',
+              l10n(context).attachmentAfterSave(
+                widget.income ? l10n(context).income : l10n(context).expense,
+              ),
             ),
             InlineError(error),
             const SizedBox(height: 16),
@@ -2725,10 +2895,18 @@ class _ExpenseFormState extends State<ExpenseForm> {
               onPressed: busy ? null : save,
               child: Text(
                 busy
-                    ? 'جارٍ حفظ ${widget.income ? 'الإيراد' : 'المصروف'}…'
+                    ? l10n(context).savingKind(
+                        widget.income
+                            ? l10n(context).income
+                            : l10n(context).expense,
+                      )
                     : uncertain
-                    ? 'إعادة محاولة الحفظ نفسه'
-                    : 'حفظ ${widget.income ? 'الإيراد' : 'المصروف'}',
+                    ? l10n(context).uiRetryTheSameSave
+                    : l10n(context).saveKind(
+                        widget.income
+                            ? l10n(context).income
+                            : l10n(context).expense,
+                      ),
               ),
             ),
           ],
@@ -2799,7 +2977,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
       }
       if (mounted) setState(() => equipmentChoices = choices);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     }
   }
 
@@ -2851,8 +3029,9 @@ class _EntryEditFormState extends State<EntryEditForm> {
               ) !=
               BigInt.parse(totalAmount.replaceAll('.', ''))) {
         setState(
-          () => error =
-              'حدد معدات مختلفة واجعل مجموع مبالغها يساوي إجمالي المصروف',
+          () =>
+              error = l10n(context)
+                  .uiSelectDifferentEquipmentAndMakeTheirAmounts,
         );
         return;
       }
@@ -2862,14 +3041,11 @@ class _EntryEditFormState extends State<EntryEditForm> {
     );
     final total = BigInt.parse(exactMoney(amount.text)!.replaceAll('.', ''));
     if (hasCash && exactMoney(amount.text) != widget.entry['amount']) {
-      setState(
-        () =>
-            error = 'لا يمكن تغيير الإجمالي بعد تسجيل دفعة أو تحصيل أو استرداد',
-      );
+      setState(() => error = l10n(context).uiTheTotalCannotChangeAfterAPayment);
       return;
     }
     if (total == settled && dueDate != null) {
-      setState(() => error = 'أزل موعد الاستحقاق عند سداد الإجمالي');
+      setState(() => error = l10n(context).uiRemoveTheDueDateOnceFullyPaid);
       return;
     }
     setState(() {
@@ -2903,7 +3079,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
       );
       if (mounted) Navigator.pop(context, Map<String, dynamic>.from(updated));
     } on ApiError catch (e) {
-      if (mounted) setState(() => error = e.message);
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -2911,13 +3087,17 @@ class _EntryEditFormState extends State<EntryEditForm> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(income ? 'تعديل الإيراد' : 'تعديل المصروف')),
+    appBar: AppBar(
+      title: Text(
+        income ? l10n(context).uiEditIncome : l10n(context).uiEditExpense,
+      ),
+    ),
     body: Form(
       key: form,
       child: FormBody(
         children: [
           Text(
-            'التسويات السابقة محفوظة ولا تتغير بالتعديل.',
+            l10n(context).uiPreviousPaymentsAreKeptAndDoNot,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -2927,29 +3107,37 @@ class _EntryEditFormState extends State<EntryEditForm> {
             enabled: !busy && !hasCash,
             textDirection: TextDirection.ltr,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'الإجمالي (ريال سعودي)',
-            ),
-            validator: (v) =>
-                exactMoney(v ?? '') == null ? 'اكتب مبلغًا صحيحًا' : null,
+            decoration: InputDecoration(labelText: l10n(context).uiTotalSar),
+            validator: (v) => exactMoney(v ?? '') == null
+                ? l10n(context).uiEnterAValidAmount
+                : null,
           ),
           if (hasCash)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'لا يمكن تغيير الإجمالي لوجود دفعة أو تحصيل أو استرداد.',
-              ),
+              child: Text(l10n(context).uiTheTotalCannotChangeBecauseAPayment),
             ),
           if (!income) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               key: const Key('editExpenseScope'),
               initialValue: expenseScope,
-              decoration: const InputDecoration(labelText: 'المصروف يخص'),
-              items: const [
-                DropdownMenuItem(value: 'SINGLE', child: Text('معدة واحدة')),
-                DropdownMenuItem(value: 'SHARED', child: Text('عدة معدات')),
-                DropdownMenuItem(value: 'GENERAL', child: Text('مصروف عام')),
+              decoration: InputDecoration(
+                labelText: l10n(context).uiExpenseAppliesTo,
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'SINGLE',
+                  child: Text(l10n(context).uiOneEquipment),
+                ),
+                DropdownMenuItem(
+                  value: 'SHARED',
+                  child: Text(l10n(context).uiSeveralEquipment),
+                ),
+                DropdownMenuItem(
+                  value: 'GENERAL',
+                  child: Text(l10n(context).generalExpense),
+                ),
               ],
               onChanged: busy
                   ? null
@@ -2969,13 +3157,16 @@ class _EntryEditFormState extends State<EntryEditForm> {
             DropdownButtonFormField<String>(
               key: const Key('editSingleEquipment'),
               initialValue: selectedEquipment,
-              decoration: const InputDecoration(labelText: 'المعدة'),
+              decoration: InputDecoration(labelText: l10n(context).uiEquipment),
               items: [
                 if (selectedEquipment != null &&
                     !equipmentChoices.any((e) => e['id'] == selectedEquipment))
                   DropdownMenuItem(
                     value: selectedEquipment,
-                    child: Text(widget.entry['equipmentName'] ?? 'المعدة'),
+                    child: Text(
+                      widget.entry['equipmentName'] ??
+                          l10n(context).uiEquipment,
+                    ),
                   ),
                 ...equipmentChoices.map(
                   (e) => DropdownMenuItem(
@@ -2991,7 +3182,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
           ],
           if (shared) ...[
             const SizedBox(height: 12),
-            const Text('عدّل مبلغ كل معدة بحيث يساوي الإجمالي.'),
+            Text(l10n(context).uiAdjustEachEquipmentAmountToMatchThe),
             ...parts.asMap().entries.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -3001,7 +3192,9 @@ class _EntryEditFormState extends State<EntryEditForm> {
                       child: DropdownButtonFormField<String>(
                         key: Key('editAllocationEquipment${item.key}'),
                         initialValue: item.value.equipmentId,
-                        decoration: const InputDecoration(labelText: 'المعدة'),
+                        decoration: InputDecoration(
+                          labelText: l10n(context).uiEquipment,
+                        ),
                         items: [
                           if (item.value.equipmentId != null &&
                               !equipmentChoices.any(
@@ -3043,9 +3236,11 @@ class _EntryEditFormState extends State<EntryEditForm> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration: const InputDecoration(labelText: 'المبلغ'),
+                        decoration: InputDecoration(
+                          labelText: l10n(context).uiAmount,
+                        ),
                         validator: (value) => exactMoney(value ?? '') == null
-                            ? 'اكتب مبلغًا صحيحًا'
+                            ? l10n(context).uiEnterAValidAmount
                             : null,
                       ),
                     ),
@@ -3070,17 +3265,22 @@ class _EntryEditFormState extends State<EntryEditForm> {
                   ? null
                   : () => setState(() => parts.add(_ExpensePart(null))),
               icon: const Icon(Icons.add),
-              label: const Text('إضافة معدة'),
+              label: Text(l10n(context).addEquipment),
             ),
           ],
           if (!income) ...[
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: category,
-              decoration: const InputDecoration(labelText: 'نوع المصروف'),
-              items: categories.entries
+              decoration: InputDecoration(
+                labelText: l10n(context).uiExpenseType,
+              ),
+              items: categoryCodes
                   .map(
-                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    (code) => DropdownMenuItem(
+                      value: code,
+                      child: Text(localizedCategory(context, code)),
+                    ),
                   )
                   .toList(),
               onChanged: busy ? null : (v) => setState(() => category = v!),
@@ -3090,7 +3290,9 @@ class _EntryEditFormState extends State<EntryEditForm> {
           OutlinedButton.icon(
             onPressed: busy ? null : () => pickDate(),
             icon: const Icon(Icons.calendar_today_outlined),
-            label: Text('تاريخ العملية: $date ميلادي'),
+            label: Text(
+              l10n(context).operationDate(localizedDate(context, date)),
+            ),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -3099,7 +3301,9 @@ class _EntryEditFormState extends State<EntryEditForm> {
             enabled: !busy,
             maxLength: 100,
             decoration: InputDecoration(
-              labelText: income ? 'اسم الطرف الذي سيدفع' : 'اسم الطرف المستحق',
+              labelText: income
+                  ? l10n(context).uiNameOfThePartyWhoWillPay
+                  : l10n(context).uiNameOfThePartyOwed,
             ),
             validator: (v) {
               final total = exactMoney(amount.text);
@@ -3109,7 +3313,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
               );
               return BigInt.parse(total.replaceAll('.', '')) > settled &&
                       (v == null || v.trim().isEmpty)
-                  ? 'اكتب اسم الطرف عند وجود متبقٍ'
+                  ? l10n(context).uiEnterPartyNameWhenABalanceRemains
                   : null;
             },
           ),
@@ -3118,14 +3322,14 @@ class _EntryEditFormState extends State<EntryEditForm> {
             icon: const Icon(Icons.event_outlined),
             label: Text(
               dueDate == null
-                  ? 'موعد الاستحقاق (اختياري)'
-                  : 'موعد الاستحقاق: $dueDate ميلادي',
+                  ? l10n(context).uiDueDateOptional
+                  : l10n(context).dueDateValue(localizedDate(context, dueDate)),
             ),
           ),
           if (dueDate != null)
             TextButton(
               onPressed: busy ? null : () => setState(() => dueDate = null),
-              child: const Text('إزالة موعد الاستحقاق'),
+              child: Text(l10n(context).uiRemoveDueDate),
             ),
           const SizedBox(height: 16),
           TextFormField(
@@ -3134,14 +3338,20 @@ class _EntryEditFormState extends State<EntryEditForm> {
             enabled: !busy,
             maxLength: 1000,
             maxLines: 3,
-            decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+            decoration: InputDecoration(
+              labelText: l10n(context).uiNoteOptional,
+            ),
           ),
           InlineError(error),
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('saveEntryEdit'),
             onPressed: busy ? null : save,
-            child: Text(busy ? 'جارٍ حفظ التعديل…' : 'حفظ التعديل'),
+            child: Text(
+              busy
+                  ? l10n(context).uiSavingChanges
+                  : l10n(context).uiSaveChanges,
+            ),
           ),
         ],
       ),
@@ -3196,20 +3406,20 @@ class _EntryDetailState extends State<EntryDetail> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) => AlertDialog(
           scrollable: true,
-          title: const Text('إلغاء العملية'),
+          title: Text(l10n(context).uiCancelEntry),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'ستبقى الدفعات والمرفقات في السجل. الإلغاء ليس استردادًا للمال.',
-              ),
+              Text(l10n(context).uiPaymentsAndAttachmentsWillRemainInThe),
               TextField(
                 key: const Key('cancellationReason'),
                 onChanged: (value) => reason = value,
                 maxLength: 500,
                 maxLines: 2,
                 enabled: !saving,
-                decoration: const InputDecoration(labelText: 'سبب الإلغاء'),
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiCancellationReason,
+                ),
               ),
               InlineError(validation),
             ],
@@ -3217,7 +3427,7 @@ class _EntryDetailState extends State<EntryDetail> {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(dialogContext),
-              child: const Text('رجوع'),
+              child: Text(l10n(context).back),
             ),
             FilledButton(
               key: const Key('confirmCancellation'),
@@ -3225,7 +3435,11 @@ class _EntryDetailState extends State<EntryDetail> {
                   ? null
                   : () async {
                       if (reason.trim().isEmpty) {
-                        update(() => validation = 'اكتب سبب الإلغاء');
+                        update(
+                          () =>
+                              validation = l10n(context)
+                                  .uiEnterCancellationReason,
+                        );
                         return;
                       }
                       update(() {
@@ -3244,13 +3458,17 @@ class _EntryDetailState extends State<EntryDetail> {
                         if (mounted) await load();
                       } on ApiError catch (e) {
                         if (dialogContext.mounted) {
-                          update(() => validation = e.message);
+                          update(() => validation = localizedError(context, e));
                         }
                       } finally {
                         if (dialogContext.mounted) update(() => saving = false);
                       }
                     },
-              child: Text(saving ? 'جارٍ الإلغاء…' : 'تأكيد الإلغاء'),
+              child: Text(
+                saving
+                    ? l10n(context).uiCancelling
+                    : l10n(context).uiConfirmCancellation,
+              ),
             ),
           ],
         ),
@@ -3269,12 +3487,19 @@ class _EntryDetailState extends State<EntryDetail> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) => AlertDialog(
           scrollable: true,
-          title: Text(income ? 'إضافة تحصيل' : 'إضافة دفعة'),
+          title: Text(
+            income ? l10n(context).uiAddReceipt : l10n(context).uiAddPayment,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${income ? 'المتبقي لك' : 'المتبقي عليك'}: ${entry!['remaining']} ريال سعودي',
+                l10n(context).remainingValue(
+                  income
+                      ? l10n(context).uiBalanceOwedToYou
+                      : l10n(context).uiBalanceYouOwe,
+                  localizedMoney(context, entry!['remaining']),
+                ),
               ),
               TextField(
                 onChanged: (value) => paymentAmount = value,
@@ -3284,7 +3509,9 @@ class _EntryDetailState extends State<EntryDetail> {
                   decimal: true,
                 ),
                 decoration: InputDecoration(
-                  labelText: income ? 'مبلغ التحصيل' : 'مبلغ الدفعة',
+                  labelText: income
+                      ? l10n(context).uiInitialReceipt
+                      : l10n(context).uiInitialPayment,
                 ),
               ),
               OutlinedButton(
@@ -3307,7 +3534,11 @@ class _EntryDetailState extends State<EntryDetail> {
                         }
                       },
                 child: Text(
-                  '${income ? 'تاريخ التحصيل' : 'تاريخ الدفع'}: $paidOn ميلادي',
+                  income
+                      ? l10n(context)
+                            .receiptDate(localizedDate(context, paidOn))
+                      : l10n(context)
+                            .paymentDate(localizedDate(context, paidOn)),
                 ),
               ),
               InlineError(paymentError),
@@ -3316,7 +3547,7 @@ class _EntryDetailState extends State<EntryDetail> {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(dialogContext),
-              child: const Text('إلغاء'),
+              child: Text(l10n(context).cancel),
             ),
             FilledButton(
               onPressed: saving
@@ -3324,7 +3555,10 @@ class _EntryDetailState extends State<EntryDetail> {
                   : () async {
                       final value = exactMoney(paymentAmount);
                       if (value == null) {
-                        update(() => paymentError = 'اكتب مبلغًا صحيحًا');
+                        update(
+                          () =>
+                              paymentError = l10n(context).uiEnterAValidAmount,
+                        );
                         return;
                       }
                       update(() {
@@ -3343,17 +3577,17 @@ class _EntryDetailState extends State<EntryDetail> {
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                         if (mounted) await load();
                       } on ApiError catch (e) {
-                        update(() => paymentError = e.message);
+                        update(() => paymentError = localizedError(context, e));
                       } finally {
                         if (dialogContext.mounted) update(() => saving = false);
                       }
                     },
               child: Text(
                 saving
-                    ? 'جارٍ الحفظ…'
+                    ? l10n(context).uiSaving170
                     : income
-                    ? 'حفظ التحصيل'
-                    : 'حفظ الدفعة',
+                    ? l10n(context).uiSaveReceipt
+                    : l10n(context).uiSavePayment,
               ),
             ),
           ],
@@ -3378,14 +3612,18 @@ class _EntryDetailState extends State<EntryDetail> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, update) => AlertDialog(
           scrollable: true,
-          title: const Text('تسجيل استرداد'),
+          title: Text(l10n(context).uiRecordRefund),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 income
-                    ? 'مبلغ أُعيد إلى العميل أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي'
-                    : 'مبلغ عاد إليك من المورد أو الطرف الآخر. المتاح للاسترداد: ${entry!['refundable']} ريال سعودي',
+                    ? l10n(context).refundIncomeHelp(
+                        localizedMoney(context, entry!['refundable']),
+                      )
+                    : l10n(context).refundExpenseHelp(
+                        localizedMoney(context, entry!['refundable']),
+                      ),
               ),
               TextField(
                 key: const Key('refundAmount'),
@@ -3395,7 +3633,9 @@ class _EntryDetailState extends State<EntryDetail> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(labelText: 'مبلغ الاسترداد'),
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiRefundAmount,
+                ),
               ),
               OutlinedButton(
                 key: const Key('refundDate'),
@@ -3417,7 +3657,9 @@ class _EntryDetailState extends State<EntryDetail> {
                           );
                         }
                       },
-                child: Text('تاريخ عودة المال: $refundedOn ميلادي'),
+                child: Text(
+                  l10n(context).refundDate(localizedDate(context, refundedOn)),
+                ),
               ),
               TextField(
                 key: const Key('refundReason'),
@@ -3425,19 +3667,21 @@ class _EntryDetailState extends State<EntryDetail> {
                 enabled: !saving,
                 maxLength: 500,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'سبب الاسترداد'),
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiRefundReason,
+                ),
               ),
               if (needsParty) ...[
-                const Text(
-                  'بعد الاسترداد سيبقى مبلغ مستحق؛ سجّل اسم الطرف للمتابعة.',
-                ),
+                Text(l10n(context).uiABalanceWillRemainAfterTheRefund),
                 TextField(
                   key: const Key('refundPartyName'),
                   onChanged: (value) => partyName = value,
                   enabled: !saving,
                   maxLength: 100,
                   decoration: InputDecoration(
-                    labelText: income ? 'اسم العميل' : 'اسم المورد أو الطرف',
+                    labelText: income
+                        ? l10n(context).uiCustomerName
+                        : l10n(context).uiSupplierOrPartyName,
                   ),
                 ),
               ],
@@ -3447,7 +3691,7 @@ class _EntryDetailState extends State<EntryDetail> {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(dialogContext),
-              child: const Text('رجوع'),
+              child: Text(l10n(context).back),
             ),
             FilledButton(
               key: const Key('saveRefund'),
@@ -3456,7 +3700,11 @@ class _EntryDetailState extends State<EntryDetail> {
                   : () async {
                       final value = exactMoney(refundAmount);
                       if (value == null) {
-                        update(() => refundError = 'اكتب مبلغ استرداد صحيحًا');
+                        update(
+                          () =>
+                              refundError = l10n(context)
+                                  .uiEnterAValidRefundAmount,
+                        );
                         return;
                       }
                       if (BigInt.parse(value.replaceAll('.', '')) >
@@ -3467,18 +3715,23 @@ class _EntryDetailState extends State<EntryDetail> {
                             ),
                           )) {
                         update(
-                          () => refundError = 'مبلغ الاسترداد أكبر من المتاح',
+                          () =>
+                              refundError = l10n(context)
+                                  .uiRefundAmountExceedsWhatIsAvailable,
                         );
                         return;
                       }
                       if (reason.trim().isEmpty) {
-                        update(() => refundError = 'اكتب سبب الاسترداد');
+                        update(
+                          () => refundError = l10n(context).uiEnterRefundReason,
+                        );
                         return;
                       }
                       if (needsParty && partyName.trim().isEmpty) {
                         update(
-                          () => refundError =
-                              'اكتب اسم الطرف؛ بعد الاسترداد سيبقى مبلغ مستحق',
+                          () =>
+                              refundError = l10n(context)
+                                  .uiEnterPartyNameABalanceWillRemain,
                         );
                         return;
                       }
@@ -3502,13 +3755,17 @@ class _EntryDetailState extends State<EntryDetail> {
                         if (mounted) await load();
                       } on ApiError catch (e) {
                         if (dialogContext.mounted) {
-                          update(() => refundError = e.message);
+                          update(
+                            () => refundError = localizedError(context, e),
+                          );
                         }
                       } finally {
                         if (dialogContext.mounted) update(() => saving = false);
                       }
                     },
-              child: Text(saving ? 'جارٍ الحفظ…' : 'حفظ الاسترداد'),
+              child: Text(
+                saving ? l10n(context).uiSaving170 : l10n(context).uiSaveRefund,
+              ),
             ),
           ],
         ),
@@ -3543,7 +3800,7 @@ class _EntryDetailState extends State<EntryDetail> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -3555,8 +3812,8 @@ class _EntryDetailState extends State<EntryDetail> {
           await (widget.pickFile?.call() ??
               openFile(
                 acceptedTypeGroups: [
-                  const XTypeGroup(
-                    label: 'صور وفواتير PDF',
+                  XTypeGroup(
+                    label: l10n(context).uiImagesAndInvoicePdfs,
                     extensions: ['jpg', 'jpeg', 'png', 'pdf'],
                     mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
                     uniformTypeIdentifiers: [
@@ -3568,13 +3825,12 @@ class _EntryDetailState extends State<EntryDetail> {
                 ],
               ));
       if (file == null) return;
-      if (await file.length() > 10 * 1024 * 1024) {
-        throw const ApiError(
-          413,
-          'FILE_TOO_LARGE',
-          'اختر ملفًا لا يتجاوز 10 ميغابايت',
-        );
+      final fileSize = await file.length();
+      if (!mounted) return;
+      if (fileSize > 10 * 1024 * 1024) {
+        throw ApiError(413, 'FILE_TOO_LARGE', l10n(context).fileTooLarge);
       }
+      if (!mounted) return;
       final extension = file.name.split('.').last.toLowerCase();
       final type = {
         'png': 'image/png',
@@ -3583,11 +3839,7 @@ class _EntryDetailState extends State<EntryDetail> {
         'pdf': 'application/pdf',
       }[extension];
       if (type == null) {
-        throw const ApiError(
-          400,
-          'UNSUPPORTED_FILE',
-          'اختر PNG أو JPEG أو PDF؛ حوّل HEIC إلى JPEG قبل الرفع',
-        );
+        throw ApiError(400, 'UNSUPPORTED_FILE', l10n(context).unsupportedFile);
       }
       pendingBytes = await file.readAsBytes();
       pendingName = file.name;
@@ -3596,7 +3848,7 @@ class _EntryDetailState extends State<EntryDetail> {
       uploadKey = requestKey();
       await upload();
     } catch (e) {
-      if (mounted) setState(() => uploadError = '$e');
+      if (mounted) setState(() => uploadError = localizedError(context, e));
     }
   }
 
@@ -3629,13 +3881,17 @@ class _EntryDetailState extends State<EntryDetail> {
       uploadId = null;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حُفظ المرفق داخل العملية')),
+          SnackBar(content: Text(l10n(context).uiAttachmentSavedWithEntry)),
         );
         await load();
       }
     } catch (e) {
       if (mounted) {
-        setState(() => uploadError = 'حُفظت العملية، وتعذر رفع المرفق. $e');
+        setState(
+          () =>
+              uploadError = l10n(context)
+                  .entryUploadFailed(localizedError(context, e)),
+        );
       }
     } finally {
       if (mounted) setState(() => uploading = false);
@@ -3663,7 +3919,7 @@ class _EntryDetailState extends State<EntryDetail> {
                     automaticallyImplyLeading: false,
                     actions: [
                       IconButton(
-                        tooltip: 'إغلاق المرفق',
+                        tooltip: l10n(context).closeAttachment,
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.close),
                       ),
@@ -3673,7 +3929,8 @@ class _EntryDetailState extends State<EntryDetail> {
                     child: InteractiveViewer(
                       child: Image.memory(
                         response.bodyBytes,
-                        semanticLabel: 'مرفق العملية: ${file['filename']}',
+                        semanticLabel: l10n(context)
+                            .entryAttachmentLabel('${file['filename']}'),
                       ),
                     ),
                   ),
@@ -3692,7 +3949,7 @@ class _EntryDetailState extends State<EntryDetail> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
       }
     }
   }
@@ -3700,10 +3957,14 @@ class _EntryDetailState extends State<EntryDetail> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(income ? 'تفاصيل الإيراد' : 'تفاصيل المصروف'),
+      title: Text(
+        income ? l10n(context).uiIncomeDetails : l10n(context).uiExpenseDetails,
+      ),
       actions: [
         IconButton(
-          tooltip: income ? 'تحديث الإيراد' : 'تحديث المصروف',
+          tooltip: income
+              ? l10n(context).uiUpdateIncome
+              : l10n(context).uiUpdateExpense,
           onPressed: uploading ? null : load,
           icon: const Icon(Icons.refresh),
         ),
@@ -3716,15 +3977,15 @@ class _EntryDetailState extends State<EntryDetail> {
         : FormBody(
             children: [
               Text(
-                '${income ? 'إيراد' : categories[entry!['category']]} • ${entry!['expenseScope'] == 'GENERAL'
-                    ? 'مصروف عام'
+                '${income ? l10n(context).income : localizedCategory(context, entry!['category'])} • ${entry!['expenseScope'] == 'GENERAL'
+                    ? l10n(context).generalExpense
                     : entry!['expenseScope'] == 'SHARED'
-                    ? 'أكثر من معدة'
+                    ? l10n(context).uiMultipleEquipment
                     : entry!['equipmentName']}',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              Text('${entry!['operationDate']} ميلادي'),
+              Text(localizedDate(context, entry!['operationDate'] as String)),
               if (cancelled) ...[
                 const SizedBox(height: 12),
                 Card(
@@ -3734,17 +3995,24 @@ class _EntryDetailState extends State<EntryDetail> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'عملية ملغاة',
+                        Text(
+                          l10n(context).cancelledEntry,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        Text('السبب: ${entry!['cancellationReason']}'),
                         Text(
-                          'تاريخ الإلغاء: ${riyadhDateTime(entry!['cancelledAt'])} ميلادي بتوقيت الرياض',
+                          l10n(context).cancelReasonValue(
+                            '${entry!['cancellationReason']}',
+                          ),
                         ),
-                        const Text(
-                          'المبالغ والتسويات أدناه محفوظة للسجل، ولا تدخل العملية في المجاميع النشطة.',
+                        Text(
+                          l10n(context).cancelDateValue(
+                            localizedRiyadhDateTime(
+                              context,
+                              entry!['cancelledAt'] as String,
+                            ),
+                          ),
                         ),
+                        Text(l10n(context).cancelledAmountsHistory),
                       ],
                     ),
                   ),
@@ -3758,13 +4026,13 @@ class _EntryDetailState extends State<EntryDetail> {
                       key: const Key('editEntry'),
                       onPressed: editEntry,
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('تعديل'),
+                      label: Text(l10n(context).edit),
                     ),
                     TextButton.icon(
                       key: const Key('cancelEntry'),
                       onPressed: cancelEntry,
                       icon: const Icon(Icons.cancel_outlined),
-                      label: const Text('إلغاء العملية'),
+                      label: Text(l10n(context).uiCancelEntry),
                     ),
                   ],
                 ),
@@ -3776,30 +4044,40 @@ class _EntryDetailState extends State<EntryDetail> {
                   child: Column(
                     children: [
                       moneyRow(
-                        income ? 'إجمالي الإيراد' : 'إجمالي المصروف',
+                        income
+                            ? l10n(context).uiTotalIncome
+                            : l10n(context).uiTotalExpenses,
                         entry!['amount'],
                       ),
                       const Divider(height: 32),
                       moneyRow(
-                        income ? 'المستلم إجمالًا' : 'المدفوع إجمالًا',
+                        income
+                            ? l10n(context).uiTotalReceived
+                            : l10n(context).uiTotalPaid,
                         entry!['paid'],
                       ),
                       if (entry!['refunded'] != null &&
                           entry!['refunded'] != '0.00') ...[
                         const SizedBox(height: 16),
                         moneyRow(
-                          income ? 'المعاد للعميل' : 'المسترد من المورد',
+                          income
+                              ? l10n(context).uiReturnedToCustomer
+                              : l10n(context).uiRefundedBySupplier,
                           entry!['refunded'],
                         ),
                         const SizedBox(height: 16),
                         moneyRow(
-                          income ? 'صافي المستلم' : 'صافي المدفوع',
+                          income
+                              ? l10n(context).uiNetReceived
+                              : l10n(context).uiNetPaid,
                           entry!['netPaid'],
                         ),
                       ],
                       const SizedBox(height: 16),
                       moneyRow(
-                        income ? 'المتبقي لك' : 'المتبقي عليك',
+                        income
+                            ? l10n(context).uiBalanceOwedToYou
+                            : l10n(context).uiBalanceYouOwe,
                         entry!['remaining'],
                       ),
                       const SizedBox(height: 20),
@@ -3811,18 +4089,11 @@ class _EntryDetailState extends State<EntryDetail> {
                             color: brand,
                           ),
                           label: Text(
-                            (income
-                                    ? {
-                                        'PAID': 'مستلم كاملًا',
-                                        'PARTIAL': 'مستلم جزئيًا',
-                                        'UNPAID': 'غير مستلم',
-                                      }
-                                    : {
-                                        'PAID': 'مدفوع كاملًا',
-                                        'PARTIAL': 'مدفوع جزئيًا',
-                                        'UNPAID': 'غير مدفوع',
-                                      })[entry!['settlementStatus']] ??
-                                'حالة التسوية',
+                            localizedFinancialStatus(
+                              context,
+                              income,
+                              entry!['settlementStatus'],
+                            ),
                           ),
                         ),
                       ),
@@ -3833,20 +4104,24 @@ class _EntryDetailState extends State<EntryDetail> {
               const SizedBox(height: 24),
               if (!income && entry!['expenseScope'] == 'SHARED') ...[
                 Text(
-                  'نصيب كل معدة',
+                  l10n(context).uiSharePerEquipment,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const Text(
-                  'المدفوع والمسترد أدناه حصص محسوبة؛ الدفعات والاستردادات الأصلية مسجلة مرة واحدة على المصروف.',
-                ),
+                Text(l10n(context).uiPaidAndRefundedAmountsBelowAreCalculated),
                 ...((entry!['allocations'] as List).map(
                   (part) => Card(
                     child: ListTile(
                       title: Text(
-                        '${part['equipmentName']}: ${part['amount']} ريال سعودي',
+                        l10n(context).partAmount(
+                          '${part['equipmentName']}',
+                          localizedMoney(context, part['amount']),
+                        ),
                       ),
                       subtitle: Text(
-                        'حصة محسوبة من صافي المدفوع: ${part['netPaidShare']} • المتبقي: ${part['remainingShare']} ريال سعودي',
+                        l10n(context).partNetRemaining(
+                          localizedMoney(context, part['netPaidShare']),
+                          localizedMoney(context, part['remainingShare']),
+                        ),
                       ),
                     ),
                   ),
@@ -3854,15 +4129,23 @@ class _EntryDetailState extends State<EntryDetail> {
                 const SizedBox(height: 16),
               ],
               if (entry!['partyName'] != null)
-                Text('الطرف: ${entry!['partyName']}'),
+                Text(l10n(context).partyValue('${entry!['partyName']}')),
               if (entry!['dueDate'] != null)
-                Text('موعد الاستحقاق: ${entry!['dueDate']} ميلادي'),
+                Text(
+                  l10n(context).dueDateValue(
+                    localizedDate(context, entry!['dueDate'] as String),
+                  ),
+                ),
               if (!cancelled && entry!['settlementStatus'] != 'PAID') ...[
                 const SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: addPayment,
                   icon: const Icon(Icons.add),
-                  label: Text(income ? 'إضافة تحصيل' : 'إضافة دفعة'),
+                  label: Text(
+                    income
+                        ? l10n(context).uiAddReceipt
+                        : l10n(context).uiAddPayment,
+                  ),
                 ),
               ],
               if (canRefund) ...[
@@ -3871,50 +4154,64 @@ class _EntryDetailState extends State<EntryDetail> {
                   key: const Key('addRefund'),
                   onPressed: addRefund,
                   icon: const Icon(Icons.undo_outlined),
-                  label: const Text('تسجيل استرداد'),
+                  label: Text(l10n(context).uiRecordRefund),
                 ),
               ],
               const SizedBox(height: 24),
               Text(
-                income ? 'التحصيلات' : 'الدفعات',
+                income ? l10n(context).uiReceipts : l10n(context).uiPayments,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               ...((entry!['settlements'] as List).map(
                 (s) => ListTile(
                   leading: const Icon(Icons.payments_outlined),
-                  title: Text('${s['amount']} ريال سعودي'),
+                  title: Text(localizedMoney(context, s['amount'])),
                   subtitle: Text(
-                    '${income ? 'استُلمت' : 'دُفعت'} في ${s['paidOn']} ميلادي',
+                    income
+                        ? l10n(context).receivedOn(
+                            localizedDate(context, s['paidOn'] as String),
+                          )
+                        : l10n(context).paidOn(
+                            localizedDate(context, s['paidOn'] as String),
+                          ),
                   ),
                 ),
               )),
               if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 24),
                 Text(
-                  'الاستردادات',
+                  l10n(context).uiRefunds,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 ...((entry!['refunds'] as List).map(
                   (r) => ListTile(
                     leading: const Icon(Icons.undo_outlined),
-                    title: Text('${r['amount']} ريال سعودي'),
+                    title: Text(localizedMoney(context, r['amount'])),
                     subtitle: Text(
-                      '${income ? 'أُعيد إلى العميل أو الطرف الآخر' : 'عاد إليك من الطرف الآخر'} في ${r['refundedOn']} ميلادي\nالسبب: ${r['reason']}',
+                      l10n(context).refundRecord(
+                        income
+                            ? l10n(context).uiReturnedToTheCustomerOrOtherParty
+                            : l10n(context).uiReturnedToYouByTheOtherParty,
+                        localizedDate(context, r['refundedOn'] as String),
+                        '${r['reason']}',
+                      ),
                     ),
                   ),
                 )),
               ],
               if (entry!['note'] != '') ...[
                 const Divider(),
-                Text('ملاحظة: ${entry!['note']}'),
+                Text(l10n(context).noteValue('${entry!['note']}')),
               ],
               const SizedBox(height: 24),
-              Text('المرفقات', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                l10n(context).attachments,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
-              const Text('صورة PNG أو JPEG، أو PDF • حتى 10 ميغابايت للملف'),
+              Text(l10n(context).filesHelp),
               const SizedBox(height: 12),
-              if (attachments.isEmpty)
-                const Text('لم تُضف مرفقات بعد؛ العملية محفوظة.'),
+              if (attachments.isEmpty) Text(l10n(context).noEntryAttachments),
               ...attachments.map(
                 (file) => Card(
                   child: Padding(
@@ -3929,10 +4226,10 @@ class _EntryDetailState extends State<EntryDetail> {
                         const SizedBox(height: 8),
                         Text(
                           file['state'] == 'READY'
-                              ? 'جاهز للعرض'
+                              ? l10n(context).uiReadyToView
                               : file['state'] == 'FAILED'
-                              ? 'تعثر رفع المرفق'
-                              : 'لم يكتمل الرفع',
+                              ? l10n(context).uiAttachmentUploadFailed
+                              : l10n(context).uiUploadIncomplete,
                         ),
                         if (file['state'] == 'READY')
                           Wrap(
@@ -3943,8 +4240,10 @@ class _EntryDetailState extends State<EntryDetail> {
                                 icon: const Icon(Icons.visibility_outlined),
                                 label: Text(
                                   file['mediaType'] == 'application/pdf'
-                                      ? (kIsWeb ? 'تنزيل PDF' : 'فتح PDF')
-                                      : 'عرض المرفق',
+                                      ? (kIsWeb
+                                            ? l10n(context).uiDownloadPdf
+                                            : l10n(context).uiOpenPdf)
+                                      : l10n(context).uiViewAttachment,
                                 ),
                               ),
                               if (kIsWeb &&
@@ -3954,7 +4253,9 @@ class _EntryDetailState extends State<EntryDetail> {
                                       ? null
                                       : () => open(file, download: true),
                                   icon: const Icon(Icons.download_outlined),
-                                  label: const Text('تنزيل المرفق'),
+                                  label: Text(
+                                    l10n(context).uiDownloadAttachment,
+                                  ),
                                 ),
                             ],
                           )
@@ -3965,7 +4266,7 @@ class _EntryDetailState extends State<EntryDetail> {
                                 : () => select(
                                     retry: Map<String, dynamic>.from(file),
                                   ),
-                            child: const Text('إعادة رفع المرفق'),
+                            child: Text(l10n(context).uiUploadAttachmentAgain),
                           ),
                       ],
                     ),
@@ -3976,7 +4277,7 @@ class _EntryDetailState extends State<EntryDetail> {
               if (uploading) ...[
                 const LinearProgressIndicator(),
                 const SizedBox(height: 12),
-                const Text('جارٍ رفع المرفق والتحقق منه…'),
+                Text(l10n(context).uiUploadingAndCheckingAttachment),
               ] else if (pendingBytes != null)
                 Wrap(
                   spacing: 12,
@@ -3985,11 +4286,11 @@ class _EntryDetailState extends State<EntryDetail> {
                     FilledButton.icon(
                       onPressed: upload,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('إعادة رفع المرفق'),
+                      label: Text(l10n(context).uiUploadAttachmentAgain),
                     ),
                     OutlinedButton(
                       onPressed: () => select(),
-                      child: const Text('اختيار ملف آخر'),
+                      child: Text(l10n(context).uiChooseAnotherFile),
                     ),
                   ],
                 )
@@ -3998,11 +4299,11 @@ class _EntryDetailState extends State<EntryDetail> {
                   key: const Key('addAttachment'),
                   onPressed: () => select(),
                   icon: const Icon(Icons.attach_file),
-                  label: const Text('إضافة مرفق'),
+                  label: Text(l10n(context).uiAddAttachment),
                 ),
               const SizedBox(height: 16),
-              const Text(
-                'تخزين تطوير محلي. لم يُفعّل فحص البرمجيات الضارة.',
+              Text(
+                l10n(context).uiLocalDevelopmentStorageMalwareScanningIsNot,
                 style: TextStyle(fontSize: 12, color: Colors.blueGrey),
               ),
             ],
@@ -4012,8 +4313,8 @@ class _EntryDetailState extends State<EntryDetail> {
     children: [
       Expanded(child: Text(label)),
       Text(
-        '$amount ريال',
-        textDirection: TextDirection.rtl,
+        localizedMoney(context, amount),
+        textDirection: Directionality.of(context),
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
       ),
     ],

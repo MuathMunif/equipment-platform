@@ -7,10 +7,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import 'platform_client.dart';
+import 'localization.dart';
 
-class ApiError implements Exception {
+class ApiError implements Exception, LocaleApiError {
   final int status;
   final String code;
+  @override
+  String get localeCode => code;
   final String message;
   const ApiError(this.status, this.code, this.message);
   @override
@@ -184,6 +187,21 @@ class Api {
   }) async {
     final response = await send(method, path, body: body, key: key);
     return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+
+  Future<Map<String, dynamic>> updatePreferredLocale(
+    String languageCode,
+  ) async {
+    if (!supportedLanguageCodes.contains(languageCode)) {
+      throw ArgumentError.value(languageCode, 'languageCode');
+    }
+    final data = await json(
+      'PUT',
+      '/auth/me/locale',
+      body: {'preferredLocale': languageCode},
+    ) as Map<String, dynamic>;
+    csrf = data['csrfToken'];
+    return data;
   }
 
   Future<Map<String, dynamic>> me() async {

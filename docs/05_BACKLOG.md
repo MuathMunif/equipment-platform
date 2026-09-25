@@ -1,6 +1,8 @@
 # Delivery backlog
 Status 2026-09-25: M0/M1, M2, and the owner's latest M3 scope (equipment documents, attention, in-app notifications) are functionally complete for local V1 development on `feat/m3-documents-alerts`, as evidenced in `HANDOFF.md`. Private production object storage, malware scanning and live Push remain deferred. This is not production readiness. M4 and later work have not started under this task.
 
+Localization foundation before M4 is implemented on `feat/localization-foundation`: `ar`, `en`, `ur` resources, user-level saved preference, localized app UI and semantic notification templates. Arabic remains fallback. Urdu copy requires native-speaker review before public release. M4 has not started.
+
 M2 also implements the D-08 general/shared expense model with V6 allocation backfill, explicit amounts, active workspace/equipment totals, and deterministic proportional shares. D-20 locks all entry totals after movement but permits audited expense allocation/classification corrections at unchanged total.
 
 The attachment-only quick draft is implemented locally in V7: required equipment, optional note/attachments, excluded from totals, in-place completion preserving attachment identity, and discard.

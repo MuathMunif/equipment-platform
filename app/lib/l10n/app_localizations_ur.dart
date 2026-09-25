@@ -1,0 +1,1322 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Urdu (`ur`).
+class AppLocalizationsUr extends AppLocalizations {
+  AppLocalizationsUr([String locale = 'ur']) : super(locale);
+
+  @override
+  String get appTitle => 'سامان کا انتظام';
+
+  @override
+  String get language => 'زبان';
+
+  @override
+  String get settings => 'ترتیبات';
+
+  @override
+  String get home => 'ہوم';
+
+  @override
+  String get equipment => 'سامان';
+
+  @override
+  String get ledger => 'ریکارڈ';
+
+  @override
+  String get notifications => 'اطلاعات';
+
+  @override
+  String get refresh => 'تازہ کریں';
+
+  @override
+  String get logout => 'لاگ آؤٹ';
+
+  @override
+  String get retry => 'دوبارہ کوشش کریں';
+
+  @override
+  String get devNotice => 'مقامی ترقیاتی ماحول • SMS نہیں بھیجا جاتا';
+
+  @override
+  String get restoreFailed => 'سیشن بحال نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get addFirstEquipment => 'پہلا سامان شامل کریں';
+
+  @override
+  String get equipmentSubtitle => 'ہر سامان کا ریکارڈ ایک جگہ رکھیں';
+
+  @override
+  String get markAllRead => 'سب کو پڑھا ہوا نشان زد کریں';
+
+  @override
+  String get noNotifications => 'ابھی کوئی اطلاع نہیں';
+
+  @override
+  String get previous => 'پچھلا';
+
+  @override
+  String get next => 'اگلا';
+
+  @override
+  String get cancel => 'منسوخ کریں';
+
+  @override
+  String get save => 'محفوظ کریں';
+
+  @override
+  String get documents => 'دستاویزات';
+
+  @override
+  String get attention => 'توجہ';
+
+  @override
+  String get income => 'آمدنی';
+
+  @override
+  String get expense => 'اخراجات';
+
+  @override
+  String get draft => 'مسودہ';
+
+  @override
+  String get settlement => 'ادائیگی';
+
+  @override
+  String get refund => 'رقم واپسی';
+
+  @override
+  String get archived => 'محفوظ شدہ';
+
+  @override
+  String get active => 'فعال';
+
+  @override
+  String get docPreviousVersion => 'پچھلا ورژن';
+
+  @override
+  String get docMissingExpiry => 'ختم ہونے کی تاریخ درج نہیں';
+
+  @override
+  String get docExpired => 'میعاد ختم';
+
+  @override
+  String get docExpiresToday => 'آج میعاد ختم ہو رہی ہے';
+
+  @override
+  String get docExpiringSoon => 'جلد میعاد ختم ہو گی';
+
+  @override
+  String get docRegistration => 'رجسٹریشن';
+
+  @override
+  String get docInsurance => 'انشورنس';
+
+  @override
+  String get docInspection => 'معیادی معائنہ';
+
+  @override
+  String get docPermit => 'لائسنس / اجازت نامہ';
+
+  @override
+  String get other => 'دیگر';
+
+  @override
+  String get docOther => 'دوسری دستاویز';
+
+  @override
+  String get document => 'دستاویز';
+
+  @override
+  String get docLoadFailed => 'ڈیٹا لوڈ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get closeAttachment => 'منسلکہ بند کریں';
+
+  @override
+  String get fileTypes => 'تصاویر اور PDF فائلیں';
+
+  @override
+  String get fileTooLarge => '10 MB سے چھوٹی فائل منتخب کریں';
+
+  @override
+  String get unsupportedFile =>
+      'PNG، JPEG یا PDF منتخب کریں۔ اپ لوڈ سے پہلے HEIC کو JPEG میں بدلیں۔';
+
+  @override
+  String get networkError =>
+      'سرور سے رابطہ نہیں ہو سکا۔ اس کا چلنا یقینی بنائیں، پھر دوبارہ کوشش کریں۔';
+
+  @override
+  String get requestFailed => 'درخواست مکمل نہیں ہو سکی۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get sessionRequired => 'جاری رکھنے کے لیے لاگ ان کریں';
+
+  @override
+  String get financialTotalLocked =>
+      'پہلی ادائیگی یا واپسی کے بعد کل رقم تبدیل نہیں ہو سکتی';
+
+  @override
+  String get documentAlreadyRenewed => 'اس دستاویز کی تجدید پہلے ہی ہو چکی ہے';
+
+  @override
+  String get accessDenied => 'آپ کو اس معلومات تک رسائی حاصل نہیں';
+
+  @override
+  String get invalidInput => 'درج کی گئی معلومات چیک کریں اور دوبارہ کوشش کریں';
+
+  @override
+  String get invalidOtp =>
+      'کوڈ غلط ہے یا اس کی مدت ختم ہو گئی ہے۔ نیا کوڈ مانگیں';
+
+  @override
+  String get sessionExpired => 'آپ کا سیشن ختم ہو گیا ہے۔ دوبارہ لاگ ان کریں';
+
+  @override
+  String get otpThrottled => 'نیا کوڈ مانگنے سے پہلے کچھ دیر انتظار کریں';
+
+  @override
+  String get recordNotFound => 'مطلوبہ ریکارڈ نہیں ملا';
+
+  @override
+  String get documentVersionChanged =>
+      'دستاویز بدل گئی ہے۔ ترمیم سے پہلے صفحہ تازہ کریں';
+
+  @override
+  String get documentLocked => 'اس حالت میں اس دستاویز کی ترمیم نہیں ہو سکتی';
+
+  @override
+  String get fileUnavailable =>
+      'فائل ابھی دستیاب نہیں۔ بعد میں دوبارہ کوشش کریں';
+
+  @override
+  String get attachmentLimit => 'منسلکات کی حد پوری ہو گئی ہے';
+
+  @override
+  String get idempotencyConflict =>
+      'درخواست کی معلومات بدل گئی ہیں۔ دوبارہ محفوظ کرنے سے پہلے ریکارڈ دیکھیں';
+
+  @override
+  String get immutableAttachment =>
+      'یہ منسلکہ محفوظ ہو چکا ہے۔ اسے بدلنے کے لیے نیا منسلکہ شامل کریں';
+
+  @override
+  String get unsupportedLocale => 'دستیاب زبان منتخب کریں';
+
+  @override
+  String get notificationDocumentExpiryTitle =>
+      'دستاویز کی میعاد جلد ختم ہو گی';
+
+  @override
+  String get notificationDocumentExpiryBody => 'سامان کی دستاویز دیکھیں';
+
+  @override
+  String get notificationWeeklyTitle => 'دستاویزات آپ کی توجہ چاہتی ہیں';
+
+  @override
+  String get notificationWeeklyBody => 'میعاد ختم شدہ دستاویزات دیکھیں';
+
+  @override
+  String unreadNotifications(int count) {
+    return 'اطلاعات • $count نہیں پڑھی گئیں';
+  }
+
+  @override
+  String get categoryFuel => 'ایندھن';
+
+  @override
+  String get categoryMaintenance => 'مرمت';
+
+  @override
+  String get paidFull => 'مکمل ادا شدہ';
+
+  @override
+  String get paidPartial => 'جزوی ادا شدہ';
+
+  @override
+  String get unpaid => 'غیر ادا شدہ';
+
+  @override
+  String get receivedFull => 'مکمل وصول شدہ';
+
+  @override
+  String get receivedPartial => 'جزوی وصول شدہ';
+
+  @override
+  String get unreceived => 'وصول نہیں ہوا';
+
+  @override
+  String get cancelled => 'منسوخ شدہ';
+
+  @override
+  String get generalExpense => 'عمومی خرچ';
+
+  @override
+  String get addEquipment => 'سامان شامل کریں';
+
+  @override
+  String get addExpense => 'خرچ شامل کریں';
+
+  @override
+  String get addIncome => 'آمدنی شامل کریں';
+
+  @override
+  String get addDocument => 'دستاویز شامل کریں';
+
+  @override
+  String get saveDocument => 'دستاویز محفوظ کریں';
+
+  @override
+  String get attachments => 'منسلکات';
+
+  @override
+  String get archive => 'محفوظ کریں';
+
+  @override
+  String get restoreDocument => 'دستاویز بحال کریں';
+
+  @override
+  String get currentDocuments => 'موجودہ دستاویزات';
+
+  @override
+  String get previousVersions => 'پچھلے ورژن';
+
+  @override
+  String get noDocuments => 'اس سامان کے لیے ابھی کوئی دستاویز نہیں';
+
+  @override
+  String get noAttachments => 'ابھی کوئی منسلکہ نہیں';
+
+  @override
+  String get searchEquipment => 'نام یا حوالہ نمبر سے تلاش کریں';
+
+  @override
+  String get searchLedger => 'ریکارڈ میں تلاش کریں';
+
+  @override
+  String get noEquipmentMatches => 'تلاش سے کوئی سامان نہیں ملا';
+
+  @override
+  String get noEntries => 'ابھی کوئی ریکارڈ نہیں';
+
+  @override
+  String get signInCode => 'تصدیقی کوڈ';
+
+  @override
+  String get phoneNumber => 'موبائل نمبر';
+
+  @override
+  String get name => 'نام';
+
+  @override
+  String get model => 'ماڈل';
+
+  @override
+  String get documentType => 'دستاویز کی قسم';
+
+  @override
+  String get newExpiryDate => 'نئی تاریخ اختتام';
+
+  @override
+  String get renewDocument => 'دستاویز کی تجدید کریں';
+
+  @override
+  String get viewAll => 'سب دیکھیں';
+
+  @override
+  String get edit => 'ترمیم کریں';
+
+  @override
+  String get update => 'تازہ کریں';
+
+  @override
+  String get back => 'واپس';
+
+  @override
+  String get general => 'عمومی';
+
+  @override
+  String get ui2021OrFh16 => '2021 یا FH16';
+
+  @override
+  String get uiEnterTheVerificationCode => 'تصدیقی کوڈ درج کریں';
+
+  @override
+  String get uiArchiveDocument => 'دستاویز محفوظ کریں';
+
+  @override
+  String get uiArchiveDocument005 => 'دستاویز محفوظ کریں؟';
+
+  @override
+  String get uiArchiveEquipment => 'سامان محفوظ کریں';
+
+  @override
+  String get uiArchiveEquipment007 => 'سامان محفوظ کریں؟';
+
+  @override
+  String get uiRemoveTheDueDateOnceFullyPaid =>
+      'مکمل ادائیگی کے بعد مقررہ تاریخ ہٹا دیں';
+
+  @override
+  String get uiAddExpiryDate => 'اختتام کی تاریخ شامل کریں';
+
+  @override
+  String get uiMultipleEquipment => 'متعدد سامان';
+
+  @override
+  String get uiReturnedToTheCustomerOrOtherParty =>
+      'صارف یا دوسرے فریق کو واپس کیا گیا';
+
+  @override
+  String get uiTotalIncome => 'کل آمدنی';
+
+  @override
+  String get uiTotalExpenses => 'کل اخراجات';
+
+  @override
+  String get uiRemoveEquipment => 'سامان ہٹائیں';
+
+  @override
+  String get uiRemoveDueDate => 'مقررہ تاریخ ہٹائیں';
+
+  @override
+  String get uiAddReceipt => 'وصولی شامل کریں';
+
+  @override
+  String get uiAddPayment => 'ادائیگی شامل کریں';
+
+  @override
+  String get uiAddImageOrPdf => 'تصویر یا PDF شامل کریں';
+
+  @override
+  String get uiAddImageOrPdfOptional => 'تصویر یا PDF شامل کریں (اختیاری)';
+
+  @override
+  String get uiAddAttachment => 'منسلکہ شامل کریں';
+
+  @override
+  String get uiAddSeparateDocument => 'الگ دستاویز شامل کریں';
+
+  @override
+  String get uiAddGeneralExpense => 'عمومی خرچ شامل کریں';
+
+  @override
+  String get uiUploadAttachmentAgain => 'منسلکہ دوبارہ اپ لوڈ کریں';
+
+  @override
+  String get uiRetryTheSameSave => 'اسی محفوظ کرنے کی کوشش دوبارہ کریں';
+
+  @override
+  String get uiRetryUploadingAttachments => 'منسلکات دوبارہ اپ لوڈ کریں';
+
+  @override
+  String get uiRetryFileUpload => 'فائل دوبارہ اپ لوڈ کریں';
+
+  @override
+  String get uiClose => 'بند کریں';
+
+  @override
+  String get uiCancelEntry => 'اندراج منسوخ کریں';
+
+  @override
+  String get uiToDate => 'آخری تاریخ';
+
+  @override
+  String get uiSearchByEquipmentNameOrReference =>
+      'سامان کے نام یا حوالہ سے تلاش کریں';
+
+  @override
+  String get uiStartByAddingYourEquipment => 'اپنا سامان شامل کرکے شروع کریں';
+
+  @override
+  String get uiStartWithEquipmentNameAndModel =>
+      'سامان کے نام اور ماڈل سے شروع کریں';
+
+  @override
+  String get uiStartWithYourMobileNumber => 'اپنے موبائل نمبر سے شروع کریں';
+
+  @override
+  String get uiSelectTheEquipmentThisExpenseBelongsTo =>
+      'وہ سامان منتخب کریں جس سے یہ خرچ متعلق ہے';
+
+  @override
+  String get uiSelectEquipment => 'سامان منتخب کریں';
+
+  @override
+  String get uiSelectIssueDate => 'اجرا کی تاریخ منتخب کریں';
+
+  @override
+  String get uiSelectExpiryDate => 'اختتام کی تاریخ منتخب کریں';
+
+  @override
+  String get uiSelectEquipment051 => 'سامان منتخب کریں';
+
+  @override
+  String get uiChooseAnotherFile => 'دوسری فائل منتخب کریں';
+
+  @override
+  String get uiText054 => 'اردو';
+
+  @override
+  String get uiDiscardDraft => 'مسودہ مسترد کریں';
+
+  @override
+  String get uiDiscardDraft056 => 'مسودہ مسترد کریں؟';
+
+  @override
+  String get uiExcludeGeneralExpenses => 'عمومی اخراجات خارج کریں';
+
+  @override
+  String get uiRestoreEquipment => 'سامان بحال کریں';
+
+  @override
+  String get uiRestoreTheEquipmentBeforeRestoringThisDocument =>
+      'اس دستاویز کو بحال کرنے سے پہلے سامان بحال کریں۔';
+
+  @override
+  String get uiCompleteAsIncome => 'آمدنی کے طور پر مکمل کریں';
+
+  @override
+  String get uiCompleteAsExpense => 'خرچ کے طور پر مکمل کریں';
+
+  @override
+  String get uiCompleteTheSavedInvoiceDetailsItsAttachments =>
+      'محفوظ شدہ رسید کی تفصیلات مکمل کریں؛ منسلکات اسی کے ساتھ رہیں گے۔';
+
+  @override
+  String get uiPartiallyReceived => 'جزوی وصول ہوا';
+
+  @override
+  String get uiReceivedInFull => 'مکمل وصول ہوا';
+
+  @override
+  String get uiReceived => 'وصول ہوا';
+
+  @override
+  String get uiNameOfThePartyWhoWillPay => 'ادائیگی کرنے والے فریق کا نام';
+
+  @override
+  String get uiNameOfThePartyOwed => 'واجب الادا فریق کا نام';
+
+  @override
+  String get uiCustomerName => 'صارف کا نام';
+
+  @override
+  String get uiDocumentName => 'دستاویز کا نام';
+
+  @override
+  String get uiEquipmentName => 'سامان کا نام';
+
+  @override
+  String get uiEquipmentNameReferencePartyOrNote =>
+      'سامان کا نام، حوالہ، فریق یا نوٹ';
+
+  @override
+  String get uiSupplierOrPartyName => 'سپلائر یا فریق کا نام';
+
+  @override
+  String get uiEnterPartyName => 'فریق کا نام درج کریں';
+
+  @override
+  String get uiEnterPartyNameWhenABalanceRemains =>
+      'باقی رقم ہونے پر فریق کا نام درج کریں';
+
+  @override
+  String get uiEnterPartyNameABalanceWillRemain =>
+      'فریق کا نام درج کریں؛ واپسی کے بعد رقم باقی رہے گی';
+
+  @override
+  String get uiEnterDocumentName => 'دستاویز کا نام درج کریں';
+
+  @override
+  String get uiEnterEquipmentName => 'سامان کا نام درج کریں';
+
+  @override
+  String get uiEnterYourNameToContinue => 'جاری رکھنے کے لیے اپنا نام درج کریں';
+
+  @override
+  String get uiEnterTheDateLike20260925 => 'تاریخ اس طرح درج کریں: 2026-09-25';
+
+  @override
+  String get uiEnterModel => 'ماڈل درج کریں';
+
+  @override
+  String get uiEnterCancellationReason => 'منسوخی کی وجہ درج کریں';
+
+  @override
+  String get uiEnterRefundReason => 'رقم واپسی کی وجہ درج کریں';
+
+  @override
+  String get uiEnterAValidRefundAmount => 'رقم واپسی کی درست مقدار درج کریں';
+
+  @override
+  String get uiEnterAnAmountAboveZeroAndBelow =>
+      'صفر سے زیادہ اور کل رقم سے کم رقم درج کریں';
+
+  @override
+  String get uiEnterAnAmountAboveZeroUpTo =>
+      'صفر سے زیادہ رقم درج کریں، اعشاریہ کے دو ہندسوں تک';
+
+  @override
+  String get uiEnterAValidAmount => 'درست رقم درج کریں';
+
+  @override
+  String get uiDevelopmentNumbers0500000001Or0500000002 =>
+      'ترقیاتی نمبر: 0500000001 یا 0500000002';
+
+  @override
+  String get uiTotalSar => 'کل (سعودی ریال)';
+
+  @override
+  String get uiRefunds => 'رقم کی واپسی';
+
+  @override
+  String get uiNameAndModelAreEnoughToStart =>
+      'شروع کرنے کے لیے نام اور ماڈل کافی ہیں۔ حوالہ نمبر خود شامل ہو جائے گا۔';
+
+  @override
+  String get uiReceipts => 'وصولیاں';
+
+  @override
+  String get uiPreviousPaymentsAreKeptAndDoNot =>
+      'پچھلی ادائیگیاں محفوظ رہتی ہیں اور ترمیم سے تبدیل نہیں ہوتیں۔';
+
+  @override
+  String get uiPayments => 'ادائیگیاں';
+
+  @override
+  String get uiGeneralRecords => 'عمومی ریکارڈ';
+
+  @override
+  String get uiArchivedRecords => 'محفوظ شدہ ریکارڈ';
+
+  @override
+  String get uiText102 => 'العربية';
+
+  @override
+  String get uiAll => 'سب';
+
+  @override
+  String get uiAmount => 'رقم';
+
+  @override
+  String get uiAmountSar => 'رقم (سعودی ریال)';
+
+  @override
+  String get uiInitialPayment => 'ابتدائی ادائیگی';
+
+  @override
+  String get uiInitialReceipt => 'ابتدائی وصولی';
+
+  @override
+  String get uiBalanceYouOwe => 'آپ کے ذمے باقی رقم';
+
+  @override
+  String get uiBalanceOwedToYou => 'آپ کی باقی وصولی';
+
+  @override
+  String get uiTotalPaid => 'کل ادا شدہ';
+
+  @override
+  String get uiPaidAndRefundedAmountsBelowAreCalculated =>
+      'نیچے ادا شدہ اور واپس شدہ رقم کا حساب تقسیم کے مطابق ہے؛ اصل ادائیگیاں اور واپسی ایک بار خرچ میں درج ہیں۔';
+
+  @override
+  String get uiRefundedBySupplier => 'سپلائر سے واپس وصول شدہ';
+
+  @override
+  String get uiTotalReceived => 'کل وصول شدہ';
+
+  @override
+  String get uiDocument => 'دستاویز';
+
+  @override
+  String get uiGeneralExpense => 'عمومی خرچ';
+
+  @override
+  String get uiExpenseAppliesTo => 'خرچ متعلق ہے';
+
+  @override
+  String get uiReturnedToCustomer => 'صارف کو واپس کیا گیا';
+
+  @override
+  String get uiEquipment => 'سامان';
+
+  @override
+  String get uiAwaitingCompletion => 'تکمیل کا منتظر';
+
+  @override
+  String get uiAwaitingCompletionThisWillNotCountAs =>
+      'تکمیل کا منتظر • تفصیلات شامل ہونے تک اسے مالی اندراج میں شمار نہیں کیا جائے گا۔';
+
+  @override
+  String get uiSearch => 'تلاش';
+
+  @override
+  String get uiNoExpiryDate => 'اختتام کی تاریخ نہیں';
+
+  @override
+  String get uiABalanceWillRemainAfterTheRefund =>
+      'واپسی کے بعد رقم باقی رہے گی؛ پیروی کے لیے فریق کا نام درج کریں۔';
+
+  @override
+  String get uiWhatShouldWeCallYou => 'ہم آپ کو کیا کہیں؟';
+
+  @override
+  String get uiDetailsToComplete => 'مکمل کرنے کی تفصیلات';
+
+  @override
+  String get uiConfirmCancellation => 'منسوخی کی تصدیق کریں';
+
+  @override
+  String get uiConfirmCode => 'کوڈ کی تصدیق کریں';
+
+  @override
+  String get uiIssueDateOptional => 'اجرا کی تاریخ (اختیاری)';
+
+  @override
+  String get uiIssueDateIsAfterExpiryDate =>
+      'اجرا کی تاریخ اختتام کی تاریخ کے بعد ہے';
+
+  @override
+  String get uiExpiryDateOptional => 'اختتام کی تاریخ (اختیاری)';
+
+  @override
+  String get uiRenewCurrentDocument => 'موجودہ دستاویز کی تجدید کریں';
+
+  @override
+  String get uiUpdateIncome => 'آمدنی تازہ کریں';
+
+  @override
+  String get uiRefreshRecords => 'ریکارڈ تازہ کریں';
+
+  @override
+  String get uiUpdateDocument => 'دستاویز کی ترمیم محفوظ کریں';
+
+  @override
+  String get uiUpdateDraft => 'مسودہ تازہ کریں';
+
+  @override
+  String get uiUpdateExpense => 'خرچ تازہ کریں';
+
+  @override
+  String get uiLocalDevelopmentStorageMalwareScanningIsNot =>
+      'مقامی ترقیاتی ذخیرہ۔ نقصان دہ سافٹ ویئر کی جانچ فعال نہیں۔';
+
+  @override
+  String get uiRecordRefund => 'رقم واپسی درج کریں';
+
+  @override
+  String get uiFilterRecords => 'ریکارڈ چھانٹیں';
+
+  @override
+  String get uiUploadFailed => 'اپ لوڈ ناکام';
+
+  @override
+  String get uiUploadFailedTryAgain => 'اپ لوڈ ناکام؛ دوبارہ کوشش کریں';
+
+  @override
+  String get uiAttachmentUploadFailed => 'منسلکہ اپ لوڈ نہیں ہو سکا';
+
+  @override
+  String get uiEditIncome => 'آمدنی میں ترمیم کریں';
+
+  @override
+  String get uiEditDocument => 'دستاویز میں ترمیم کریں';
+
+  @override
+  String get uiEditExpense => 'خرچ میں ترمیم کریں';
+
+  @override
+  String get uiCouldNotLoadDocumentsTryAgain =>
+      'دستاویزات لوڈ نہیں ہو سکیں • دوبارہ کوشش کریں';
+
+  @override
+  String get uiCouldNotLoadDocumentsTryAgain161 =>
+      'دستاویزات لوڈ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get uiChangeNumberOrRequestANewCode =>
+      'نمبر بدلیں یا نیا کوڈ طلب کریں';
+
+  @override
+  String get uiIncomeDetails => 'آمدنی کی تفصیلات';
+
+  @override
+  String get uiExpenseDetails => 'خرچ کی تفصیلات';
+
+  @override
+  String get uiDownloadPdf => 'PDF ڈاؤن لوڈ کریں';
+
+  @override
+  String get uiDownloadAttachment => 'منسلکہ ڈاؤن لوڈ کریں';
+
+  @override
+  String get uiCancelling => 'منسوخ ہو رہا ہے…';
+
+  @override
+  String get uiVerifying => 'تصدیق ہو رہی ہے…';
+
+  @override
+  String get uiSaving => 'محفوظ ہو رہا ہے...';
+
+  @override
+  String get uiSaving170 => 'محفوظ ہو رہا ہے…';
+
+  @override
+  String get uiSavingChanges => 'تبدیلیاں محفوظ ہو رہی ہیں…';
+
+  @override
+  String get uiSavingEquipment => 'سامان محفوظ ہو رہا ہے…';
+
+  @override
+  String get uiUploadingAndCheckingAttachment =>
+      'منسلکہ اپ لوڈ اور جانچ ہو رہی ہے…';
+
+  @override
+  String get uiReadyToRetryUpload => 'اپ لوڈ دوبارہ کرنے کے لیے تیار';
+
+  @override
+  String get uiReadyToUpload => 'اپ لوڈ کے لیے تیار';
+
+  @override
+  String get uiReadyToView => 'دیکھنے کے لیے تیار';
+
+  @override
+  String get uiReceiptStatus => 'وصولی کی حالت';
+
+  @override
+  String get uiSettlementStatus => 'ادائیگی کی حالت';
+
+  @override
+  String get uiPaymentStatus => 'ادائیگی کی حالت';
+
+  @override
+  String get uiEntryStatus => 'اندراج کی حالت';
+
+  @override
+  String get uiSelectDifferentEquipmentAndMakeTheirAmounts =>
+      'مختلف سامان منتخب کریں اور ان کی رقوم کا مجموعہ کل خرچ کے برابر رکھیں';
+
+  @override
+  String get uiSaveRefund => 'رقم واپسی محفوظ کریں';
+
+  @override
+  String get uiSaveReceipt => 'وصولی محفوظ کریں';
+
+  @override
+  String get uiSaveChanges => 'تبدیلیاں محفوظ کریں';
+
+  @override
+  String get uiSavePayment => 'ادائیگی محفوظ کریں';
+
+  @override
+  String get uiSaveInvoiceNowAndCompleteDetailsLater =>
+      'رسید ابھی محفوظ کریں اور تفصیلات بعد میں مکمل کریں';
+
+  @override
+  String get uiSaveEquipment => 'سامان محفوظ کریں';
+
+  @override
+  String get uiSaveInvoiceNow => 'رسید ابھی محفوظ کریں';
+
+  @override
+  String get uiAttachmentSavedWithEntry => 'منسلکہ اندراج کے ساتھ محفوظ ہو گیا';
+
+  @override
+  String get uiPaidPartOfIt => 'کچھ رقم ادا کی';
+
+  @override
+  String get uiPaidInFull => 'مکمل ادا کیا';
+
+  @override
+  String get uiPaid => 'ادا شدہ';
+
+  @override
+  String get uiDocumentNumberOptional => 'دستاویز نمبر (اختیاری)';
+
+  @override
+  String get uiDevelopmentCodeOnly123456 => 'صرف ترقیاتی کوڈ: 123456';
+
+  @override
+  String get uiCancellationReason => 'منسوخی کی وجہ';
+
+  @override
+  String get uiRefundReason => 'رقم واپسی کی وجہ';
+
+  @override
+  String get uiPaymentsAndAttachmentsWillRemainInThe =>
+      'ادائیگیاں اور منسلکات ریکارڈ میں رہیں گے۔ منسوخی سے رقم واپس نہیں ہوتی۔';
+
+  @override
+  String get uiUnsavedDataWillBeLostIfYou =>
+      'غیر محفوظ شدہ ڈیٹا ضائع ہو جائے گا۔ اگر محفوظ ہونے کی تصدیق نہیں ملی تو نئی درخواست سے پہلے ریکارڈ دیکھیں۔';
+
+  @override
+  String get uiEquipmentHistory => 'سامان کی تاریخ';
+
+  @override
+  String get uiEquipmentHistoryAndDocumentsWillRemainSaved =>
+      'سامان کی تاریخ اور دستاویزات محفوظ رہیں گی۔ بحالی تک میعاد ختم ہونے کی یاد دہانیاں رک جائیں گی۔';
+
+  @override
+  String get uiThePreviousDocumentWillBeKeptIn =>
+      'پچھلی دستاویز تاریخ میں محفوظ رہے گی۔ تجدید شدہ دستاویز کے لیے نئی اختتامی تاریخ شامل کریں۔';
+
+  @override
+  String get uiNetPaid => 'خالص ادا شدہ';
+
+  @override
+  String get uiNetReceived => 'خالص وصول شدہ';
+
+  @override
+  String get uiImagesAndInvoicePdfs => 'تصاویر اور رسید کی PDF فائلیں';
+
+  @override
+  String get uiRequestVerificationCode => 'تصدیقی کوڈ طلب کریں';
+
+  @override
+  String get uiReturnedToYouByTheOtherParty => 'دوسرے فریق سے آپ کو واپس ملا';
+
+  @override
+  String get uiSeveralEquipment => 'کئی سامان';
+
+  @override
+  String get uiAdjustEachEquipmentAmountToMatchThe =>
+      'ہر سامان کی رقم بدلیں تاکہ کل کے برابر ہو۔';
+
+  @override
+  String get uiViewRecordsAndEntries => 'ریکارڈ اور اندراجات دیکھیں ←';
+
+  @override
+  String get uiViewAttachment => 'منسلکہ دیکھیں';
+
+  @override
+  String get uiViewDocuments => 'دستاویزات دیکھیں';
+
+  @override
+  String get uiUnsettled => 'غیر ادا شدہ';
+
+  @override
+  String get uiOpenPdf => 'PDF کھولیں';
+
+  @override
+  String get uiOpenSavedDraft => 'محفوظ شدہ مسودہ کھولیں';
+
+  @override
+  String get uiTipper1 => 'ڈمپر 1';
+
+  @override
+  String get uiEachEntryItsPaymentsAndAttachmentsIn =>
+      'ہر اندراج، اس کی ادائیگیاں اور منسلکات ایک ریکارڈ میں';
+
+  @override
+  String get uiNoEntriesMatchYourSearchOrFilters =>
+      'تلاش یا فلٹر سے کوئی اندراج نہیں ملا۔ انہیں بدلیں یا صاف کریں۔';
+
+  @override
+  String get uiNoInvoicesAwaitingCompletion => 'تکمیل کے منتظر کوئی رسید نہیں';
+
+  @override
+  String get uiNoDocumentsNeedAttentionNow =>
+      'فی الحال کوئی دستاویز توجہ نہیں چاہتی';
+
+  @override
+  String get uiNoDocumentsHaveMissingInformation =>
+      'کسی دستاویز کی معلومات نامکمل نہیں';
+
+  @override
+  String get uiNoMatchingEquipment => 'کوئی مماثل سامان نہیں';
+
+  @override
+  String get uiNoPreviousVersionsYet => 'ابھی کوئی پچھلا ورژن نہیں';
+
+  @override
+  String get uiTheTotalCannotChangeAfterAPayment =>
+      'ادائیگی، وصولی یا واپسی درج ہونے کے بعد کل رقم تبدیل نہیں ہو سکتی';
+
+  @override
+  String get uiTheTotalCannotChangeBecauseAPayment =>
+      'ادائیگی، وصولی یا واپسی موجود ہونے کی وجہ سے کل رقم تبدیل نہیں ہو سکتی۔';
+
+  @override
+  String get uiNotPaid => 'ادا نہیں کیا';
+
+  @override
+  String get uiNotReceived => 'وصول نہیں ہوا';
+
+  @override
+  String get uiUploadIncomplete => 'اپ لوڈ نامکمل';
+
+  @override
+  String get uiThisWillNotCountAsAFinancial =>
+      'یہ مالی اندراج میں شمار نہیں ہو گا۔ مسترد کرنے کے بعد منسلکات فہرست سے ہٹ جائیں گے۔';
+
+  @override
+  String get uiThisDocumentWillNoLongerAppearAmong =>
+      'یہ دستاویز موجودہ دستاویزات میں نہیں دکھے گی اور میعاد کی یاد دہانی نہیں آئے گی۔ یہ تاریخ میں محفوظ رہے گی۔';
+
+  @override
+  String get uiRefundAmount => 'واپسی کی رقم';
+
+  @override
+  String get uiRefundAmountExceedsWhatIsAvailable =>
+      'واپسی کی رقم دستیاب رقم سے زیادہ ہے';
+
+  @override
+  String get uiAmountPerEquipment => 'ہر سامان کی رقم';
+
+  @override
+  String get uiContinueEntry => 'اندراج جاری رکھیں';
+
+  @override
+  String get uiWorkspace => 'کام کی جگہ';
+
+  @override
+  String get uiClearFilters => 'فلٹر صاف کریں';
+
+  @override
+  String get uiPartiallySettled => 'جزوی ادا شدہ';
+
+  @override
+  String get uiFullySettled => 'مکمل ادا شدہ';
+
+  @override
+  String get uiGeneralExpensesOnly => 'صرف عمومی اخراجات';
+
+  @override
+  String get uiAWorkspaceExpenseItIsNotAssigned =>
+      'کام کی جگہ کا خرچ؛ کسی سامان سے متعلق نہیں';
+
+  @override
+  String get uiYourEquipmentAndExpensesInOnePlace =>
+      'آپ کا سامان اور اخراجات ایک جگہ';
+
+  @override
+  String get uiOneEquipment => 'ایک سامان';
+
+  @override
+  String get uiLeave => 'چھوڑ دیں';
+
+  @override
+  String get uiNoteOptional => 'نوٹ (اختیاری)';
+
+  @override
+  String get uiFromDate => 'ابتدائی تاریخ';
+
+  @override
+  String get uiDueDateOptional => 'مقررہ تاریخ (اختیاری)';
+
+  @override
+  String get uiPreviousVersionIsViewOnly => 'پچھلا ورژن صرف دیکھنے کے لیے ہے';
+
+  @override
+  String get uiActive => 'فعال';
+
+  @override
+  String get uiSharePerEquipment => 'ہر سامان کا حصہ';
+
+  @override
+  String get uiEntryType => 'اندراج کی قسم';
+
+  @override
+  String get uiExpenseType => 'خرچ کی قسم';
+
+  @override
+  String get uiThisInvoiceIsSavedForLaterCompletion =>
+      'یہ رسید بعد میں مکمل کرنے کے لیے محفوظ ہے اور ابھی مالی مجموعوں میں شامل نہیں۔';
+
+  @override
+  String get uiLeaveThisForm => 'یہ فارم چھوڑ دیں؟';
+
+  @override
+  String get uiNeedsAttention => 'توجہ درکار';
+
+  @override
+  String get uiExpenseAppliesTo276 => 'خرچ متعلق ہے';
+
+  @override
+  String get uiThisIncomeIsRecordedUnderThisEquipment =>
+      'یہ آمدنی اس سامان کے تحت درج ہوتی ہے';
+
+  @override
+  String verifyPhone(String phone) {
+    return '$phone کی تصدیق کریں';
+  }
+
+  @override
+  String modelValue(String model) {
+    return 'ماڈل: $model';
+  }
+
+  @override
+  String fromDateValue(String date) {
+    return '$date سے';
+  }
+
+  @override
+  String toDateValue(String date) {
+    return '$date تک';
+  }
+
+  @override
+  String entryDateStatus(String date, String status) {
+    return '$date\n$status';
+  }
+
+  @override
+  String draftUploadFailed(String error) {
+    return 'مسودہ محفوظ ہو گیا، لیکن فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔ $error';
+  }
+
+  @override
+  String draftNote(String note) {
+    return 'تکمیل کا منتظر\n$note';
+  }
+
+  @override
+  String noteValue(String note) {
+    return 'نوٹ: $note';
+  }
+
+  @override
+  String allocationRemaining(String amount) {
+    return 'تقسیم کے لیے باقی: $amount';
+  }
+
+  @override
+  String operationDate(String date) {
+    return 'اندراج کی تاریخ: $date';
+  }
+
+  @override
+  String paymentDate(String date) {
+    return 'ادائیگی کی تاریخ: $date';
+  }
+
+  @override
+  String receiptDate(String date) {
+    return 'وصولی کی تاریخ: $date';
+  }
+
+  @override
+  String dueDateValue(String date) {
+    return 'مقررہ تاریخ: $date';
+  }
+
+  @override
+  String attachmentAfterSave(String kind) {
+    return '$kind محفوظ کرنے کے بعد تصویر یا PDF شامل کر سکتے ہیں۔';
+  }
+
+  @override
+  String savingKind(String kind) {
+    return '$kind محفوظ ہو رہا ہے…';
+  }
+
+  @override
+  String saveKind(String kind) {
+    return '$kind محفوظ کریں';
+  }
+
+  @override
+  String remainingValue(String label, String amount) {
+    return '$label: $amount';
+  }
+
+  @override
+  String refundIncomeHelp(String amount) {
+    return 'صارف یا دوسرے فریق کو واپس کی گئی رقم۔ واپسی کے لیے دستیاب: $amount';
+  }
+
+  @override
+  String refundExpenseHelp(String amount) {
+    return 'سپلائر یا دوسرے فریق سے آپ کو واپس ملی رقم۔ واپسی کے لیے دستیاب: $amount';
+  }
+
+  @override
+  String refundDate(String date) {
+    return 'رقم واپسی کی تاریخ: $date';
+  }
+
+  @override
+  String entryUploadFailed(String error) {
+    return 'اندراج محفوظ ہو گیا، لیکن منسلکہ اپ لوڈ نہیں ہوا۔ $error';
+  }
+
+  @override
+  String entryAttachmentLabel(String filename) {
+    return 'اندراج کا منسلکہ: $filename';
+  }
+
+  @override
+  String cancelReasonValue(String reason) {
+    return 'وجہ: $reason';
+  }
+
+  @override
+  String cancelDateValue(String date) {
+    return 'منسوخی کی تاریخ: $date';
+  }
+
+  @override
+  String partAmount(String equipment, String amount) {
+    return '$equipment: $amount';
+  }
+
+  @override
+  String partNetRemaining(String paid, String remaining) {
+    return 'خالص ادا شدہ کا حسابی حصہ: $paid • باقی: $remaining';
+  }
+
+  @override
+  String partyValue(String party) {
+    return 'فریق: $party';
+  }
+
+  @override
+  String paidOn(String date) {
+    return '$date کو ادا ہوا';
+  }
+
+  @override
+  String receivedOn(String date) {
+    return '$date کو وصول ہوا';
+  }
+
+  @override
+  String refundRecord(String kind, String date, String reason) {
+    return '$kind $date کو\nوجہ: $reason';
+  }
+
+  @override
+  String get filesHelp => 'PNG یا JPEG تصویر، یا PDF • ہر فائل 10 MB تک';
+
+  @override
+  String get noEntryAttachments =>
+      'ابھی کوئی منسلکہ شامل نہیں؛ اندراج محفوظ ہے۔';
+
+  @override
+  String documentSummary(
+    String total,
+    String expired,
+    String soon,
+    String missing,
+  ) {
+    return '$total دستاویزات • $expired میعاد ختم • $soon جلد ختم • $missing بغیر اختتامی تاریخ';
+  }
+
+  @override
+  String equipmentDocumentsTitle(String equipment) {
+    return '$equipment کی دستاویزات';
+  }
+
+  @override
+  String documentAlreadyExists(String document) {
+    return 'اس سامان کے لیے موجودہ $document پہلے سے ہے۔ الگ دستاویز شامل کرنے کے بجائے تجدید کریں؟';
+  }
+
+  @override
+  String expiryValue(String date) {
+    return '$date کو میعاد ختم ہو گی';
+  }
+
+  @override
+  String numberValue(String number) {
+    return 'نمبر: $number';
+  }
+
+  @override
+  String issueDateValue(String date) {
+    return 'اجرا کی تاریخ: $date';
+  }
+
+  @override
+  String versionNumber(String number) {
+    return 'ورژن $number';
+  }
+
+  @override
+  String versionExpiry(String expiry) {
+    return 'اختتام: $expiry';
+  }
+
+  @override
+  String versionIssue(String date) {
+    return 'اجرا: $date';
+  }
+
+  @override
+  String versionNumberLabel(String number) {
+    return 'ورژن نمبر: $number';
+  }
+
+  @override
+  String documentNumberLabel(String number) {
+    return 'دستاویز نمبر: $number';
+  }
+
+  @override
+  String expiryDateValue(String date) {
+    return 'اختتامی تاریخ: $date';
+  }
+
+  @override
+  String missingDocumentsCount(String count) {
+    return '$count دستاویزات بغیر اختتامی تاریخ';
+  }
+
+  @override
+  String get versionAttachments => 'اس ورژن کے منسلکات';
+
+  @override
+  String get noAttachmentsShort => 'کوئی منسلکہ نہیں';
+
+  @override
+  String get addExpiryDate => 'اختتامی تاریخ شامل کریں';
+
+  @override
+  String get documentTypeExists => 'اس قسم کی دستاویز پہلے سے ہے';
+
+  @override
+  String get refreshDocuments => 'دستاویزات تازہ کریں';
+
+  @override
+  String get cancelledAmountsHistory =>
+      'نیچے درج رقوم اور ادائیگیاں تاریخ میں محفوظ ہیں اور فعال مجموعوں میں شامل نہیں۔';
+
+  @override
+  String get cancelledEntry => 'منسوخ شدہ اندراج';
+
+  @override
+  String get timeoutMessage =>
+      'درخواست میں بہت وقت لگا۔ اگر آپ معلومات محفوظ کر رہے تھے تو دوبارہ کوشش سے پہلے ریکارڈ دیکھیں۔';
+
+  @override
+  String documentExpiryInDays(String days) {
+    return '$days دن میں میعاد ختم ہو گی';
+  }
+
+  @override
+  String get documentExpiryToday => 'آج میعاد ختم ہو گی';
+
+  @override
+  String get documentExpiryPast => 'میعاد ختم';
+
+  @override
+  String weeklyExpiredCount(String count) {
+    return '$count میعاد ختم شدہ دستاویزات کا جائزہ لیں';
+  }
+
+  @override
+  String get uploadFailed => 'فائل اپ لوڈ نہیں ہو سکی';
+
+  @override
+  String get sarUnit => 'سعودی ریال';
+}

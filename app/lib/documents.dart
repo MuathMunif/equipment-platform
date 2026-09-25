@@ -5,38 +5,103 @@ import 'package:flutter/material.dart';
 
 import 'api.dart';
 import 'file_export.dart';
+import 'localization.dart';
 
-const documentNames = <String, String>{
-  'REGISTRATION': 'الاستمارة',
-  'INSURANCE': 'التأمين',
-  'PERIODIC_INSPECTION': 'الفحص الدوري',
-  'LICENSE_PERMIT': 'ترخيص / تصريح',
-  'OTHER': 'أخرى',
-};
+const documentTypeCodes = [
+  'REGISTRATION',
+  'INSURANCE',
+  'PERIODIC_INSPECTION',
+  'LICENSE_PERMIT',
+  'OTHER',
+];
 
-String documentName(Map<String, dynamic> doc) => doc['type'] == 'OTHER'
-    ? (doc['customTypeName'] as String? ?? 'مستند آخر')
-    : documentNames[doc['type']] ?? 'مستند';
+String localizedDocumentName(BuildContext context, Map<String, dynamic> doc) {
+  final loc = l10n(context);
+  if (doc['type'] == 'OTHER' &&
+      (doc['customTypeName'] as String?)?.isNotEmpty == true) {
+    return doc['customTypeName'] as String;
+  }
+  return switch (doc['type']) {
+    'REGISTRATION' => loc.docRegistration,
+    'INSURANCE' => loc.docInsurance,
+    'PERIODIC_INSPECTION' => loc.docInspection,
+    'LICENSE_PERMIT' => loc.docPermit,
+    'OTHER' => loc.docOther,
+    _ => loc.document,
+  };
+}
 
-String documentStatus(Map<String, dynamic> doc) => switch (doc['status']) {
-  'ARCHIVED' => 'مؤرشف',
-  'PREVIOUS_VERSION' => 'نسخة سابقة',
-  'MISSING_EXPIRY' => 'تاريخ الانتهاء غير مضاف',
-  'EXPIRED' => 'منتهي',
-  'EXPIRES_TODAY' => 'ينتهي اليوم',
-  'EXPIRING_SOON' => 'ينتهي قريبًا',
-  _ => 'ساري',
-};
+String localizedDocumentStatus(BuildContext context, Map<String, dynamic> doc) {
+  final loc = l10n(context);
+  return switch (doc['status']) {
+    'ARCHIVED' => loc.archived,
+    'PREVIOUS_VERSION' => loc.docPreviousVersion,
+    'MISSING_EXPIRY' => loc.docMissingExpiry,
+    'EXPIRED' => loc.docExpired,
+    'EXPIRES_TODAY' => loc.docExpiresToday,
+    'EXPIRING_SOON' => loc.docExpiringSoon,
+    _ => loc.active,
+  };
+}
+
+(String, String) localizedNotification(
+  BuildContext context,
+  Map<String, dynamic> item,
+) {
+  final loc = l10n(context);
+  final template = item['templateKey'];
+  final params = item['params'] is Map
+      ? Map<String, dynamic>.from(item['params'] as Map)
+      : <String, dynamic>{};
+  final equipment = params['equipmentName'] as String? ?? '';
+  final type = localizedDocumentName(context, {
+    'type': params['documentType'],
+    'customTypeName': params['customTypeName'],
+  });
+  final days = (params['daysRemaining'] as num?)?.toInt();
+  final countdown = days == null
+      ? loc.notificationDocumentExpiryBody
+      : days < 0
+      ? loc.documentExpiryPast
+      : days == 0
+      ? loc.documentExpiryToday
+      : loc.documentExpiryInDays('$days');
+  return switch (template) {
+    'DOCUMENT_EXPIRY' => (
+      loc.notificationDocumentExpiryTitle,
+      '$type • $equipment — $countdown',
+    ),
+    'DOCUMENT_EXPIRED_WEEKLY' => (
+      loc.notificationWeeklyTitle,
+      loc.weeklyExpiredCount('${params['count'] ?? 0}'),
+    ),
+    _ => (
+      item['title'] as String? ?? loc.notifications,
+      item['body'] as String? ?? '',
+    ),
+  };
+}
 
 bool documentNeedsAttention(Map<String, dynamic> doc) =>
     {'EXPIRED', 'EXPIRES_TODAY', 'EXPIRING_SOON'}.contains(doc['status']);
 
-Widget documentLoadFailure(VoidCallback retry) => Center(
+String localizedAttentionBody(BuildContext context, Map<String, dynamic> doc) =>
+    localizedNotification(context, {
+      'templateKey': 'DOCUMENT_EXPIRY',
+      'params': {
+        'documentType': doc['type'],
+        'customTypeName': doc['customTypeName'],
+        'equipmentName': doc['equipmentName'],
+        'daysRemaining': doc['daysRemaining'],
+      },
+    }).$2;
+
+Widget documentLoadFailure(BuildContext context, VoidCallback retry) => Center(
   child: Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      const Text('تعذر تحميل البيانات. حاول مرة أخرى.'),
-      TextButton(onPressed: retry, child: const Text('إعادة المحاولة')),
+      Text(l10n(context).docLoadFailed),
+      TextButton(onPressed: retry, child: Text(l10n(context).retry)),
     ],
   ),
 );
@@ -64,7 +129,7 @@ Future<void> openDocumentAttachment(
                 automaticallyImplyLeading: false,
                 actions: [
                   IconButton(
-                    tooltip: 'إغلاق المرفق',
+                    tooltip: l10n(context).closeAttachment,
                     onPressed: () => Navigator.pop(dialog),
                     icon: const Icon(Icons.close),
                   ),
@@ -88,7 +153,8 @@ Future<void> openDocumentAttachment(
     }
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
     }
   }
 }
@@ -114,11 +180,11 @@ String documentFileType(XFile file) =>
       ),
     };
 
-Future<DocumentUpload?> chooseDocumentFile() async {
+Future<DocumentUpload?> chooseDocumentFile(BuildContext context) async {
   final file = await openFile(
     acceptedTypeGroups: [
-      const XTypeGroup(
-        label: 'صور وملفات PDF',
+      XTypeGroup(
+        label: l10n(context).fileTypes,
         extensions: ['jpg', 'jpeg', 'png', 'pdf'],
         mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
         uniformTypeIdentifiers: ['public.jpeg', 'public.png', 'com.adobe.pdf'],
@@ -209,7 +275,7 @@ class _EquipmentDocumentsCardState extends State<EquipmentDocumentsCard> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -247,25 +313,33 @@ class _EquipmentDocumentsCardState extends State<EquipmentDocumentsCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('المستندات', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              l10n(context).documents,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             if (loading) const LinearProgressIndicator(),
             if (error != null) ...[
-              const Text('تعذر تحميل المستندات. حاول مرة أخرى.'),
-              TextButton(onPressed: load, child: const Text('إعادة المحاولة')),
+              Text(l10n(context).uiCouldNotLoadDocumentsTryAgain161),
+              TextButton(onPressed: load, child: Text(l10n(context).retry)),
             ],
             if (!loading && error == null) ...[
               const SizedBox(height: 8),
               if (docs.isEmpty)
-                const Text('لم تضف مستندات لهذه المعدة بعد')
+                Text(l10n(context).noDocuments)
               else ...[
                 Text(
-                  '${docs.length} مستندات • $expired منتهي • $near ينتهي قريبًا • $missing بدون تاريخ انتهاء',
+                  l10n(context).documentSummary(
+                    '${docs.length}',
+                    '$expired',
+                    '$near',
+                    '$missing',
+                  ),
                 ),
                 if (urgent.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      '${documentName(urgent.first)} • ${documentStatus(urgent.first)}',
+                      '${localizedDocumentName(context, urgent.first)} • ${localizedDocumentStatus(context, urgent.first)}',
                     ),
                   ),
               ],
@@ -276,7 +350,11 @@ class _EquipmentDocumentsCardState extends State<EquipmentDocumentsCard> {
                 icon: Icon(
                   docs.isEmpty ? Icons.add : Icons.description_outlined,
                 ),
-                label: Text(docs.isEmpty ? 'إضافة مستند' : 'عرض المستندات'),
+                label: Text(
+                  docs.isEmpty
+                      ? l10n(context).addDocument
+                      : l10n(context).uiViewDocuments,
+                ),
               ),
             ],
           ],
@@ -334,7 +412,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -379,11 +457,15 @@ class _DocumentListPageState extends State<DocumentListPage> {
       ...docs.map(
         (doc) => Card(
           child: ListTile(
-            title: Text(documentName(doc)),
+            title: Text(localizedDocumentName(context, doc)),
             subtitle: Text(
-              '${documentStatus(doc)}${doc['expiryDate'] == null ? '' : ' • ${doc['expiryDate']}'}',
+              '${localizedDocumentStatus(context, doc)}${doc['expiryDate'] == null ? '' : ' • ${localizedDate(context, doc['expiryDate'] as String)}'}',
             ),
-            trailing: const Icon(Icons.chevron_left),
+            trailing: Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left
+                  : Icons.chevron_right,
+            ),
             onTap: () => open(doc),
           ),
         ),
@@ -396,10 +478,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
     final others = current.where((d) => !documentNeedsAttention(d)).toList();
     return Scaffold(
       appBar: AppBar(
-        title: Text('مستندات ${widget.equipment['name']}'),
+        title: Text(
+          l10n(context).equipmentDocumentsTitle('${widget.equipment['name']}'),
+        ),
         actions: [
           IconButton(
-            tooltip: 'تحديث المستندات',
+            tooltip: l10n(context).refreshDocuments,
             onPressed: load,
             icon: const Icon(Icons.refresh),
           ),
@@ -413,10 +497,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(error!),
-                  TextButton(
-                    onPressed: load,
-                    child: const Text('إعادة المحاولة'),
-                  ),
+                  TextButton(onPressed: load, child: Text(l10n(context).retry)),
                 ],
               ),
             )
@@ -429,24 +510,26 @@ class _DocumentListPageState extends State<DocumentListPage> {
                     key: const Key('addDocument'),
                     onPressed: add,
                     icon: const Icon(Icons.add),
-                    label: const Text('إضافة مستند'),
+                    label: Text(l10n(context).addDocument),
                   ),
                 ),
                 if (current.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text('لم تضف مستندات لهذه المعدة بعد'),
+                    child: Text(l10n(context).noDocuments),
                   ),
-                if (urgent.isNotEmpty) section('يحتاج انتباه', urgent),
-                if (others.isNotEmpty) section('المستندات الحالية', others),
+                if (urgent.isNotEmpty)
+                  section(l10n(context).uiNeedsAttention, urgent),
+                if (others.isNotEmpty)
+                  section(l10n(context).currentDocuments, others),
                 if (archived.isNotEmpty)
                   ExpansionTile(
-                    title: const Text('السجل المؤرشف'),
+                    title: Text(l10n(context).uiArchivedRecords),
                     children: archived
                         .map(
                           (d) => ListTile(
-                            title: Text(documentName(d)),
-                            subtitle: const Text('مؤرشف'),
+                            title: Text(localizedDocumentName(context, d)),
+                            subtitle: Text(l10n(context).archived),
                             onTap: () => open(d),
                           ),
                         )
@@ -514,7 +597,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
 
   String? dateError(String? value, {bool required = false}) {
     final text = normalizeDigits(value?.trim() ?? '');
-    if (text.isEmpty) return required ? 'أضف تاريخ الانتهاء' : null;
+    if (text.isEmpty) return required ? l10n(context).uiAddExpiryDate : null;
     try {
       if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(text)) {
         throw const FormatException();
@@ -525,7 +608,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       }
       return null;
     } catch (_) {
-      return 'اكتب التاريخ بهذا الشكل: 2026-09-25';
+      return l10n(context).uiEnterTheDateLike20260925;
     }
   }
 
@@ -546,7 +629,9 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
 
   Future<void> addFile() async {
     try {
-      final file = await (widget.pickFile ?? chooseDocumentFile)();
+      final file = await (widget.pickFile != null
+          ? widget.pickFile!()
+          : chooseDocumentFile(context));
       if (file != null && mounted) {
         setState(() {
           files.add(file);
@@ -554,7 +639,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     }
   }
 
@@ -589,24 +674,29 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       final choice = await showDialog<String>(
         context: context,
         builder: (dialog) => AlertDialog(
-          title: const Text('يوجد مستند من هذا النوع'),
+          title: Text(l10n(context).documentTypeExists),
           content: Text(
-            'يوجد ${documentName(Map<String, dynamic>.from(matches.first as Map))} حالي لهذه المعدة. هل تريد تجديده بدل إضافة مستند منفصل؟',
+            l10n(context).documentAlreadyExists(
+              localizedDocumentName(
+                context,
+                Map<String, dynamic>.from(matches.first as Map),
+              ),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialog, 'cancel'),
-              child: const Text('رجوع'),
+              child: Text(l10n(context).back),
             ),
             TextButton(
               key: const Key('addSeparateDocument'),
               onPressed: () => Navigator.pop(dialog, 'separate'),
-              child: const Text('إضافة مستند منفصل'),
+              child: Text(l10n(context).uiAddSeparateDocument),
             ),
             FilledButton(
               key: const Key('renewExistingDocument'),
               onPressed: () => Navigator.pop(dialog, 'renew'),
-              child: const Text('تجديد الحالي'),
+              child: Text(l10n(context).uiRenewCurrentDocument),
             ),
           ],
         ),
@@ -630,7 +720,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       }
       return choice == 'separate';
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
       return false;
     } finally {
       if (mounted) setState(() => checkingDuplicate = false);
@@ -644,7 +734,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         normalizeDigits(issue.text.trim())
                 .compareTo(normalizeDigits(expiry.text.trim())) >
             0) {
-      setState(() => error = 'تاريخ الإصدار بعد تاريخ الانتهاء');
+      setState(() => error = l10n(context).uiIssueDateIsAfterExpiryDate);
       return;
     }
     if (saved == null && !await duplicateWarning()) return;
@@ -681,7 +771,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       }
       if (mounted) Navigator.pop(context, saved);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -695,10 +785,10 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       appBar: AppBar(
         title: Text(
           widget.renewal
-              ? 'تجديد المستند'
+              ? l10n(context).renewDocument
               : edit
-              ? 'تعديل المستند'
-              : 'إضافة مستند',
+              ? l10n(context).uiEditDocument
+              : l10n(context).addDocument,
         ),
       ),
       body: Center(
@@ -711,21 +801,27 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
               child: Column(
                 children: [
                   if (widget.renewal)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(bottom: 16),
                       child: Text(
-                        'سيُحفظ المستند السابق في السجل. أضف تاريخ انتهاء جديدًا للمستند المجدد.',
+                        l10n(context).uiThePreviousDocumentWillBeKeptIn,
                       ),
                     ),
                   DropdownButtonFormField<String>(
                     key: const Key('documentType'),
                     initialValue: type,
-                    decoration: const InputDecoration(labelText: 'نوع المستند'),
-                    items: documentNames.entries
+                    decoration: InputDecoration(
+                      labelText: l10n(context).documentType,
+                    ),
+                    items: documentTypeCodes
                         .map(
                           (e) => DropdownMenuItem(
-                            value: e.key,
-                            child: Text(e.value),
+                            value: e,
+                            child: Text(
+                              e == 'OTHER'
+                                  ? l10n(context).other
+                                  : localizedDocumentName(context, {'type': e}),
+                            ),
                           ),
                         )
                         .toList(),
@@ -739,21 +835,21 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                       key: const Key('customDocumentName'),
                       controller: custom,
                       enabled: !widget.renewal && !locked && saved == null,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم المستند',
+                      decoration: InputDecoration(
+                        labelText: l10n(context).uiDocumentName,
                       ),
                       maxLength: 100,
                       validator: (_) =>
                           type == 'OTHER' && custom.text.trim().isEmpty
-                          ? 'اكتب اسم المستند'
+                          ? l10n(context).uiEnterDocumentName
                           : null,
                     ),
                   ],
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: number,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم المستند (اختياري)',
+                    decoration: InputDecoration(
+                      labelText: l10n(context).uiDocumentNumberOptional,
                     ),
                     maxLength: 100,
                   ),
@@ -764,8 +860,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         child: TextFormField(
                           key: const Key('documentIssueDate'),
                           controller: issue,
-                          decoration: const InputDecoration(
-                            labelText: 'تاريخ الإصدار (اختياري)',
+                          decoration: InputDecoration(
+                            labelText: l10n(context).uiIssueDateOptional,
                             hintText: '2026-09-25',
                           ),
                           keyboardType: TextInputType.datetime,
@@ -773,7 +869,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'اختر تاريخ الإصدار',
+                        tooltip: l10n(context).uiSelectIssueDate,
                         onPressed: () => pickDate(issue),
                         icon: const Icon(Icons.event),
                       ),
@@ -788,8 +884,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                           controller: expiry,
                           decoration: InputDecoration(
                             labelText: widget.renewal
-                                ? 'تاريخ الانتهاء الجديد'
-                                : 'تاريخ الانتهاء (اختياري)',
+                                ? l10n(context).newExpiryDate
+                                : l10n(context).uiExpiryDateOptional,
                             hintText: '2026-09-25',
                           ),
                           keyboardType: TextInputType.datetime,
@@ -798,7 +894,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'اختر تاريخ الانتهاء',
+                        tooltip: l10n(context).uiSelectExpiryDate,
                         onPressed: () => pickDate(expiry),
                         icon: const Icon(Icons.event),
                       ),
@@ -807,8 +903,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: notes,
-                    decoration: const InputDecoration(
-                      labelText: 'ملاحظة (اختياري)',
+                    decoration: InputDecoration(
+                      labelText: l10n(context).uiNoteOptional,
                     ),
                     maxLength: 1000,
                     maxLines: 3,
@@ -818,15 +914,15 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     key: const Key('selectDocumentAttachment'),
                     onPressed: busy || files.length >= 10 ? null : addFile,
                     icon: const Icon(Icons.attach_file),
-                    label: const Text('إضافة صورة أو PDF'),
+                    label: Text(l10n(context).uiAddImageOrPdf),
                   ),
                   ...files.map(
                     (f) => ListTile(
                       title: Text(f.filename),
                       subtitle: Text(
                         f.id == null
-                            ? 'جاهز للرفع'
-                            : 'جاهز لإعادة محاولة الرفع',
+                            ? l10n(context).uiReadyToUpload
+                            : l10n(context).uiReadyToRetryUpload,
                       ),
                     ),
                   ),
@@ -846,12 +942,12 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     onPressed: busy ? null : save,
                     child: Text(
                       busy
-                          ? 'جارٍ الحفظ...'
+                          ? l10n(context).uiSaving
                           : saved != null
-                          ? 'إعادة محاولة رفع المرفقات'
+                          ? l10n(context).uiRetryUploadingAttachments
                           : widget.renewal
-                          ? 'تجديد المستند'
-                          : 'حفظ المستند',
+                          ? l10n(context).renewDocument
+                          : l10n(context).saveDocument,
                     ),
                   ),
                 ],
@@ -920,7 +1016,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -945,19 +1041,17 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: const Text('أرشفة المستند؟'),
-        content: const Text(
-          'لن يظهر المستند ضمن المستندات الحالية ولن تصلك تنبيهات انتهاء خاصة به. سيبقى محفوظًا في السجل.',
-        ),
+        title: Text(l10n(context).uiArchiveDocument005),
+        content: Text(l10n(context).uiThisDocumentWillNoLongerAppearAmong),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('رجوع'),
+            child: Text(l10n(context).back),
           ),
           FilledButton(
             key: const Key('confirmDocumentArchive'),
             onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('أرشفة'),
+            child: Text(l10n(context).archive),
           ),
         ],
       ),
@@ -978,7 +1072,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       );
       if (mounted) await load();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -986,12 +1080,14 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
 
   Future<void> addAttachment() async {
     try {
-      final selected = await (widget.pickFile ?? chooseDocumentFile)();
+      final selected = await (widget.pickFile != null
+          ? widget.pickFile!()
+          : chooseDocumentFile(context));
       if (selected == null) return;
       upload = selected;
       await retryUpload();
     } catch (e) {
-      if (mounted) setState(() => uploadError = '$e');
+      if (mounted) setState(() => uploadError = localizedError(context, e));
     }
   }
 
@@ -1011,7 +1107,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       upload = null;
       if (mounted) await load();
     } catch (e) {
-      if (mounted) setState(() => uploadError = '$e');
+      if (mounted) setState(() => uploadError = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1024,10 +1120,14 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     final expired = d?['status'] == 'EXPIRED';
     return Scaffold(
       appBar: AppBar(
-        title: Text(d == null ? 'المستند' : documentName(d)),
+        title: Text(
+          d == null
+              ? l10n(context).uiDocument
+              : localizedDocumentName(context, d),
+        ),
         actions: [
           IconButton(
-            tooltip: 'تحديث المستند',
+            tooltip: l10n(context).uiUpdateDocument,
             onPressed: load,
             icon: const Icon(Icons.refresh),
           ),
@@ -1041,10 +1141,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(error!),
-                  TextButton(
-                    onPressed: load,
-                    child: const Text('إعادة المحاولة'),
-                  ),
+                  TextButton(onPressed: load, child: Text(l10n(context).retry)),
                 ],
               ),
             )
@@ -1066,23 +1163,38 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              documentName(d!),
+                              localizedDocumentName(context, d!),
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             const SizedBox(height: 8),
-                            Text(documentStatus(d)),
+                            Text(localizedDocumentStatus(context, d)),
                             const SizedBox(height: 8),
                             Text(
                               d['expiryDate'] == null
-                                  ? 'تاريخ الانتهاء غير مضاف'
-                                  : 'ينتهي في ${d['expiryDate']}',
+                                  ? l10n(context).docMissingExpiry
+                                  : l10n(context).expiryValue(
+                                      localizedDate(
+                                        context,
+                                        d['expiryDate'] as String,
+                                      ),
+                                    ),
                             ),
                             if (d['documentNumber'] != null)
-                              Text('الرقم: ${d['documentNumber']}'),
+                              Text(
+                                l10n(context)
+                                    .numberValue('${d['documentNumber']}'),
+                              ),
                             if (d['issueDate'] != null)
-                              Text('تاريخ الإصدار: ${d['issueDate']}'),
+                              Text(
+                                l10n(context).issueDateValue(
+                                  localizedDate(
+                                    context,
+                                    d['issueDate'] as String,
+                                  ),
+                                ),
+                              ),
                             if ((d['notes'] as String? ?? '').isNotEmpty)
-                              Text('ملاحظة: ${d['notes']}'),
+                              Text(l10n(context).noteValue('${d['notes']}')),
                           ],
                         ),
                       ),
@@ -1101,14 +1213,14 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                           key: const Key('renewDocument'),
                           onPressed: busy ? null : () => edit(renewal: true),
                           icon: const Icon(Icons.autorenew),
-                          label: const Text('تجديد المستند'),
+                          label: Text(l10n(context).renewDocument),
                         ),
                       if (expired) const SizedBox(height: 8),
                       OutlinedButton.icon(
                         key: const Key('editDocument'),
                         onPressed: busy ? null : () => edit(),
                         icon: const Icon(Icons.edit_outlined),
-                        label: const Text('تعديل'),
+                        label: Text(l10n(context).edit),
                       ),
                       if (!expired) const SizedBox(height: 8),
                       if (!expired)
@@ -1116,38 +1228,41 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                           key: const Key('renewDocument'),
                           onPressed: busy ? null : () => edit(renewal: true),
                           icon: const Icon(Icons.autorenew),
-                          label: const Text('تجديد المستند'),
+                          label: Text(l10n(context).renewDocument),
                         ),
                       const SizedBox(height: 8),
                       TextButton.icon(
                         key: const Key('archiveDocument'),
                         onPressed: busy ? null : archive,
                         icon: const Icon(Icons.archive_outlined),
-                        label: const Text('أرشفة المستند'),
+                        label: Text(l10n(context).uiArchiveDocument),
                       ),
                     ] else if (d['equipmentArchived'] != true)
                       FilledButton(
                         key: const Key('restoreDocument'),
                         onPressed: busy ? null : () => action('restore'),
-                        child: const Text('استعادة المستند'),
+                        child: Text(l10n(context).restoreDocument),
                       )
                     else
-                      const Text('استعد المعدة أولًا لاستعادة المستند.'),
+                      Text(
+                        l10n(context)
+                            .uiRestoreTheEquipmentBeforeRestoringThisDocument,
+                      ),
                     const SizedBox(height: 24),
                     Text(
-                      'المرفقات',
+                      l10n(context).attachments,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    if (attachments.isEmpty) const Text('لا توجد مرفقات بعد'),
+                    if (attachments.isEmpty) Text(l10n(context).noAttachments),
                     ...attachments.map(
                       (f) => ListTile(
                         title: Text(f['filename'] as String),
                         subtitle: Text(
                           f['state'] == 'READY'
-                              ? 'جاهز للعرض'
+                              ? l10n(context).uiReadyToView
                               : f['state'] == 'FAILED'
-                              ? 'تعثر الرفع'
-                              : 'لم يكتمل الرفع',
+                              ? l10n(context).uiUploadFailed
+                              : l10n(context).uiUploadIncomplete,
                         ),
                         onTap: f['state'] == 'READY'
                             ? () =>
@@ -1160,13 +1275,13 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         key: const Key('addDocumentAttachment'),
                         onPressed: busy ? null : addAttachment,
                         icon: const Icon(Icons.attach_file),
-                        label: const Text('إضافة مرفق'),
+                        label: Text(l10n(context).uiAddAttachment),
                       ),
                     if (upload != null && uploadError != null)
                       TextButton(
                         key: const Key('retryDocumentAttachment'),
                         onPressed: busy ? null : retryUpload,
-                        child: const Text('إعادة محاولة رفع الملف'),
+                        child: Text(l10n(context).uiRetryFileUpload),
                       ),
                     if (uploadError != null)
                       Text(
@@ -1188,7 +1303,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         ),
                       ),
                       icon: const Icon(Icons.history),
-                      label: const Text('النسخ السابقة'),
+                      label: Text(l10n(context).previousVersions),
                     ),
                   ],
                 ),
@@ -1238,7 +1353,7 @@ class _DocumentHistoryPageState extends State<DocumentHistoryPage> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1246,25 +1361,32 @@ class _DocumentHistoryPageState extends State<DocumentHistoryPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('النسخ السابقة')),
+    appBar: AppBar(title: Text(l10n(context).previousVersions)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? documentLoadFailure(load)
+        ? documentLoadFailure(context, load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              if (versions.length <= 1) const Text('لا توجد نسخ سابقة بعد'),
+              if (versions.length <= 1)
+                Text(l10n(context).uiNoPreviousVersionsYet),
               ...versions
                   .where((v) => v['status'] == 'PREVIOUS_VERSION')
                   .map(
                     (v) => Card(
                       child: ListTile(
-                        title: Text('النسخة ${v['versionNumber']}'),
-                        subtitle: Text(
-                          'انتهاء: ${v['expiryDate'] ?? 'بدون تاريخ انتهاء'}${v['issueDate'] == null ? '' : ' • إصدار: ${v['issueDate']}'}',
+                        title: Text(
+                          l10n(context).versionNumber('${v['versionNumber']}'),
                         ),
-                        trailing: const Icon(Icons.chevron_left),
+                        subtitle: Text(
+                          '${l10n(context).versionExpiry(v['expiryDate'] == null ? l10n(context).uiNoExpiryDate : localizedDate(context, v['expiryDate'] as String))}${v['issueDate'] == null ? '' : ' • ${l10n(context).versionIssue(localizedDate(context, v['issueDate'] as String))}'}',
+                        ),
+                        trailing: Icon(
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.chevron_left
+                              : Icons.chevron_right,
+                        ),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -1334,7 +1456,7 @@ class _DocumentVersionPageState extends State<DocumentVersionPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1342,38 +1464,53 @@ class _DocumentVersionPageState extends State<DocumentVersionPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('نسخة سابقة')),
+    appBar: AppBar(title: Text(l10n(context).docPreviousVersion)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? documentLoadFailure(load)
+        ? documentLoadFailure(context, load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              const Text('نسخة سابقة للعرض فقط'),
+              Text(l10n(context).uiPreviousVersionIsViewOnly),
               const SizedBox(height: 16),
               Text(
-                documentName(version!),
+                localizedDocumentName(context, version!),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              Text('رقم النسخة: ${version!['versionNumber']}'),
+              Text(
+                l10n(context)
+                    .versionNumberLabel('${version!['versionNumber']}'),
+              ),
               if (version!['documentNumber'] != null)
-                Text('رقم المستند: ${version!['documentNumber']}'),
+                Text(
+                  l10n(context)
+                      .documentNumberLabel('${version!['documentNumber']}'),
+                ),
               if (version!['issueDate'] != null)
-                Text('تاريخ الإصدار: ${version!['issueDate']}'),
+                Text(
+                  l10n(context).issueDateValue(
+                    localizedDate(context, version!['issueDate'] as String),
+                  ),
+                ),
               Text(
                 version!['expiryDate'] == null
-                    ? 'تاريخ الانتهاء غير مضاف'
-                    : 'تاريخ الانتهاء: ${version!['expiryDate']}',
+                    ? l10n(context).docMissingExpiry
+                    : l10n(context).expiryDateValue(
+                        localizedDate(
+                          context,
+                          version!['expiryDate'] as String,
+                        ),
+                      ),
               ),
               if ((version!['notes'] as String? ?? '').isNotEmpty)
-                Text('ملاحظة: ${version!['notes']}'),
+                Text(l10n(context).noteValue('${version!['notes']}')),
               const SizedBox(height: 20),
               Text(
-                'مرفقات هذه النسخة',
+                l10n(context).versionAttachments,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              if (attachments.isEmpty) const Text('لا توجد مرفقات'),
+              if (attachments.isEmpty) Text(l10n(context).noAttachmentsShort),
               ...attachments.map(
                 (f) => ListTile(
                   title: Text(f['filename'] as String),
@@ -1429,7 +1566,7 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1442,26 +1579,26 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('يحتاج انتباه', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            l10n(context).uiNeedsAttention,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           if (loading) const LinearProgressIndicator(),
           if (error != null)
             TextButton(
               onPressed: load,
-              child: Text('تعذر تحميل المستندات • إعادة المحاولة'),
+              child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain),
             ),
           if (!loading && error == null) ...[
-            if (items.isEmpty) const Text('لا توجد مستندات تحتاج انتباه الآن'),
+            if (items.isEmpty)
+              Text(l10n(context).uiNoDocumentsNeedAttentionNow),
             ...items
                 .take(3)
                 .map(
                   (d) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      d['type'] == 'OTHER'
-                          ? d['customTypeName'] as String? ?? 'مستند'
-                          : documentNames[d['type']] ?? 'مستند',
-                    ),
-                    subtitle: Text('${d['equipmentName']} • ${d['body']}'),
+                    title: Text(localizedDocumentName(context, d)),
+                    subtitle: Text(localizedAttentionBody(context, d)),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1482,17 +1619,17 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                     builder: (_) => AttentionPage(api: widget.api),
                   ),
                 ),
-                child: const Text('عرض الكل'),
+                child: Text(l10n(context).viewAll),
               ),
             const Divider(),
             Text(
-              'بيانات تحتاج استكمال',
+              l10n(context).uiDetailsToComplete,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(
               incomplete.isEmpty
-                  ? 'لا توجد مستندات ناقصة البيانات'
-                  : '${incomplete.length} مستند بدون تاريخ انتهاء',
+                  ? l10n(context).uiNoDocumentsHaveMissingInformation
+                  : l10n(context).missingDocumentsCount('${incomplete.length}'),
             ),
             if (incomplete.isNotEmpty)
               TextButton(
@@ -1503,7 +1640,7 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                     builder: (_) => IncompleteDocumentsPage(api: widget.api),
                   ),
                 ),
-                child: const Text('عرض المستندات'),
+                child: Text(l10n(context).uiViewDocuments),
               ),
           ],
         ],
@@ -1547,7 +1684,7 @@ class _AttentionPageState extends State<AttentionPage> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1556,10 +1693,10 @@ class _AttentionPageState extends State<AttentionPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('يحتاج انتباه'),
+      title: Text(l10n(context).uiNeedsAttention),
       actions: [
         IconButton(
-          tooltip: 'تحديث',
+          tooltip: l10n(context).update,
           onPressed: load,
           icon: const Icon(Icons.refresh),
         ),
@@ -1568,21 +1705,17 @@ class _AttentionPageState extends State<AttentionPage> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? documentLoadFailure(load)
+        ? documentLoadFailure(context, load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
               if (items.isEmpty)
-                const Text('لا توجد مستندات تحتاج انتباه الآن'),
+                Text(l10n(context).uiNoDocumentsNeedAttentionNow),
               ...items.map(
                 (d) => Card(
                   child: ListTile(
-                    title: Text(
-                      d['type'] == 'OTHER'
-                          ? d['customTypeName'] as String? ?? 'مستند'
-                          : documentNames[d['type']] ?? 'مستند',
-                    ),
-                    subtitle: Text('${d['equipmentName']} • ${d['body']}'),
+                    title: Text(localizedDocumentName(context, d)),
+                    subtitle: Text(localizedAttentionBody(context, d)),
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -1639,7 +1772,7 @@ class _IncompleteDocumentsPageState extends State<IncompleteDocumentsPage> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1664,17 +1797,17 @@ class _IncompleteDocumentsPageState extends State<IncompleteDocumentsPage> {
       );
       if (result != null && mounted) load();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('بيانات تحتاج استكمال'),
+      title: Text(l10n(context).uiDetailsToComplete),
       actions: [
         IconButton(
-          tooltip: 'تحديث',
+          tooltip: l10n(context).update,
           onPressed: load,
           icon: const Icon(Icons.refresh),
         ),
@@ -1683,20 +1816,21 @@ class _IncompleteDocumentsPageState extends State<IncompleteDocumentsPage> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? documentLoadFailure(load)
+        ? documentLoadFailure(context, load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              if (items.isEmpty) const Text('لا توجد مستندات ناقصة البيانات'),
+              if (items.isEmpty)
+                Text(l10n(context).uiNoDocumentsHaveMissingInformation),
               ...items.map(
                 (d) => Card(
                   child: ListTile(
-                    title: Text(documentName(d)),
-                    subtitle: const Text('تاريخ الانتهاء غير مضاف'),
+                    title: Text(localizedDocumentName(context, d)),
+                    subtitle: Text(l10n(context).docMissingExpiry),
                     trailing: TextButton(
                       key: Key('addExpiry-${d['id']}'),
                       onPressed: () => addExpiry(d),
-                      child: const Text('إضافة تاريخ الانتهاء'),
+                      child: Text(l10n(context).addExpiryDate),
                     ),
                     onTap: () async {
                       await Navigator.push(
@@ -1758,7 +1892,9 @@ class _NotificationButtonState extends State<NotificationButton> {
   @override
   Widget build(BuildContext context) => IconButton(
     key: const Key('openNotifications'),
-    tooltip: unread == 0 ? 'الإشعارات' : 'الإشعارات • $unread غير مقروء',
+    tooltip: unread == 0
+        ? l10n(context).notifications
+        : l10n(context).unreadNotifications(unread),
     onPressed: open,
     icon: Badge(
       isLabelVisible: unread > 0,
@@ -1805,7 +1941,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1842,7 +1978,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       }
       if (mounted) load();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1860,7 +1996,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
       );
       if (mounted) load();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = localizedError(context, e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1869,12 +2005,12 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('الإشعارات'),
+      title: Text(l10n(context).notifications),
       actions: [
         TextButton(
           key: const Key('markAllNotificationsRead'),
           onPressed: busy ? null : readAll,
-          child: const Text('تحديد الكل كمقروء'),
+          child: Text(l10n(context).markAllRead),
         ),
       ],
     ),
@@ -1886,10 +2022,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(error!),
-                TextButton(
-                  onPressed: load,
-                  child: const Text('إعادة المحاولة'),
-                ),
+                TextButton(onPressed: load, child: Text(l10n(context).retry)),
               ],
             ),
           )
@@ -1901,7 +2034,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                   error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-              if (items.isEmpty) const Text('لا توجد إشعارات بعد'),
+              if (items.isEmpty) Text(l10n(context).noNotifications),
               ...items.map(
                 (item) => Card(
                   child: ListTile(
@@ -1911,15 +2044,19 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                           : Icons.notifications_none,
                     ),
                     title: Text(
-                      item['title'] as String,
+                      localizedNotification(context, item).$1,
                       style: TextStyle(
                         fontWeight: item['readAt'] == null
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),
                     ),
-                    subtitle: Text(item['body'] as String),
-                    trailing: const Icon(Icons.chevron_left),
+                    subtitle: Text(localizedNotification(context, item).$2),
+                    trailing: Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
+                    ),
                     onTap: busy ? null : () => read(item),
                   ),
                 ),
@@ -1935,7 +2072,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                               page--;
                               load();
                             },
-                      child: const Text('السابق'),
+                      child: Text(l10n(context).previous),
                     ),
                     Text('${page + 1}'),
                     TextButton(
@@ -1945,7 +2082,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                               page++;
                               load();
                             },
-                      child: const Text('التالي'),
+                      child: Text(l10n(context).next),
                     ),
                   ],
                 ),

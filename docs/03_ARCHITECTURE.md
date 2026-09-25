@@ -124,6 +124,7 @@ Do not choose an obsolete storage image based on previous chat claims. A dev fil
 and if real object-store integration remains explicitly NOT TESTED until exercised; no production fallback to app disk.
 
 ## A-10 — Notifications
+Localization foundation (2026-09-25): Flutter uses generated ARB resources for `ar`, `en`, and `ur`, with Arabic fallback and user-level saved preference. New notification rows carry a semantic `template_key` and JSON parameters; legacy title/body remain readable. In-app text is rendered from the current user's locale. A future Push adapter receives the recipient's saved locale at dispatch time. Expiry dates, financial values, schedules, dedupe and domain codes remain unchanged. Urdu copy needs native-speaker review before public release.
 M3 implementation note (2026-09-25): equipment documents use a long-lived record and immutable renewal versions; attachment metadata points to a document version. Expiry status is derived using an injectable clock and the Asia/Riyadh date. Current attention is queried from active documents; notification history is persisted separately with a database dedupe key. The M3 development Push sender performs no external delivery. FCM/APNs and production delivery remain deferred to pre-Beta.
 Durable notification/outbox and scheduled-reminder state in PostgreSQL; worker processing with deduplication and bounded retry.
 A process restart must not lose due reminders. Multiple worker instances must not produce repeated reminders for the same slot.

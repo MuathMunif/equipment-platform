@@ -93,6 +93,30 @@ class OwnerSliceTest {
   String c=challenge("0500000001");var response=request("POST","/auth/verify",Map.of("challengeId",c,"code","123456","client","NATIVE"),null,null);assertTrue(response.json.get("requiresName").asBoolean());assertEquals(0,db.queryForObject("select count(*) from workspace",Integer.class));
   assertEquals(200,request("POST","/auth/verify",Map.of("challengeId",c,"code","123456","name","مالك","client","NATIVE"),null,null).status);assertEquals(1,db.queryForObject("select count(*) from workspace",Integer.class));
  }
+ @Test void preferredLocaleBelongsToAuthenticatedUserAndSurvivesNewSession()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");
+  assertTrue(request("GET","/auth/me",null,owner.token,null).json.get("preferredLocale").isNull());
+  assertEquals(400,request("PUT","/auth/me/locale",Map.of("preferredLocale","fr"),owner.token,null).status);
+  assertEquals(200,request("PUT","/auth/me/locale",Map.of("preferredLocale","ur"),owner.token,null).status);
+  assertEquals("ur",request("GET","/auth/me",null,owner.token,null).json.get("preferredLocale").asString());
+  assertTrue(request("GET","/auth/me",null,other.token,null).json.get("preferredLocale").isNull());
+  assertEquals(200,request("PUT","/auth/me/locale",Map.of("preferredLocale","en"),other.token,null).status);
+  assertEquals("ur",request("GET","/auth/me",null,owner.token,null).json.get("preferredLocale").asString());
+  db.update("update otp_challenge set created_at=now()-interval '31 seconds' where phone='+966500000001'");
+  User again=login("0500000001");
+  assertEquals("ur",request("GET","/auth/me",null,again.token,null).json.get("preferredLocale").asString());
+ }
+ @Test void legacyNotificationRemainsReadableAcrossLocaleChange()throws Exception{
+  User owner=login("0500000001"),other=login("0500000002");UUID id=UUID.randomUUID();
+  db.update("insert into notification(id,workspace_id,recipient_user_id,type,entity_type,title,body,dedupe_key) values(?,?,?,'DOCUMENT_EXPIRED_WEEKLY','DOCUMENT_SUMMARY',?,?,?)",id,UUID.fromString(owner.workspace),UUID.fromString(owner.user),"مستندات منتهية","سجل تطويري سابق","LEGACY:"+id);
+  assertEquals(200,request("PUT","/auth/me/locale",Map.of("preferredLocale","en"),owner.token,null).status);
+  var first=request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("items").get(0);
+  assertTrue(first.get("templateKey").isNull());assertTrue(first.get("params").isNull());
+  assertEquals("سجل تطويري سابق",first.get("body").asString());
+  assertEquals(404,request("POST",path(other,"/notifications/"+id+"/read"),null,other.token,null).status);
+  assertEquals(200,request("POST",path(owner,"/notifications/"+id+"/read"),null,owner.token,null).status);
+  assertEquals(0,request("GET",path(owner,"/notifications/unread-count"),null,owner.token,null).json.get("unreadCount").asInt());
+ }
  @Test void fullyPaidExpenseIsAtomicExactAndConcurrentReplayDoesNotDuplicate()throws Exception{
   User user=login("0500000001");String eq=equipment(user),key=key();var body=expense(eq);var results=new ArrayList<Reply>();
   try(var pool=Executors.newVirtualThreadPerTaskExecutor()){var futures=new ArrayList<Future<Reply>>();for(int i=0;i<6;i++)futures.add(pool.submit(()->request("POST",path(user,"/entries"),body,user.token,key)));for(var future:futures)results.add(future.get());}
@@ -676,6 +700,9 @@ class OwnerSliceTest {
   assertEquals(1,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
   var list=request("GET",path(owner,"/notifications"),null,owner.token,null);assertEquals(1,list.json.get("total").asInt());
   assertEquals("DOCUMENT_CURRENT_STATE",list.json.get("items").get(0).get("type").asString());
+  assertEquals("DOCUMENT_EXPIRY",list.json.get("items").get(0).get("templateKey").asString());
+  assertEquals("INSURANCE",list.json.get("items").get(0).get("params").get("documentType").asString());
+  assertEquals(5,list.json.get("items").get(0).get("params").get("daysRemaining").asInt());
   assertEquals(id,list.json.get("items").get(0).get("entityId").asString());
   String notification=list.json.get("items").get(0).get("id").asString();
   assertEquals(1,request("GET",path(owner,"/notifications/unread-count"),null,owner.token,null).json.get("unreadCount").asInt());
@@ -717,6 +744,8 @@ class OwnerSliceTest {
   assertEquals(1,notifications.runWeekly(sunday));assertEquals(0,notifications.runWeekly(sunday));
   var items=request("GET",path(owner,"/notifications"),null,owner.token,null).json.get("items");assertEquals(9,items.size());
   assertEquals("DOCUMENT_EXPIRED_WEEKLY",items.get(0).get("type").asString());
+  assertEquals("DOCUMENT_EXPIRED_WEEKLY",items.get(0).get("templateKey").asString());
+  assertEquals(2,items.get(0).get("params").get("count").asInt());
   assertEquals("DOCUMENT_SUMMARY",items.get(0).get("entityType").asString());
   assertTrue(items.get(0).get("body").asString().contains("2"));
   assertEquals(0,request("GET",path(other,"/notifications"),null,other.token,null).json.get("total").asInt());

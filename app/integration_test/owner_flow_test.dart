@@ -1,6 +1,7 @@
 import 'package:equipment_app/api.dart';
 import 'package:equipment_app/documents.dart';
 import 'package:equipment_app/main.dart';
+import 'package:equipment_app/localization.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -716,7 +717,11 @@ void main() {
       final amended = await owner.json(
         'PUT',
         owner.scoped('/documents/$missingId'),
-        body: {'type': 'REGISTRATION', 'expiryDate': date(5)},
+        body: {
+          'expectedVersionId': missing['versionId'],
+          'type': 'REGISTRATION',
+          'expiryDate': date(5),
+        },
       );
       expect(amended['status'], 'EXPIRING_SOON');
       final changedNotifications = await owner.json(
@@ -813,11 +818,19 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('openNotifications')));
       await tester.pumpAndSettle();
-      expect(find.text('الإشعارات'), findsWidgets);
-      await tester.tap(find.text('التأمين').last);
+      final notificationContext = tester.element(
+        find.byType(NotificationCenterPage),
+      );
+      expect(find.text(l10n(notificationContext).notifications), findsWidgets);
+      final insuranceLabel = localizedDocumentName(notificationContext, {
+        'type': 'INSURANCE',
+      });
+      expect(find.textContaining(insuranceLabel), findsWidgets);
+      await tester.tap(find.textContaining(insuranceLabel).last);
       await tester.pumpAndSettle();
       expect(find.byType(DocumentDetailPage), findsOneWidget);
-      expect(find.textContaining('ينتهي في'), findsWidgets);
+      final detailContext = tester.element(find.byType(DocumentDetailPage));
+      expect(find.textContaining(l10n(detailContext).active), findsWidgets);
     },
   );
 }

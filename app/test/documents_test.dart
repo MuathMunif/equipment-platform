@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:equipment_app/api.dart';
 import 'package:equipment_app/documents.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -16,8 +16,8 @@ http.Response reply(Object value, [int status = 200]) => http.Response(
 );
 Widget host(Widget page) => MaterialApp(
   locale: const Locale('ar'),
-  supportedLocales: const [Locale('ar')],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
   home: page,
 );
 Api apiWith(Future<http.Response> Function(http.Request) handler) =>
@@ -186,20 +186,27 @@ void main() {
     expect(find.text('أضف تاريخ الانتهاء'), findsOneWidget);
     expect(find.textContaining('سيُحفظ المستند السابق'), findsOneWidget);
   });
-  testWidgets('document edit sends the version shown to the user', (tester) async {
+  testWidgets('document edit sends the version shown to the user', (
+    tester,
+  ) async {
     Map<String, dynamic>? sent;
     final api = apiWith((request) async {
-      if (request.method == 'PUT' && request.url.path.endsWith('/documents/d')) {
+      if (request.method == 'PUT' &&
+          request.url.path.endsWith('/documents/d')) {
         sent = jsonDecode(request.body) as Map<String, dynamic>;
         return reply(doc(version: 2));
       }
       return reply([]);
     });
-    await tester.pumpWidget(launcher((_) => DocumentFormPage(
-      api: api,
-      equipment: equipment,
-      document: doc(version: 2),
-    )));
+    await tester.pumpWidget(
+      launcher(
+        (_) => DocumentFormPage(
+          api: api,
+          equipment: equipment,
+          document: doc(version: 2),
+        ),
+      ),
+    );
     await tester.tap(find.text('فتح'));
     await tester.pumpAndSettle();
     await tapVisible(tester, find.byKey(const Key('saveDocument')));
@@ -316,6 +323,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('renewDocument')), findsOneWidget);
   });
+  for (final language in ['en', 'ur']) {
+    for (final width in [390.0, 1440.0]) {
+      testWidgets('$language attention at $width ignores Arabic server body', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final api = apiWith(
+          (request) async => reply([
+            {
+              'documentId': 'd',
+              'equipmentId': 'eq',
+              'equipmentName': 'Truck 1',
+              'type': 'INSURANCE',
+              'body': 'ينتهي بعد 5 أيام',
+              'expiryDate': '2026-09-30',
+              'daysRemaining': 5,
+              'status': 'EXPIRING_SOON',
+            },
+          ]),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: Locale(language),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: AttentionPage(api: api),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('ينتهي بعد'), findsNothing);
+        expect(find.textContaining('Truck 1'), findsOneWidget);
+        expect(
+          find.textContaining(language == 'en' ? 'Expires in' : 'دن میں'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
   testWidgets('incomplete document directly opens expiry edit form', (
     tester,
   ) async {
