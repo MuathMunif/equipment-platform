@@ -61,6 +61,11 @@ public class NotificationService {
         }
         return written==1;
     }
+    public void event(UUID workspace,UUID recipient,String type,String entityType,UUID entity,Map<String,Object> params){
+        if(recipient==null)return;
+        Boolean active=db.queryForObject("select exists(select 1 from membership where workspace_id=? and user_id=? and active=true)",Boolean.class,workspace,recipient);
+        if(Boolean.TRUE.equals(active))insert(workspace,recipient,type,entityType,entity,"","",type+":"+entity+":"+recipient,type,params);
+    }
     /** Called inside the document mutation transaction, after the new current state is stored. */
     public void currentState(UUID workspace,UUID document){currentState(workspace,document,today());}
     public void currentState(UUID workspace,UUID document,LocalDate day){
@@ -115,43 +120,63 @@ public class NotificationService {
         Object raw=row.get("template_params");Map<String,Object> params=raw==null?null:JSON.readValue(raw.toString(),Map.class);
         return new Notification((UUID)row.get("id"),(String)row.get("type"),(String)row.get("entity_type"),(UUID)row.get("entity_id"),(String)row.get("title"),(String)row.get("body"),(String)row.get("template_key"),params,((Timestamp)row.get("created_at")).toInstant().toString(),row.get("read_at")==null?null:((Timestamp)row.get("read_at")).toInstant().toString());
     }
+    private record VisibleNotifications(String clause,List<Object> args){}
+    private VisibleNotifications visible(Actor actor,UUID workspace){
+        Access.Member m=access.member(actor,workspace);List<Object> args=new ArrayList<>(List.of(workspace,actor.userId()));
+        if(m.role().equals("OWNER"))return new VisibleNotifications("n.workspace_id=? and n.recipient_user_id=?",args);
+        String equipment="case n.entity_type when 'DOCUMENT' then (select d.equipment_id from equipment_document d where d.workspace_id=n.workspace_id and d.id=n.entity_id) when 'ISSUE' then (select i.equipment_id from equipment_issue i where i.workspace_id=n.workspace_id and i.id=n.entity_id) when 'FINANCIAL_SUBMISSION' then (select s.equipment_id from financial_submission s where s.workspace_id=n.workspace_id and s.id=n.entity_id) else n.entity_id end";
+        String scope=m.scope().equals("ALL_EQUIPMENT")?"true":m.scope().equals("ASSIGNED_EQUIPMENT")?"exists(select 1 from driver_assignment x where x.workspace_id=n.workspace_id and x.driver_user_id=? and x.equipment_id=("+equipment+") and x.ended_at is null)":"exists(select 1 from membership_equipment x where x.workspace_id=n.workspace_id and x.user_id=? and x.equipment_id=("+equipment+"))";
+        String types="((n.entity_type='DOCUMENT' and "+m.has("DOCUMENT_VIEW")+") or (n.entity_type='ISSUE' and "+m.has("ISSUE_VIEW")+") or (n.entity_type='EQUIPMENT' and "+m.has("EQUIPMENT_VIEW")+") or (n.entity_type='FINANCIAL_SUBMISSION' and "+m.has("FINANCE_REVIEW")+"))";
+        String clause="n.workspace_id=? and n.recipient_user_id=? and ((n.entity_type='FINANCIAL_SUBMISSION' and exists(select 1 from financial_submission own where own.workspace_id=n.workspace_id and own.id=n.entity_id and own.submitted_by=?)) or ("+types+" and "+scope+"))";
+        args.add(actor.userId());if(!m.scope().equals("ALL_EQUIPMENT"))args.add(actor.userId());return new VisibleNotifications(clause,args);
+    }
     public Page list(Actor actor,UUID workspace,int page){
-        access.owner(actor,workspace);if(page<0 || page>100000)throw ApiException.invalid("رقم الصفحة غير صالح");
-        var rows=db.queryForList("select * from notification where workspace_id=? and recipient_user_id=? order by created_at desc,id desc limit 30 offset ?",workspace,actor.userId(),page*30);
-        Long total=db.queryForObject("select count(*) from notification where workspace_id=? and recipient_user_id=?",Long.class,workspace,actor.userId());
+        VisibleNotifications q=visible(actor,workspace);if(page<0 || page>100000)throw ApiException.invalid("رقم الصفحة غير صالح");
+        List<Object> args=new ArrayList<>(q.args());args.add(page*30);
+        var rows=db.queryForList("select n.* from notification n where "+q.clause()+" order by n.created_at desc,n.id desc limit 30 offset ?",args.toArray());
+        Long total=db.queryForObject("select count(*) from notification n where "+q.clause(),Long.class,q.args().toArray());
         return new Page(rows.stream().map(this::view).toList(),page,30,total);
     }
     public Map<String,Long> unreadCount(Actor actor,UUID workspace){
-        access.owner(actor,workspace);Long count=db.queryForObject("select count(*) from notification where workspace_id=? and recipient_user_id=? and read_at is null",Long.class,workspace,actor.userId());return Map.of("unreadCount",count);
+        VisibleNotifications q=visible(actor,workspace);Long count=db.queryForObject("select count(*) from notification n where "+q.clause()+" and n.read_at is null",Long.class,q.args().toArray());return Map.of("unreadCount",count);
     }
     @Transactional
     public Notification read(Actor actor,UUID workspace,UUID id){
-        access.owner(actor,workspace);int changed=db.update("update notification set read_at=coalesce(read_at,now()) where workspace_id=? and recipient_user_id=? and id=?",workspace,actor.userId(),id);
+        VisibleNotifications q=visible(actor,workspace);List<Object> args=new ArrayList<>(q.args());args.add(id);Boolean allowed=db.queryForObject("select exists(select 1 from notification n where "+q.clause()+" and n.id=?)",Boolean.class,args.toArray());if(!Boolean.TRUE.equals(allowed))throw ApiException.missing();int changed=db.update("update notification set read_at=coalesce(read_at,now()) where workspace_id=? and recipient_user_id=? and id=?",workspace,actor.userId(),id);
         if(changed==0)throw ApiException.missing();return view(db.queryForMap("select * from notification where workspace_id=? and recipient_user_id=? and id=?",workspace,actor.userId(),id));
     }
     @Transactional
     public Map<String,Integer> readAll(Actor actor,UUID workspace){
-        access.owner(actor,workspace);int count=db.update("update notification set read_at=now() where workspace_id=? and recipient_user_id=? and read_at is null",workspace,actor.userId());return Map.of("markedRead",count);
+        VisibleNotifications q=visible(actor,workspace);int count=db.update("update notification set read_at=now() where id in (select n.id from notification n where "+q.clause()+" and n.read_at is null)",q.args().toArray());return Map.of("markedRead",count);
     }
     public List<Map<String,Object>> attention(Actor actor,UUID workspace,UUID equipment){
-        access.owner(actor,workspace);
+        Access.Member member=access.require(actor,workspace,"DOCUMENT_VIEW");
+        if(equipment!=null)access.equipment(actor,workspace,equipment,"DOCUMENT_VIEW");
         if(equipment!=null){Boolean found=db.queryForObject("select exists(select 1 from equipment where workspace_id=? and id=?)",Boolean.class,workspace,equipment);if(!Boolean.TRUE.equals(found))throw ApiException.missing();}
         LocalDate day=today();List<Map<String,Object>> items=new ArrayList<>();
         for(Current d:active(workspace,null)){
             if(equipment!=null && !equipment.equals(d.equipment()))continue;
+            if(!access.contains(member,workspace,d.equipment()))continue;
             if(d.expiry()==null)continue;long days=java.time.temporal.ChronoUnit.DAYS.between(day,d.expiry());if(days>30)continue;
             Map<String,Object> item=new LinkedHashMap<>();item.put("documentId",d.document());item.put("equipmentId",d.equipment());item.put("equipmentName",d.equipmentName());item.put("type",d.type());item.put("customTypeName",d.customName());item.put("expiryDate",d.expiry());item.put("daysRemaining",days);item.put("status",DocumentService.status(d.expiry(),day,false,false));item.put("body",body(d,days));items.add(item);
         }
         items.sort(Comparator.comparingLong(i->(long)i.get("daysRemaining")));return items;
     }
     public List<Map<String,Object>> operationalAttention(Actor actor,UUID workspace,UUID equipment){
-        access.owner(actor,workspace);
+        Access.Member member=access.member(actor,workspace);
+        if(equipment!=null&&!access.contains(member,workspace,equipment))throw ApiException.missing();
         List<Map<String,Object>> result=new ArrayList<>();
-        for(var row:db.queryForList("select i.id,i.equipment_id,i.description,i.equipment_stopped,i.created_at,e.name as equipment_name from equipment_issue i join equipment e on e.workspace_id=i.workspace_id and e.id=i.equipment_id where i.workspace_id=? and i.status='OPEN' and e.archived_at is null"+(equipment==null?"":" and i.equipment_id=?")+" order by i.equipment_stopped desc,i.created_at desc,i.id desc",equipment==null?new Object[]{workspace}:new Object[]{workspace,equipment})){
+        if(member.has("ISSUE_VIEW"))for(var row:db.queryForList("select i.id,i.equipment_id,i.description,i.equipment_stopped,i.created_at,e.name as equipment_name from equipment_issue i join equipment e on e.workspace_id=i.workspace_id and e.id=i.equipment_id where i.workspace_id=? and i.status='OPEN' and e.archived_at is null"+(equipment==null?"":" and i.equipment_id=?")+" order by i.equipment_stopped desc,i.created_at desc,i.id desc",equipment==null?new Object[]{workspace}:new Object[]{workspace,equipment})){
+            if(!access.contains(member,workspace,(UUID)row.get("equipment_id")))continue;
             Map<String,Object> item=new LinkedHashMap<>();item.put("entityType","ISSUE");item.put("issueId",row.get("id"));item.put("equipmentId",row.get("equipment_id"));item.put("equipmentName",row.get("equipment_name"));item.put("description",row.get("description"));item.put("equipmentStopped",row.get("equipment_stopped"));item.put("status","OPEN");item.put("priorityRank",Boolean.TRUE.equals(row.get("equipment_stopped"))?1:4);item.put("createdAt",((Timestamp)row.get("created_at")).toInstant().toString());result.add(item);
         }
-        for(var document:attention(actor,workspace,equipment)){
-            Map<String,Object> item=new LinkedHashMap<>(document);long days=(long)item.get("daysRemaining");item.put("entityType","DOCUMENT");item.put("priorityRank",days<0?2:days==0?3:days<=1?5:days<=7?6:7);result.add(item);
+        if(member.has("DOCUMENT_VIEW"))for(var document:attention(actor,workspace,equipment)){
+            Map<String,Object> item=new LinkedHashMap<>(document);long days=(long)item.get("daysRemaining");item.put("entityType","DOCUMENT");item.put("priorityRank",days<0?2:days==0?3:days<=1?6:days<=7?7:8);result.add(item);
+        }
+        if(member.has("FINANCE_REVIEW")){
+            String scope=access.equipmentPredicate(member,"s");
+            long count=member.scope().equals("ALL_EQUIPMENT")?db.queryForObject("select count(*) from financial_submission s where s.workspace_id=? and s.status='PENDING_REVIEW'",Long.class,workspace):db.queryForObject("select count(*) from financial_submission s where s.workspace_id=? and s.status='PENDING_REVIEW' and "+scope,Long.class,workspace,actor.userId());
+            if(count>0){Map<String,Object> item=new LinkedHashMap<>();item.put("entityType","FINANCIAL_REVIEW");item.put("pendingCount",count);item.put("priorityRank",5);result.add(item);}
         }
         result.sort(Comparator.comparingInt(i->(int)i.get("priorityRank")));
         return result;

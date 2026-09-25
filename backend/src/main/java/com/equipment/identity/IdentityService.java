@@ -1,6 +1,7 @@
 package com.equipment.identity;
 
 import com.equipment.common.*;
+import com.equipment.workspaces.Access;
 import java.time.*;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,21 +13,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class IdentityService {
     public static final String COOKIE = "equipment_session";
     private final JdbcTemplate db;
+    private final Access access;
     private final int hours;
-    public IdentityService(JdbcTemplate db, @Value("${app.session-hours:8}") int hours) { this.db=db; this.hours=hours; }
+    public IdentityService(JdbcTemplate db,Access access, @Value("${app.session-hours:8}") int hours) { this.db=db;this.access=access; this.hours=hours; }
     public record Challenge(UUID challengeId, String expiresAt, int resendAfterSeconds) {}
     public record Login(boolean requiresName, String token, String csrfToken, UUID userId) {}
-    private String phone(String value) {
+    public static String normalizePhone(String value) {
         if(value==null) throw ApiException.invalid("اكتب رقم الجوال التجريبي");
         String normalized=value.replace(" ","").replace("-","");
         if(normalized.matches("05[0-9]{8}")) normalized="+966"+normalized.substring(1);
-        if(!Set.of("+966500000001","+966500000002").contains(normalized))
-            throw ApiException.invalid("بيئة التطوير تقبل الرقمين 0500000001 و0500000002 فقط");
+        if(normalized.matches("9665[0-9]{8}")) normalized="+"+normalized;
+        // Development OTP is local only. The reserved 0500000xxx range permits team testing.
+        if(!normalized.matches("\\+966500000[0-9]{3}"))
+            throw ApiException.invalid("بيئة التطوير تقبل أرقام الاختبار 0500000000–0500000999 فقط");
         return normalized;
     }
     @Transactional
     public Challenge challenge(String input) {
-        String phone=phone(input);
+        String phone=normalizePhone(input);
         db.queryForList("select pg_advisory_xact_lock(hashtextextended(?,0))","otp:"+phone);
         Integer recent=db.queryForObject("select count(*) from otp_challenge where phone=? and created_at>now()-interval '30 seconds'",Integer.class,phone);
         Integer hourly=db.queryForObject("select count(*) from otp_challenge where phone=? and created_at>now()-interval '1 hour'",Integer.class,phone);
@@ -73,12 +77,13 @@ public class IdentityService {
         return new Actor((UUID)rows.getFirst().get("user_id"),hash,(String)rows.getFirst().get("csrf_token"));
     }
     public Map<String,Object> me(Actor actor) {
-        var rows=db.queryForList("select u.id,u.name,u.preferred_locale,w.id as workspace_id,w.name as workspace_name from app_user u join membership m on m.user_id=u.id and m.active=true and m.role='OWNER' join workspace w on w.id=m.workspace_id where u.id=? order by w.created_at",actor.userId());
+        var rows=db.queryForList("select u.id,u.name,u.preferred_locale,u.last_workspace_id,w.id as workspace_id,w.name as workspace_name,m.role,m.scope,m.financial_mode from app_user u join membership m on m.user_id=u.id and m.active=true join workspace w on w.id=m.workspace_id where u.id=? order by w.created_at",actor.userId());
         if(rows.isEmpty()) throw new ApiException(403,"MEMBERSHIP_REQUIRED","لم تعد لديك صلاحية الوصول إلى مساحة العمل");
         var first=rows.getFirst();
         Map<String,Object> result=new LinkedHashMap<>();
         result.put("userId",actor.userId());result.put("name",first.get("name"));result.put("preferredLocale",first.get("preferred_locale"));
-        result.put("csrfToken",actor.csrfToken());result.put("workspaces",rows.stream().map(r->Map.of("id",r.get("workspace_id"),"name",r.get("workspace_name"))).toList());result.put("development",true);
+        result.put("csrfToken",actor.csrfToken());result.put("workspaces",rows.stream().map(r->{UUID w=(UUID)r.get("workspace_id");var member=access.member(actor,w);return Map.of("id",w,"name",r.get("workspace_name"),"role",member.role(),"scope",member.scope(),"financialMode",member.financialMode(),"capabilities",member.capabilities());}).toList());
+        UUID preferred=(UUID)first.get("last_workspace_id");result.put("lastWorkspaceId",rows.stream().anyMatch(r->r.get("workspace_id").equals(preferred))?preferred:first.get("workspace_id"));result.put("development",true);
         return result;
     }
     @Transactional
