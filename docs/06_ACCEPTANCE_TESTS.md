@@ -80,6 +80,7 @@ TEAM-08: Editing previously approved driver-origin money cannot bypass the Q-03 
 
 ## Documents/issues/notifications
 M3 local checkpoint (2026-09-25): equipment document/version/attachment, status, renewal conflict, archive, attention, notification dedupe and tenant checks are covered by the 50-test backend suite. Flutter has 40 unit/widget tests in total, including M3 mobile/web RTL, forms, renewal/history, archive, attention, notifications and upload retry. A connected M3 iPhone simulator journey passed 1/1 with local API/PostgreSQL. Web E2E, Android, live Push and production storage/scanning remain unverified. ISSUE and maintenance cases below are future scope.
+Localization foundation checkpoint: backend suite 52/52 verifies user preference scope/persistence and old/new notification formats; Flutter 52/52 covers `ar`/`en`/`ur`, RTL/LTR, runtime switch, statuses, error codes and semantic notification rendering. Chrome localization widgets 10/10 and connected M3 iPhone 1/1 pass. Urdu linguistic approval and live web E2E remain unverified.
 DOC-01: Equipment without a document is not shown as document-compliant; missing data doesn't block expenses.
 DOC-02: Adding expiry reminders requires a valid expiration date; no invented expiration from model year.
 DOC-03: Renewal preserves old version, makes new current and prevents old future notifications.
