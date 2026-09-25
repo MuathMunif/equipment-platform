@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,10 +21,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Service
 public class NotificationService {
     private static final Logger LOG=LoggerFactory.getLogger(NotificationService.class);
+    private static final JsonMapper JSON=JsonMapper.builder().build();
     private static final ZoneId ZONE=ZoneId.of("Asia/Riyadh");
     private final JdbcTemplate db;private final Access access;private final Clock clock;private final PushNotificationSender push;
     public NotificationService(JdbcTemplate db,Access access,Clock clock,PushNotificationSender push){this.db=db;this.access=access;this.clock=clock;this.push=push;}
-    public record Notification(UUID id,String type,String entityType,UUID entityId,String title,String body,String createdAt,String readAt) {}
+    public record Notification(UUID id,String type,String entityType,UUID entityId,String title,String body,String templateKey,Map<String,Object> params,String createdAt,String readAt) {}
     public record Page(List<Notification> items,int page,int pageSize,long total) {}
     private record Current(UUID workspace,UUID document,UUID version,UUID equipment,String equipmentName,String type,String customName,LocalDate expiry) {}
     private LocalDate today(){return LocalDate.now(clock.withZone(ZONE));}
@@ -43,10 +45,17 @@ public class NotificationService {
     }
     private String bucket(long days){return days<0?"EXPIRED":days==0?"TODAY":days<=1?"1D":days<=7?"7D":days<=30?"30D":"FUTURE";}
     private String identity(Current d){return d.version()+":"+d.expiry();}
-    private boolean insert(UUID workspace,UUID recipient,String type,String entityType,UUID entity,String title,String body,String dedupe){
-        UUID id=UUID.randomUUID();int written=db.update("insert into notification(id,workspace_id,recipient_user_id,type,entity_type,entity_id,title,body,dedupe_key) values(?,?,?,?,?,?,?,?,?) on conflict (workspace_id,recipient_user_id,dedupe_key) do nothing",id,workspace,recipient,type,entityType,entity,title,body,dedupe);
+    private Map<String,Object> documentParams(Current d,long days){
+        Map<String,Object> params=new LinkedHashMap<>();params.put("documentType",d.type());params.put("customTypeName",d.customName());params.put("equipmentName",d.equipmentName());params.put("daysRemaining",days);return params;
+    }
+    private String preferredLocale(UUID recipient){
+        String locale=db.queryForObject("select preferred_locale from app_user where id=?",String.class,recipient);
+        return locale==null?"ar":locale;
+    }
+    private boolean insert(UUID workspace,UUID recipient,String type,String entityType,UUID entity,String title,String body,String dedupe,String templateKey,Map<String,Object> params){
+        UUID id=UUID.randomUUID();int written=db.update("insert into notification(id,workspace_id,recipient_user_id,type,entity_type,entity_id,title,body,dedupe_key,template_key,template_params) values(?,?,?,?,?,?,?,?,?,?,cast(? as jsonb)) on conflict (workspace_id,recipient_user_id,dedupe_key) do nothing",id,workspace,recipient,type,entityType,entity,title,body,dedupe,templateKey,JSON.writeValueAsString(params));
         if(written==1){
-            Runnable delivery=()->{try{push.send(workspace,recipient,title,body);}catch(RuntimeException e){LOG.warn("Development push delivery failed for notification {}",id,e);}};
+            Runnable delivery=()->{try{push.send(workspace,recipient,templateKey,params,preferredLocale(recipient));}catch(RuntimeException e){LOG.warn("Development push delivery failed for notification {}",id,e);}};
             if(TransactionSynchronizationManager.isSynchronizationActive())TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization(){@Override public void afterCommit(){delivery.run();}});
             else delivery.run();
         }
@@ -59,7 +68,7 @@ public class NotificationService {
         for(Current d:active(workspace,document)){
             if(d.expiry()==null)continue;long days=java.time.temporal.ChronoUnit.DAYS.between(day,d.expiry());if(days>30)continue;
             String key="DOCUMENT:"+identity(d)+":CURRENT_STATE:"+bucket(days);
-            insert(workspace,recipient,"DOCUMENT_CURRENT_STATE","DOCUMENT",d.document(),label(d),body(d,days),key);
+            insert(workspace,recipient,"DOCUMENT_CURRENT_STATE","DOCUMENT",d.document(),label(d),body(d,days),key,"DOCUMENT_EXPIRY",documentParams(d,days));
         }
     }
     /** Re-evaluates current documents after equipment restore without touching historical versions. */
@@ -79,11 +88,11 @@ public class NotificationService {
             String prefix="DOCUMENT:"+identity(d)+":";
             if(threshold!=null){
                 if(hasKey(d.workspace(),recipient,prefix+"CURRENT_STATE:"+threshold))continue;
-                if(insert(d.workspace(),recipient,"DOCUMENT_"+threshold,"DOCUMENT",d.document(),label(d),body(d,days),"DOCUMENT:"+identity(d)+":"+threshold))count++;
+                if(insert(d.workspace(),recipient,"DOCUMENT_"+threshold,"DOCUMENT",d.document(),label(d),body(d,days),"DOCUMENT:"+identity(d)+":"+threshold,"DOCUMENT_EXPIRY",documentParams(d,days)))count++;
             }else if(days<30 && days>=0){
                 String stage=bucket(days);
                 if(hasKey(d.workspace(),recipient,prefix+stage))continue;
-                if(insert(d.workspace(),recipient,"DOCUMENT_CURRENT_STATE","DOCUMENT",d.document(),label(d),body(d,days),"DOCUMENT:"+identity(d)+":CURRENT_STATE:"+bucket(days)))count++;
+                if(insert(d.workspace(),recipient,"DOCUMENT_CURRENT_STATE","DOCUMENT",d.document(),label(d),body(d,days),"DOCUMENT:"+identity(d)+":CURRENT_STATE:"+bucket(days),"DOCUMENT_EXPIRY",documentParams(d,days)))count++;
             }
         }
         return count;
@@ -97,11 +106,15 @@ public class NotificationService {
         for(var item:expired.entrySet()){
             UUID recipient=owner(item.getKey());if(recipient==null)continue;
             String body="لديك "+item.getValue()+" مستندات منتهية تحتاج متابعة.";
-            if(insert(item.getKey(),recipient,"DOCUMENT_EXPIRED_WEEKLY","DOCUMENT_SUMMARY",null,"مستندات منتهية",body,"DOCUMENT:EXPIRED_WEEKLY:"+weekStart))count++;
+            if(insert(item.getKey(),recipient,"DOCUMENT_EXPIRED_WEEKLY","DOCUMENT_SUMMARY",null,"مستندات منتهية",body,"DOCUMENT:EXPIRED_WEEKLY:"+weekStart,"DOCUMENT_EXPIRED_WEEKLY",Map.of("count",item.getValue())))count++;
         }
         return count;
     }
-    private Notification view(Map<String,Object> row){return new Notification((UUID)row.get("id"),(String)row.get("type"),(String)row.get("entity_type"),(UUID)row.get("entity_id"),(String)row.get("title"),(String)row.get("body"),((Timestamp)row.get("created_at")).toInstant().toString(),row.get("read_at")==null?null:((Timestamp)row.get("read_at")).toInstant().toString());}
+    @SuppressWarnings("unchecked")
+    private Notification view(Map<String,Object> row){
+        Object raw=row.get("template_params");Map<String,Object> params=raw==null?null:JSON.readValue(raw.toString(),Map.class);
+        return new Notification((UUID)row.get("id"),(String)row.get("type"),(String)row.get("entity_type"),(UUID)row.get("entity_id"),(String)row.get("title"),(String)row.get("body"),(String)row.get("template_key"),params,((Timestamp)row.get("created_at")).toInstant().toString(),row.get("read_at")==null?null:((Timestamp)row.get("read_at")).toInstant().toString());
+    }
     public Page list(Actor actor,UUID workspace,int page){
         access.owner(actor,workspace);if(page<0 || page>100000)throw ApiException.invalid("رقم الصفحة غير صالح");
         var rows=db.queryForList("select * from notification where workspace_id=? and recipient_user_id=? order by created_at desc,id desc limit 30 offset ?",workspace,actor.userId(),page*30);

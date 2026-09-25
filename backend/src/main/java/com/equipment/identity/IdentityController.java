@@ -14,6 +14,7 @@ public class IdentityController {
     public IdentityController(IdentityService service) { this.service=service; }
     public record ChallengeRequest(String phone) {}
     public record VerifyRequest(UUID challengeId,String code,String name,String client) {}
+    public record LocaleRequest(String preferredLocale) {}
     @GetMapping("/health") Map<String,Object> health() { return Map.of("status","UP","mode","ISOLATED_DEVELOPMENT","storage","LOCAL_FILESYSTEM","malwareScan","NOT_CONFIGURED"); }
     @PostMapping("/auth/challenges") IdentityService.Challenge challenge(@RequestBody ChallengeRequest request) { return service.challenge(request.phone()); }
     @PostMapping("/auth/verify") Map<String,Object> verify(@RequestBody VerifyRequest request,HttpServletResponse response) {
@@ -27,6 +28,7 @@ public class IdentityController {
         return body;
     }
     @GetMapping("/auth/me") Map<String,Object> me(@RequestAttribute Actor actor) { return service.me(actor); }
+    @PutMapping("/auth/me/locale") Map<String,Object> locale(@RequestAttribute Actor actor,@RequestBody LocaleRequest request) { return service.updatePreferredLocale(actor,request.preferredLocale()); }
     @PostMapping("/auth/logout") Map<String,Object> logout(@RequestAttribute Actor actor,HttpServletResponse response) {
         service.logout(actor); response.addHeader(HttpHeaders.SET_COOKIE,ResponseCookie.from(IdentityService.COOKIE,"").httpOnly(true).sameSite("Strict").path("/api/v1").maxAge(0).build().toString()); return Map.of("loggedOut",true);
     }
