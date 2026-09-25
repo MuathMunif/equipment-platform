@@ -568,7 +568,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get uiDevelopmentNumbers0500000001Or0500000002 =>
-      'ترقیاتی نمبر: 0500000001 یا 0500000002';
+      'ترقیاتی نمبر: 0500000000–0500000999، دعوت یافتہ اراکین سمیت';
 
   @override
   String get uiTotalSar => 'کل (سعودی ریال)';
@@ -1556,4 +1556,409 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get m4ClearIssue => 'منسلک مسئلہ ہٹائیں';
+
+  @override
+  String get m5Owner => 'مالک';
+
+  @override
+  String get m5Manager => 'منیجر';
+
+  @override
+  String get m5Accountant => 'اکاؤنٹنٹ';
+
+  @override
+  String get m5Driver => 'ڈرائیور';
+
+  @override
+  String get m5Member => 'رکن';
+
+  @override
+  String get m5Pending => 'زیرِ انتظار';
+
+  @override
+  String get m5Accepted => 'قبول شدہ';
+
+  @override
+  String get m5Cancelled => 'منسوخ';
+
+  @override
+  String get m5Expired => 'میعاد ختم';
+
+  @override
+  String get m5Approved => 'منظور شدہ';
+
+  @override
+  String get m5Rejected => 'مسترد';
+
+  @override
+  String get m5EquipmentView => 'آلات دیکھیں';
+
+  @override
+  String get m5EquipmentManage => 'آلات کا انتظام';
+
+  @override
+  String get m5FinanceView => 'مالی ریکارڈ دیکھیں';
+
+  @override
+  String get m5FinanceManage => 'مالی ریکارڈ کا انتظام';
+
+  @override
+  String get m5FinanceReview => 'مالی درخواستوں کا جائزہ';
+
+  @override
+  String get m5DocumentView => 'دستاویزات دیکھیں';
+
+  @override
+  String get m5DocumentManage => 'دستاویزات کا انتظام';
+
+  @override
+  String get m5IssueView => 'مسائل دیکھیں';
+
+  @override
+  String get m5IssueManage => 'مسائل کا انتظام';
+
+  @override
+  String get m5MaintenanceView => 'مرمت دیکھیں';
+
+  @override
+  String get m5MaintenanceManage => 'مرمت کا انتظام';
+
+  @override
+  String get m5DriverAssignmentManage => 'ڈرائیوروں کی تعیناتی';
+
+  @override
+  String get m5ReportView => 'رپورٹس دیکھیں';
+
+  @override
+  String get m5TeamManage => 'ٹیم کا انتظام';
+
+  @override
+  String get m5MyInvitations => 'میرے دعوت نامے';
+
+  @override
+  String get m5NoInvitations => 'کوئی زیرِ انتظار دعوت نہیں';
+
+  @override
+  String get m5Expires => 'ختم ہونے کی تاریخ';
+
+  @override
+  String get m5Accept => 'دعوت قبول کریں';
+
+  @override
+  String get m5Decline => 'دعوت مسترد کریں';
+
+  @override
+  String get m5Team => 'ٹیم';
+
+  @override
+  String get m5Members => 'اراکین';
+
+  @override
+  String get m5NoMembers => 'ابھی کوئی رکن نہیں';
+
+  @override
+  String get m5Invitations => 'دعوت نامے';
+
+  @override
+  String get m5InviteMember => 'رکن کو دعوت دیں';
+
+  @override
+  String get m5Resend => 'دوبارہ بھیجیں';
+
+  @override
+  String get m5CancelInvitation => 'دعوت منسوخ کریں؟';
+
+  @override
+  String get m5ResendInvitation => 'دعوت دوبارہ بھیجیں؟';
+
+  @override
+  String get m5EditMember => 'رکن میں ترمیم';
+
+  @override
+  String get m5Role => 'کردار';
+
+  @override
+  String get m5Scope => 'آلات کی رسائی';
+
+  @override
+  String get m5AllEquipment => 'تمام آلات';
+
+  @override
+  String get m5SelectedEquipment => 'منتخب آلات';
+
+  @override
+  String get m5ChooseEquipment => 'کم از کم ایک آلہ منتخب کریں';
+
+  @override
+  String get m5FinancialMode => 'مالی اندراج کا طریقہ';
+
+  @override
+  String get m5ReviewMode => 'جائزے کے لیے بھیجیں';
+
+  @override
+  String get m5DirectMode => 'براہ راست درج کریں';
+
+  @override
+  String get m5Capabilities => 'اجازتیں';
+
+  @override
+  String get m5CapabilitiesHint => 'منتخب کریں کہ یہ رکن کیا کر سکتا ہے۔';
+
+  @override
+  String get m5NamePhoneRequired => 'نام اور فون نمبر درج کریں';
+
+  @override
+  String get m5ConfirmPermissions => 'کردار یا رسائی کی تبدیلی محفوظ کریں؟';
+
+  @override
+  String get m5SendInvitation => 'دعوت بھیجیں';
+
+  @override
+  String get m5MemberDetails => 'رکن کی تفصیلات';
+
+  @override
+  String get m5DriverAssignment => 'ڈرائیور کی تعیناتی';
+
+  @override
+  String get m5RevokeConfirm => 'اس رکن کی رسائی ختم کریں؟';
+
+  @override
+  String get m5RevokeAccess => 'رسائی ختم کریں';
+
+  @override
+  String get m5CurrentAssignment => 'موجودہ تعیناتی';
+
+  @override
+  String get m5NoAssignment => 'کوئی موجودہ تعیناتی نہیں';
+
+  @override
+  String get m5ReplaceAssignmentConfirm => 'اس ڈرائیور کا آلہ تبدیل کریں؟';
+
+  @override
+  String get m5Assign => 'تعینات کریں';
+
+  @override
+  String get m5Unassign => 'تعیناتی ختم کریں';
+
+  @override
+  String get m5UnassignConfirm => 'اس ڈرائیور کی تعیناتی ختم کریں؟';
+
+  @override
+  String get m5AssignmentHistory => 'تعیناتی کی تاریخ';
+
+  @override
+  String get m5NoHistory => 'کوئی پچھلی تعیناتی نہیں';
+
+  @override
+  String get m5DriverHome => 'آج کا کام';
+
+  @override
+  String get m5NoAssignmentDriver =>
+      'فی الحال آپ کو کوئی آلہ تفویض نہیں کیا گیا۔';
+
+  @override
+  String get m5ReportIssue => 'خرابی کی اطلاع دیں';
+
+  @override
+  String get m5SubmitExpense => 'اخراجات بھیجیں';
+
+  @override
+  String get m5MyIssues => 'میرے مسائل';
+
+  @override
+  String get m5NoIssues => 'اس آلے کے لیے کوئی مسئلہ نہیں';
+
+  @override
+  String get m5MySubmissions => 'میری مالی درخواستیں';
+
+  @override
+  String get m5NoSubmissions => 'ابھی کوئی مالی درخواست نہیں';
+
+  @override
+  String get m5ReceiptOnly => 'رقم کے بغیر رسید';
+
+  @override
+  String get m5SubmissionHint =>
+      'رقم، نوٹ یا رسید شامل کریں۔ اخراجات درج کرنے سے پہلے جائزہ لیا جائے گا۔';
+
+  @override
+  String get m5TransactionDate => 'لین دین کی تاریخ';
+
+  @override
+  String get m5Note => 'نوٹ';
+
+  @override
+  String get m5AddReceipt => 'رسید شامل کریں';
+
+  @override
+  String get m5SubmissionNeedsContent => 'رقم، نوٹ یا رسید شامل کریں';
+
+  @override
+  String get m5SendForReview => 'جائزے کے لیے بھیجیں';
+
+  @override
+  String get m5ReviewQueue => 'جائزے کی درخواستیں';
+
+  @override
+  String get m5ReviewQueueEmpty => 'جائزے کے لیے کوئی درخواست نہیں';
+
+  @override
+  String get m5SubmissionDetails => 'درخواست کی تفصیلات';
+
+  @override
+  String get m5Status => 'حالت';
+
+  @override
+  String get m5SubmittedBy => 'بھیجنے والا';
+
+  @override
+  String get m5RejectionReason => 'مسترد کرنے کی وجہ';
+
+  @override
+  String get m5ApprovedEntryCreated => 'منظوری کے بعد اخراجات درج ہو گئے';
+
+  @override
+  String get m5Approve => 'منظور کریں';
+
+  @override
+  String get m5Reject => 'مسترد کریں';
+
+  @override
+  String get m5RejectSubmission => 'درخواست مسترد کریں';
+
+  @override
+  String get m5ReasonRequired => 'مسترد کرنے کی وجہ درج کریں';
+
+  @override
+  String get m5ApproveExpense => 'اخراجات منظور کریں';
+
+  @override
+  String get m5ApprovalHint =>
+      'منظوری سے پہلے اخراجات کی تفصیلات چیک کریں۔ یہ ایک بار ریکارڈ میں ظاہر ہوگا۔';
+
+  @override
+  String get m5Category => 'زمرہ';
+
+  @override
+  String get m5PaymentStatus => 'ادائیگی کی حالت';
+
+  @override
+  String get m5PaidOn => 'ادائیگی کی تاریخ';
+
+  @override
+  String get m5DueDate => 'واجب الادا تاریخ';
+
+  @override
+  String get m5ChooseDate => 'تاریخ منتخب کریں';
+
+  @override
+  String get m5PartyDueRequired => 'فریق کا نام اور واجب الادا تاریخ درج کریں';
+
+  @override
+  String get m5PartialLessThanTotal => 'جزوی ادائیگی کل رقم سے کم ہونی چاہیے';
+
+  @override
+  String get m5ApproveConfirm => 'یہ اخراجات منظور اور درج کریں؟';
+
+  @override
+  String get m5SwitchWorkspace => 'ورک اسپیس تبدیل کریں';
+
+  @override
+  String get m5NotificationDriverAssigned => 'آپ کو آلہ تفویض کیا گیا';
+
+  @override
+  String get m5NotificationDriverIssue => 'ڈرائیور کی نئی اطلاع';
+
+  @override
+  String get m5NotificationSubmissionPending => 'مالی درخواست جائزے کی منتظر';
+
+  @override
+  String get m5NotificationSubmissionApproved =>
+      'آپ کی مالی درخواست منظور ہوئی';
+
+  @override
+  String get m5NotificationSubmissionRejected =>
+      'آپ کی مالی درخواست مسترد ہوئی';
+
+  @override
+  String get m5AttentionReview => 'مالی درخواستوں کا جائزہ درکار';
+
+  @override
+  String m5PendingReviewsCount(String count) {
+    return '$count مالی درخواستیں جائزے کی منتظر ہیں';
+  }
+
+  @override
+  String get m5RoleChangeResetsPermissions =>
+      'کردار بدلنے سے اجازتیں نئے کردار کی طے شدہ حالت پر واپس آ جائیں گی اور پچھلی تخصیصات ختم ہو جائیں گی۔ جاری رکھیں؟';
+
+  @override
+  String get m5DirectExpenseHint =>
+      'اخراجات کی تفصیلات مکمل کریں اور براہ راست درج کریں۔';
+
+  @override
+  String get m5DirectExpenseConfirm => 'یہ اخراجات درج کریں؟';
+
+  @override
+  String get m5InvitationPending =>
+      'اس نمبر کے لیے دعوت پہلے ہی زیرِ انتظار ہے۔';
+
+  @override
+  String get m5InvitationClosed =>
+      'دعوت بند یا ختم ہو گئی ہے۔ فہرست تازہ کریں۔';
+
+  @override
+  String get m5AlreadyMember => 'یہ شخص پہلے ہی رکن ہے۔';
+
+  @override
+  String get m5SubmissionReviewed =>
+      'اس درخواست کا جائزہ ہو چکا ہے۔ فہرست تازہ کریں۔';
+
+  @override
+  String get m5NoDriverAssignment =>
+      'فی الحال آپ کو کوئی آلہ تفویض نہیں کیا گیا۔';
+
+  @override
+  String get m5Issues => 'مسائل';
+
+  @override
+  String get m5DriverInviteHint =>
+      'ڈرائیور کے دعوت قبول کرنے کے بعد آلہ تفویض کریں۔';
+
+  @override
+  String get m5AllScopeHint => 'موجودہ اور آئندہ شامل کیے گئے آلات شامل ہیں۔';
+
+  @override
+  String get m5AssignMayReplace =>
+      'یہ تعیناتی آلے کے موجودہ ڈرائیور کی جگہ لے سکتی ہے۔ جاری رکھیں؟';
+
+  @override
+  String get m5ChooseDriver => 'ڈرائیور منتخب کریں';
+
+  @override
+  String get m5NoEligibleDrivers => 'اس آلے کے لیے کوئی ڈرائیور دستیاب نہیں';
+
+  @override
+  String m5DriverCurrentlyOnEquipment(String equipmentName) {
+    return 'فی الحال $equipmentName پر تعینات ہے';
+  }
+
+  @override
+  String m5ConfirmAssignDriver(String driverName, String equipmentName) {
+    return '$driverName کو $equipmentName پر تعینات کریں؟';
+  }
+
+  @override
+  String m5ConfirmReplaceDriver(
+    String currentDriver,
+    String newDriver,
+    String equipmentName,
+  ) {
+    return '$equipmentName پر $currentDriver کی جگہ $newDriver کو تعینات کریں؟';
+  }
+
+  @override
+  String m5ConfirmMoveDriver(String driverName, String sourceEquipment) {
+    return '$driverName کی $sourceEquipment پر موجودہ تعیناتی ختم ہو جائے گی۔';
+  }
 }

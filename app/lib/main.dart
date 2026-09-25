@@ -6,6 +6,7 @@ import 'api.dart';
 import 'file_export.dart';
 import 'documents.dart';
 import 'maintenance.dart';
+import 'team.dart';
 import 'localization.dart';
 import 'l10n/app_localizations.dart';
 
@@ -116,6 +117,16 @@ class _EquipmentAppState extends State<EquipmentApp> {
     }
   }
 
+  Future<void> reloadUser() async {
+    final updated = await widget.api.me();
+    if (mounted) setState(() => user = updated);
+  }
+
+  Future<void> selectWorkspace(String id) async {
+    await widget.api.selectWorkspace(id);
+    await reloadUser();
+  }
+
   Future<void> logout() async {
     try {
       await widget.api.json('POST', '/auth/logout');
@@ -177,10 +188,13 @@ class _EquipmentAppState extends State<EquipmentApp> {
         : user == null
         ? LoginPage(api: widget.api, completed: loggedIn)
         : WorkspacePage(
+            key: ValueKey(widget.api.workspace),
             api: widget.api,
             user: user!,
             logout: logout,
             changeLocale: changeLocale,
+            reloadUser: reloadUser,
+            selectWorkspace: selectWorkspace,
           ),
   );
 }
@@ -436,12 +450,16 @@ class WorkspacePage extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback logout;
   final Future<void> Function(String)? changeLocale;
+  final Future<void> Function()? reloadUser;
+  final Future<void> Function(String)? selectWorkspace;
   const WorkspacePage({
     super.key,
     required this.api,
     required this.user,
     required this.logout,
     this.changeLocale,
+    this.reloadUser,
+    this.selectWorkspace,
   });
   @override
   State<WorkspacePage> createState() => _WorkspacePageState();
@@ -453,36 +471,232 @@ class _WorkspacePageState extends State<WorkspacePage> {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 850;
-    final content = selected == 3
-        ? LedgerPage(key: ValueKey('ledger-$revision'), api: widget.api)
-        : selected == 2
-        ? MaintenanceHub(
+    final spaces = (widget.user['workspaces'] as List<dynamic>? ?? []);
+    final active = spaces
+        .where((space) => space['id'] == widget.api.workspace)
+        .firstOrNull;
+    final role = active?['role'];
+    final capabilities = (active?['capabilities'] as List<dynamic>? ?? [])
+        .toSet();
+    final isDriver = role == 'DRIVER';
+    final canTeam = role == 'OWNER' || capabilities.contains('TEAM_MANAGE');
+    final canAssignDrivers =
+        role == 'OWNER' || capabilities.contains('DRIVER_ASSIGNMENT_MANAGE');
+    final canReview =
+        role == 'OWNER' || capabilities.contains('FINANCE_REVIEW');
+    final canFinance =
+        role == null ||
+        role == 'OWNER' ||
+        capabilities.contains('FINANCE_VIEW');
+    final canDirectFinance =
+        (role == null ||
+            role == 'OWNER' ||
+            capabilities.contains('FINANCE_MANAGE')) &&
+        (active?['financialMode'] == null ||
+            active?['financialMode'] == 'DIRECT');
+    final canSubmitReview =
+        capabilities.contains('FINANCE_MANAGE') &&
+        active?['financialMode'] == 'REVIEW';
+    final canMaintain =
+        role == null ||
+        role == 'OWNER' ||
+        capabilities.contains('ISSUE_VIEW') ||
+        capabilities.contains('MAINTENANCE_VIEW');
+    final destinations = <(IconData, String, Widget)>[
+      (
+        Icons.home_outlined,
+        l10n(context).home,
+        EquipmentList(
+          key: ValueKey('home-$revision'),
+          api: widget.api,
+          home: true,
+          name: widget.user['name'],
+          canManage:
+              role == null ||
+              role == 'OWNER' ||
+              capabilities.contains('EQUIPMENT_MANAGE'),
+          canFinance: canFinance,
+          canFinanceManage: canDirectFinance,
+          canSubmitReview: canSubmitReview,
+          canDocuments:
+              role == null ||
+              role == 'OWNER' ||
+              capabilities.contains('DOCUMENT_VIEW'),
+          canMaintenance: canMaintain,
+          canAssignDrivers: canAssignDrivers,
+        ),
+      ),
+      (
+        Icons.local_shipping_outlined,
+        l10n(context).equipment,
+        EquipmentList(
+          key: ValueKey('equipment-$revision'),
+          api: widget.api,
+          home: false,
+          name: widget.user['name'],
+          canManage:
+              role == null ||
+              role == 'OWNER' ||
+              capabilities.contains('EQUIPMENT_MANAGE'),
+          canFinance: canFinance,
+          canFinanceManage: canDirectFinance,
+          canSubmitReview: canSubmitReview,
+          canDocuments:
+              role == null ||
+              role == 'OWNER' ||
+              capabilities.contains('DOCUMENT_VIEW'),
+          canMaintenance: canMaintain,
+          canAssignDrivers: canAssignDrivers,
+        ),
+      ),
+      if (canMaintain)
+        (
+          Icons.build_outlined,
+          l10n(context).m4Hub,
+          MaintenanceHub(
             key: ValueKey('maintenance-$revision'),
             api: widget.api,
-          )
-        : EquipmentList(
-            key: ValueKey('equipment-$revision'),
+          ),
+        ),
+      if (canFinance)
+        (
+          Icons.receipt_long_outlined,
+          l10n(context).ledger,
+          LedgerPage(
+            key: ValueKey('ledger-$revision'),
             api: widget.api,
-            home: selected == 0,
-            name: widget.user['name'],
-          );
+            canManage: canDirectFinance,
+            canSubmitReview: canSubmitReview,
+          ),
+        ),
+    ];
+    final current = selected.clamp(0, destinations.length - 1);
+    final content = isDriver
+        ? DriverHomePage(
+            key: ValueKey('driver-$revision'),
+            api: widget.api,
+            financialMode: active?['financialMode'] as String? ?? 'REVIEW',
+            userId: widget.user['userId'] as String?,
+          )
+        : destinations[current].$3;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n(context).appTitle),
+        title: Text(active?['name'] as String? ?? l10n(context).appTitle),
         actions: [
+          PopupMenuButton<String>(
+            key: const Key('workspaceMenu'),
+            tooltip: l10n(context).settings,
+            icon: const Icon(Icons.more_vert),
+            itemBuilder: (_) => [
+              if (spaces.length > 1)
+                PopupMenuItem(
+                  value: 'switch',
+                  key: const Key('switchWorkspace'),
+                  child: Text(l10n(context).m5SwitchWorkspace),
+                ),
+              PopupMenuItem(
+                value: 'invitations',
+                key: const Key('myInvitations'),
+                child: Text(l10n(context).m5MyInvitations),
+              ),
+              if (canTeam)
+                PopupMenuItem(
+                  value: 'team',
+                  key: const Key('openTeam'),
+                  child: Text(l10n(context).m5Team),
+                ),
+              if (canReview)
+                PopupMenuItem(
+                  value: 'review',
+                  key: const Key('openReviewQueue'),
+                  child: Text(l10n(context).m5ReviewQueue),
+                ),
+              PopupMenuItem(
+                value: 'refresh',
+                child: Text(l10n(context).refresh),
+              ),
+              PopupMenuItem(value: 'logout', child: Text(l10n(context).logout)),
+            ],
+            onSelected: (value) async {
+              if (value == 'refresh') {
+                setState(() => revision++);
+                return;
+              }
+              if (value == 'logout') {
+                widget.logout();
+                return;
+              }
+              if (value == 'invitations') {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AccountInvitationsPage(
+                      api: widget.api,
+                      changed: widget.reloadUser ?? () async {},
+                    ),
+                  ),
+                );
+                return;
+              }
+              if (value == 'team') {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TeamPage(
+                      api: widget.api,
+                      owner: role == 'OWNER',
+                      canAssign:
+                          role == 'OWNER' ||
+                          capabilities.contains('DRIVER_ASSIGNMENT_MANAGE'),
+                    ),
+                  ),
+                );
+                return;
+              }
+              if (value == 'review') {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReviewQueuePage(api: widget.api),
+                  ),
+                );
+                return;
+              }
+              final choice = await showDialog<String>(
+                context: context,
+                builder: (dialog) => SimpleDialog(
+                  title: Text(l10n(dialog).m5SwitchWorkspace),
+                  children: [
+                    for (final space in spaces)
+                      SimpleDialogOption(
+                        onPressed: () =>
+                            Navigator.pop(dialog, space['id'] as String),
+                        child: Text(
+                          '${space['name']} • ${m5Role(dialog, space['role'])}',
+                        ),
+                      ),
+                  ],
+                ),
+              );
+              if (choice == null ||
+                  choice == widget.api.workspace ||
+                  !context.mounted) {
+                return;
+              }
+              try {
+                await widget.selectWorkspace?.call(choice);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(localizedError(context, e))),
+                  );
+                }
+              }
+            },
+          ),
           NotificationButton(
             key: ValueKey('notifications-$revision'),
             api: widget.api,
-          ),
-          IconButton(
-            tooltip: l10n(context).refresh,
-            onPressed: () => setState(() => revision++),
-            icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            tooltip: l10n(context).logout,
-            onPressed: widget.logout,
-            icon: const Icon(Icons.logout),
           ),
           IconButton(
             key: const Key('languageSettings'),
@@ -531,28 +745,17 @@ class _WorkspacePageState extends State<WorkspacePage> {
           Expanded(
             child: Row(
               children: [
-                if (wide)
+                if (wide && !isDriver)
                   NavigationRail(
                     extended: true,
-                    selectedIndex: selected,
+                    selectedIndex: current,
                     onDestinationSelected: (i) => setState(() => selected = i),
                     destinations: [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.home_outlined),
-                        label: Text(l10n(context).home),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.local_shipping_outlined),
-                        label: Text(l10n(context).equipment),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.build_outlined),
-                        label: Text(l10n(context).m4Hub),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.receipt_long_outlined),
-                        label: Text(l10n(context).ledger),
-                      ),
+                      for (final item in destinations)
+                        NavigationRailDestination(
+                          icon: Icon(item.$1),
+                          label: Text(item.$2),
+                        ),
                     ],
                   ),
                 Expanded(child: content),
@@ -561,28 +764,14 @@ class _WorkspacePageState extends State<WorkspacePage> {
           ),
         ],
       ),
-      bottomNavigationBar: wide
+      bottomNavigationBar: wide || isDriver
           ? null
           : NavigationBar(
-              selectedIndex: selected,
+              selectedIndex: current,
               onDestinationSelected: (i) => setState(() => selected = i),
               destinations: [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  label: l10n(context).home,
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.local_shipping_outlined),
-                  label: l10n(context).equipment,
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.build_outlined),
-                  label: l10n(context).m4Hub,
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.receipt_long_outlined),
-                  label: l10n(context).ledger,
-                ),
+                for (final item in destinations)
+                  NavigationDestination(icon: Icon(item.$1), label: item.$2),
               ],
             ),
     );
@@ -593,11 +782,25 @@ class EquipmentList extends StatefulWidget {
   final Api api;
   final bool home;
   final String name;
+  final bool canManage,
+      canFinance,
+      canFinanceManage,
+      canSubmitReview,
+      canDocuments,
+      canMaintenance,
+      canAssignDrivers;
   const EquipmentList({
     super.key,
     required this.api,
     required this.home,
     required this.name,
+    this.canManage = true,
+    this.canFinance = true,
+    this.canFinanceManage = true,
+    this.canSubmitReview = false,
+    this.canDocuments = true,
+    this.canMaintenance = true,
+    this.canAssignDrivers = false,
   });
   @override
   State<EquipmentList> createState() => _EquipmentListState();
@@ -653,7 +856,17 @@ class _EquipmentListState extends State<EquipmentList> {
     if (created != null && mounted) {
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => EquipmentDetail(api: widget.api, equipment: created),
+          builder: (_) => EquipmentDetail(
+            api: widget.api,
+            equipment: created,
+            canManage: widget.canManage,
+            canFinance: widget.canFinance,
+            canFinanceManage: widget.canFinanceManage,
+            canSubmitReview: widget.canSubmitReview,
+            canDocuments: widget.canDocuments,
+            canMaintenance: widget.canMaintenance,
+            canAssignDrivers: widget.canAssignDrivers,
+          ),
         ),
       );
       load();
@@ -676,7 +889,7 @@ class _EquipmentListState extends State<EquipmentList> {
         const SizedBox(height: 8),
         Text(l10n(context).equipmentSubtitle),
         const SizedBox(height: 24),
-        if (widget.home) ...[
+        if (widget.home && widget.canDocuments) ...[
           HomeDocumentAttention(api: widget.api),
           const SizedBox(height: 20),
         ],
@@ -707,7 +920,7 @@ class _EquipmentListState extends State<EquipmentList> {
           ],
         ),
         const SizedBox(height: 20),
-        if (items.isEmpty && search.text.isEmpty)
+        if (items.isEmpty && search.text.isEmpty && widget.canManage)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(28),
@@ -737,17 +950,23 @@ class _EquipmentListState extends State<EquipmentList> {
             ),
           )
         else ...[
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: FilledButton.icon(
-              key: const Key('addEquipment'),
-              onPressed: add,
-              icon: const Icon(Icons.add),
-              label: Text(l10n(context).addEquipment),
+          if (widget.canManage)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FilledButton.icon(
+                key: const Key('addEquipment'),
+                onPressed: add,
+                icon: const Icon(Icons.add),
+                label: Text(l10n(context).addEquipment),
+              ),
             ),
-          ),
           const SizedBox(height: 20),
-          if (items.isEmpty) Text(l10n(context).uiNoMatchingEquipment),
+          if (items.isEmpty)
+            Text(
+              search.text.isEmpty
+                  ? l10n(context).noEquipmentMatches
+                  : l10n(context).uiNoMatchingEquipment,
+            ),
           LayoutBuilder(
             builder: (context, constraints) => Wrap(
               spacing: 16,
@@ -767,6 +986,13 @@ class _EquipmentListState extends State<EquipmentList> {
                               builder: (_) => EquipmentDetail(
                                 api: widget.api,
                                 equipment: item,
+                                canManage: widget.canManage,
+                                canFinance: widget.canFinance,
+                                canFinanceManage: widget.canFinanceManage,
+                                canSubmitReview: widget.canSubmitReview,
+                                canDocuments: widget.canDocuments,
+                                canMaintenance: widget.canMaintenance,
+                                canAssignDrivers: widget.canAssignDrivers,
                               ),
                             ),
                           ),
@@ -995,10 +1221,24 @@ class _EquipmentFormState extends State<EquipmentForm> {
 class EquipmentDetail extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> equipment;
+  final bool canManage,
+      canFinance,
+      canFinanceManage,
+      canSubmitReview,
+      canDocuments,
+      canMaintenance,
+      canAssignDrivers;
   const EquipmentDetail({
     super.key,
     required this.api,
     required this.equipment,
+    this.canManage = true,
+    this.canFinance = true,
+    this.canFinanceManage = true,
+    this.canSubmitReview = false,
+    this.canDocuments = true,
+    this.canMaintenance = true,
+    this.canAssignDrivers = false,
   });
   @override
   State<EquipmentDetail> createState() => _EquipmentDetailState();
@@ -1060,25 +1300,83 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
     appBar: AppBar(
       title: Text(equipment['name']),
       actions: [
-        TextButton(
-          key: const Key('toggleEquipmentArchive'),
-          onPressed: busy ? null : toggleArchive,
-          child: Text(
-            equipment['archivedAt'] == null
-                ? l10n(context).uiArchiveEquipment
-                : l10n(context).uiRestoreEquipment,
+        if (widget.canAssignDrivers && equipment['archivedAt'] == null)
+          IconButton(
+            key: const Key('openEquipmentDriverAssignment'),
+            tooltip: l10n(context).m5DriverAssignment,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => EquipmentDriverAssignmentPage(
+                  api: widget.api,
+                  equipment: equipment,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.person_pin_outlined),
           ),
-        ),
+        if (widget.canManage)
+          TextButton(
+            key: const Key('toggleEquipmentArchive'),
+            onPressed: busy ? null : toggleArchive,
+            child: Text(
+              equipment['archivedAt'] == null
+                  ? l10n(context).uiArchiveEquipment
+                  : l10n(context).uiRestoreEquipment,
+            ),
+          ),
       ],
     ),
-    body: LedgerPage(api: widget.api, equipment: equipment),
+    body: widget.canFinance
+        ? LedgerPage(
+            api: widget.api,
+            equipment: equipment,
+            canManage: widget.canFinanceManage,
+            canSubmitReview: widget.canSubmitReview,
+            canDocuments: widget.canDocuments,
+            canMaintenance: widget.canMaintenance,
+          )
+        : ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text(
+                '${equipment['name']}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              Text(l10n(context).modelValue('${equipment['model']}')),
+              Text('${equipment['reference']}'),
+              if (widget.canSubmitReview)
+                FilledButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SubmissionFormPage(
+                        api: widget.api,
+                        equipment: equipment,
+                      ),
+                    ),
+                  ),
+                  child: Text(l10n(context).m5SubmitExpense),
+                ),
+            ],
+          ),
   );
 }
 
 class LedgerPage extends StatefulWidget {
   final Api api;
   final Map<String, dynamic>? equipment;
-  const LedgerPage({super.key, required this.api, this.equipment});
+  final bool canManage;
+  final bool canSubmitReview;
+  final bool canDocuments, canMaintenance;
+  const LedgerPage({
+    super.key,
+    required this.api,
+    this.equipment,
+    this.canManage = true,
+    this.canSubmitReview = false,
+    this.canDocuments = true,
+    this.canMaintenance = true,
+  });
   @override
   State<LedgerPage> createState() => _LedgerPageState();
 }
@@ -1454,19 +1752,21 @@ class _LedgerPageState extends State<LedgerPage> {
       padding: const EdgeInsets.all(24),
       children: [
         if (widget.equipment == null) ...[
-          FilledButton.icon(
-            key: const Key('addGeneralExpense'),
-            onPressed: () => add(),
-            icon: const Icon(Icons.add),
-            label: Text(l10n(context).uiAddGeneralExpense),
-          ),
+          if (widget.canManage)
+            FilledButton.icon(
+              key: const Key('addGeneralExpense'),
+              onPressed: () => add(),
+              icon: const Icon(Icons.add),
+              label: Text(l10n(context).uiAddGeneralExpense),
+            ),
           const SizedBox(height: 16),
-          OutlinedButton.icon(
-            key: const Key('openDrafts'),
-            onPressed: showDrafts,
-            icon: const Icon(Icons.pending_actions_outlined),
-            label: Text(l10n(context).uiAwaitingCompletion),
-          ),
+          if (widget.canManage)
+            OutlinedButton.icon(
+              key: const Key('openDrafts'),
+              onPressed: showDrafts,
+              icon: const Icon(Icons.pending_actions_outlined),
+              label: Text(l10n(context).uiAwaitingCompletion),
+            ),
           const SizedBox(height: 16),
         ],
         if (widget.equipment != null)
@@ -1489,28 +1789,49 @@ class _LedgerPageState extends State<LedgerPage> {
                     textDirection: TextDirection.ltr,
                   ),
                   const SizedBox(height: 24),
-                  FilledButton.icon(
-                    key: const Key('addExpense'),
-                    onPressed: () => add(),
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n(context).addExpense),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    key: const Key('addIncome'),
-                    onPressed: () => add(income: true),
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n(context).addIncome),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    key: const Key('quickCapture'),
-                    onPressed: captureDraft,
-                    icon: const Icon(Icons.photo_camera_outlined),
-                    label: Text(
-                      l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater,
+                  if (widget.canManage)
+                    FilledButton.icon(
+                      key: const Key('addExpense'),
+                      onPressed: () => add(),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n(context).addExpense),
                     ),
-                  ),
+                  const SizedBox(height: 12),
+                  if (widget.canManage)
+                    OutlinedButton.icon(
+                      key: const Key('addIncome'),
+                      onPressed: () => add(income: true),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n(context).addIncome),
+                    ),
+                  const SizedBox(height: 12),
+                  if (widget.canManage)
+                    OutlinedButton.icon(
+                      key: const Key('quickCapture'),
+                      onPressed: captureDraft,
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: Text(
+                        l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater,
+                      ),
+                    ),
+                  if (widget.canSubmitReview)
+                    FilledButton.icon(
+                      key: const Key('submitExpenseForReview'),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SubmissionFormPage(
+                              api: widget.api,
+                              equipment: widget.equipment!,
+                            ),
+                          ),
+                        );
+                        if (mounted) load();
+                      },
+                      icon: const Icon(Icons.send_outlined),
+                      label: Text(l10n(context).m5SubmitExpense),
+                    ),
                   const SizedBox(height: 12),
                   TextButton.icon(
                     key: const Key('openEquipmentDrafts'),
@@ -1524,11 +1845,16 @@ class _LedgerPageState extends State<LedgerPage> {
           ),
         if (widget.equipment != null) ...[
           const SizedBox(height: 16),
-          EquipmentDocumentsCard(api: widget.api, equipment: widget.equipment!),
-          EquipmentMaintenanceCard(
-            api: widget.api,
-            equipment: widget.equipment!,
-          ),
+          if (widget.canDocuments)
+            EquipmentDocumentsCard(
+              api: widget.api,
+              equipment: widget.equipment!,
+            ),
+          if (widget.canMaintenance)
+            EquipmentMaintenanceCard(
+              api: widget.api,
+              equipment: widget.equipment!,
+            ),
         ],
         const SizedBox(height: 20),
         Row(
@@ -4039,7 +4365,7 @@ class _EntryDetailState extends State<EntryDetail> {
                     ),
                   ),
                 ),
-              ] else ...[
+              ] else if (widget.api.canPostFinance) ...[
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -4158,7 +4484,9 @@ class _EntryDetailState extends State<EntryDetail> {
                     localizedDate(context, entry!['dueDate'] as String),
                   ),
                 ),
-              if (!cancelled && entry!['settlementStatus'] != 'PAID') ...[
+              if (widget.api.canPostFinance &&
+                  !cancelled &&
+                  entry!['settlementStatus'] != 'PAID') ...[
                 const SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: addPayment,
@@ -4170,7 +4498,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   ),
                 ),
               ],
-              if (canRefund) ...[
+              if (widget.api.canPostFinance && canRefund) ...[
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   key: const Key('addRefund'),
@@ -4316,7 +4644,7 @@ class _EntryDetailState extends State<EntryDetail> {
                     ),
                   ],
                 )
-              else
+              else if (widget.api.canPostFinance)
                 OutlinedButton.icon(
                   key: const Key('addAttachment'),
                   onPressed: () => select(),

@@ -563,7 +563,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get uiDevelopmentNumbers0500000001Or0500000002 =>
-      'الأرقام التجريبية: 0500000001 أو 0500000002';
+      'أرقام التطوير: 0500000000–0500000999، بما فيها أرقام المدعوين';
 
   @override
   String get uiTotalSar => 'الإجمالي (ريال سعودي)';
@@ -1547,4 +1547,401 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get m4ClearIssue => 'إزالة ربط البلاغ';
+
+  @override
+  String get m5Owner => 'المالك';
+
+  @override
+  String get m5Manager => 'مدير';
+
+  @override
+  String get m5Accountant => 'محاسب';
+
+  @override
+  String get m5Driver => 'سائق';
+
+  @override
+  String get m5Member => 'عضو';
+
+  @override
+  String get m5Pending => 'بانتظار المراجعة';
+
+  @override
+  String get m5Accepted => 'مقبولة';
+
+  @override
+  String get m5Cancelled => 'ملغاة';
+
+  @override
+  String get m5Expired => 'منتهية';
+
+  @override
+  String get m5Approved => 'معتمدة';
+
+  @override
+  String get m5Rejected => 'مرفوضة';
+
+  @override
+  String get m5EquipmentView => 'عرض المعدات';
+
+  @override
+  String get m5EquipmentManage => 'إدارة المعدات';
+
+  @override
+  String get m5FinanceView => 'عرض الماليات';
+
+  @override
+  String get m5FinanceManage => 'إدارة الماليات';
+
+  @override
+  String get m5FinanceReview => 'مراجعة الطلبات المالية';
+
+  @override
+  String get m5DocumentView => 'عرض المستندات';
+
+  @override
+  String get m5DocumentManage => 'إدارة المستندات';
+
+  @override
+  String get m5IssueView => 'عرض البلاغات';
+
+  @override
+  String get m5IssueManage => 'إدارة البلاغات';
+
+  @override
+  String get m5MaintenanceView => 'عرض الصيانة';
+
+  @override
+  String get m5MaintenanceManage => 'إدارة الصيانة';
+
+  @override
+  String get m5DriverAssignmentManage => 'تعيين السائقين';
+
+  @override
+  String get m5ReportView => 'عرض التقارير';
+
+  @override
+  String get m5TeamManage => 'إدارة الفريق';
+
+  @override
+  String get m5MyInvitations => 'دعواتي';
+
+  @override
+  String get m5NoInvitations => 'لا توجد دعوات معلقة';
+
+  @override
+  String get m5Expires => 'تنتهي';
+
+  @override
+  String get m5Accept => 'قبول الدعوة';
+
+  @override
+  String get m5Decline => 'رفض الدعوة';
+
+  @override
+  String get m5Team => 'الفريق';
+
+  @override
+  String get m5Members => 'الأعضاء';
+
+  @override
+  String get m5NoMembers => 'لا يوجد أعضاء بعد';
+
+  @override
+  String get m5Invitations => 'الدعوات';
+
+  @override
+  String get m5InviteMember => 'دعوة عضو';
+
+  @override
+  String get m5Resend => 'إعادة إرسال';
+
+  @override
+  String get m5CancelInvitation => 'إلغاء الدعوة؟';
+
+  @override
+  String get m5ResendInvitation => 'إعادة إرسال الدعوة؟';
+
+  @override
+  String get m5EditMember => 'تعديل العضو';
+
+  @override
+  String get m5Role => 'الدور';
+
+  @override
+  String get m5Scope => 'نطاق المعدات';
+
+  @override
+  String get m5AllEquipment => 'كل المعدات';
+
+  @override
+  String get m5SelectedEquipment => 'معدات محددة';
+
+  @override
+  String get m5ChooseEquipment => 'اختر معدة واحدة على الأقل';
+
+  @override
+  String get m5FinancialMode => 'وضع الإدخال المالي';
+
+  @override
+  String get m5ReviewMode => 'يرسل للمراجعة';
+
+  @override
+  String get m5DirectMode => 'يسجل مباشرة';
+
+  @override
+  String get m5Capabilities => 'الصلاحيات';
+
+  @override
+  String get m5CapabilitiesHint => 'حدّد ما يمكن لهذا العضو فعله.';
+
+  @override
+  String get m5NamePhoneRequired => 'أدخل الاسم ورقم الجوال';
+
+  @override
+  String get m5ConfirmPermissions => 'حفظ تغييرات الدور أو النطاق؟';
+
+  @override
+  String get m5SendInvitation => 'إرسال الدعوة';
+
+  @override
+  String get m5MemberDetails => 'تفاصيل العضو';
+
+  @override
+  String get m5DriverAssignment => 'تعيين السائق';
+
+  @override
+  String get m5RevokeConfirm => 'إيقاف وصول هذا العضو؟';
+
+  @override
+  String get m5RevokeAccess => 'إيقاف الوصول';
+
+  @override
+  String get m5CurrentAssignment => 'التعيين الحالي';
+
+  @override
+  String get m5NoAssignment => 'لا يوجد تعيين حالي';
+
+  @override
+  String get m5ReplaceAssignmentConfirm => 'تغيير المعدة المعينة لهذا السائق؟';
+
+  @override
+  String get m5Assign => 'تعيين';
+
+  @override
+  String get m5Unassign => 'إنهاء التعيين';
+
+  @override
+  String get m5UnassignConfirm => 'إنهاء تعيين هذا السائق؟';
+
+  @override
+  String get m5AssignmentHistory => 'سجل التعيينات';
+
+  @override
+  String get m5NoHistory => 'لا توجد تعيينات سابقة';
+
+  @override
+  String get m5DriverHome => 'عملك اليوم';
+
+  @override
+  String get m5NoAssignmentDriver => 'لا توجد معدة معيّنة لك حاليًا.';
+
+  @override
+  String get m5ReportIssue => 'الإبلاغ عن عطل';
+
+  @override
+  String get m5SubmitExpense => 'إرسال مصروف';
+
+  @override
+  String get m5MyIssues => 'بلاغاتي';
+
+  @override
+  String get m5NoIssues => 'لا توجد بلاغات لهذه المعدة';
+
+  @override
+  String get m5MySubmissions => 'طلباتي المالية';
+
+  @override
+  String get m5NoSubmissions => 'لم ترسل طلبات مالية بعد';
+
+  @override
+  String get m5ReceiptOnly => 'إيصال دون مبلغ';
+
+  @override
+  String get m5SubmissionHint =>
+      'أضف المبلغ أو الملاحظة أو الإيصال؛ يراجعه المسؤول قبل تسجيل المصروف.';
+
+  @override
+  String get m5TransactionDate => 'تاريخ العملية';
+
+  @override
+  String get m5Note => 'ملاحظة';
+
+  @override
+  String get m5AddReceipt => 'إضافة إيصال';
+
+  @override
+  String get m5SubmissionNeedsContent => 'أضف مبلغًا أو ملاحظة أو إيصالًا';
+
+  @override
+  String get m5SendForReview => 'إرسال للمراجعة';
+
+  @override
+  String get m5ReviewQueue => 'طلبات المراجعة';
+
+  @override
+  String get m5ReviewQueueEmpty => 'لا توجد طلبات بانتظار المراجعة';
+
+  @override
+  String get m5SubmissionDetails => 'تفاصيل الطلب';
+
+  @override
+  String get m5Status => 'الحالة';
+
+  @override
+  String get m5SubmittedBy => 'أرسله';
+
+  @override
+  String get m5RejectionReason => 'سبب الرفض';
+
+  @override
+  String get m5ApprovedEntryCreated => 'سُجل المصروف بعد الاعتماد';
+
+  @override
+  String get m5Approve => 'اعتماد';
+
+  @override
+  String get m5Reject => 'رفض';
+
+  @override
+  String get m5RejectSubmission => 'رفض الطلب';
+
+  @override
+  String get m5ReasonRequired => 'اكتب سبب الرفض';
+
+  @override
+  String get m5ApproveExpense => 'اعتماد المصروف';
+
+  @override
+  String get m5ApprovalHint =>
+      'راجع بيانات المصروف قبل اعتماده. سيظهر في السجل مرة واحدة.';
+
+  @override
+  String get m5Category => 'التصنيف';
+
+  @override
+  String get m5PaymentStatus => 'حالة الدفع';
+
+  @override
+  String get m5PaidOn => 'تاريخ الدفع';
+
+  @override
+  String get m5DueDate => 'تاريخ الاستحقاق';
+
+  @override
+  String get m5ChooseDate => 'اختر تاريخًا';
+
+  @override
+  String get m5PartyDueRequired => 'أدخل اسم الطرف وتاريخ الاستحقاق';
+
+  @override
+  String get m5PartialLessThanTotal =>
+      'المدفوع جزئيًا يجب أن يكون أقل من الإجمالي';
+
+  @override
+  String get m5ApproveConfirm => 'اعتماد هذا المصروف وتسجيله؟';
+
+  @override
+  String get m5SwitchWorkspace => 'تبديل المساحة';
+
+  @override
+  String get m5NotificationDriverAssigned => 'عُيّنت لك معدة';
+
+  @override
+  String get m5NotificationDriverIssue => 'بلاغ جديد من السائق';
+
+  @override
+  String get m5NotificationSubmissionPending => 'طلب مالي ينتظر مراجعتك';
+
+  @override
+  String get m5NotificationSubmissionApproved => 'اعتُمد طلبك المالي';
+
+  @override
+  String get m5NotificationSubmissionRejected => 'رُفض طلبك المالي';
+
+  @override
+  String get m5AttentionReview => 'طلبات مالية تحتاج مراجعة';
+
+  @override
+  String m5PendingReviewsCount(String count) {
+    return '$count طلبات مالية بانتظار المراجعة';
+  }
+
+  @override
+  String get m5RoleChangeResetsPermissions =>
+      'تغيير الدور سيعيد الصلاحيات إلى إعدادات الدور الجديد ويلغي تخصيصاتها السابقة. هل تريد المتابعة؟';
+
+  @override
+  String get m5DirectExpenseHint => 'أكمل بيانات المصروف وسجله مباشرة.';
+
+  @override
+  String get m5DirectExpenseConfirm => 'تسجيل هذا المصروف؟';
+
+  @override
+  String get m5InvitationPending => 'توجد دعوة معلقة لهذا الرقم';
+
+  @override
+  String get m5InvitationClosed => 'أُغلقت الدعوة أو انتهت؛ حدّث القائمة';
+
+  @override
+  String get m5AlreadyMember => 'هذا الشخص عضو بالفعل';
+
+  @override
+  String get m5SubmissionReviewed => 'تمت مراجعة الطلب؛ حدّث القائمة';
+
+  @override
+  String get m5NoDriverAssignment => 'لا توجد معدة معيّنة لك حاليًا';
+
+  @override
+  String get m5Issues => 'البلاغات';
+
+  @override
+  String get m5DriverInviteHint => 'يمكن تعيين معدة للسائق بعد قبوله الدعوة.';
+
+  @override
+  String get m5AllScopeHint => 'يشمل المعدات الحالية وأي معدات تضاف لاحقًا.';
+
+  @override
+  String get m5AssignMayReplace =>
+      'قد يحل هذا التعيين محل سائق المعدة الحالي. متابعة؟';
+
+  @override
+  String get m5ChooseDriver => 'اختر السائق';
+
+  @override
+  String get m5NoEligibleDrivers => 'لا يوجد سائقون متاحون لهذه المعدة';
+
+  @override
+  String m5DriverCurrentlyOnEquipment(String equipmentName) {
+    return 'السائق معيّن حاليًا على $equipmentName';
+  }
+
+  @override
+  String m5ConfirmAssignDriver(String driverName, String equipmentName) {
+    return 'تعيين $driverName على $equipmentName؟';
+  }
+
+  @override
+  String m5ConfirmReplaceDriver(
+    String currentDriver,
+    String newDriver,
+    String equipmentName,
+  ) {
+    return 'استبدال $currentDriver بـ $newDriver على $equipmentName؟';
+  }
+
+  @override
+  String m5ConfirmMoveDriver(String driverName, String sourceEquipment) {
+    return 'سينتهي تعيين $driverName الحالي على $sourceEquipment.';
+  }
 }

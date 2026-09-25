@@ -231,14 +231,20 @@ class _EquipmentMaintenanceCardState extends State<EquipmentMaintenanceCard> {
     try {
       final id = widget.equipment['id'];
       final results = await Future.wait([
-        widget.api.json(
-          'GET',
-          widget.api.scoped('/issues?equipmentId=$id&page=0'),
-        ),
-        widget.api.json(
-          'GET',
-          widget.api.scoped('/maintenance?equipmentId=$id&page=0'),
-        ),
+        if (widget.api.can('ISSUE_VIEW'))
+          widget.api.json(
+            'GET',
+            widget.api.scoped('/issues?equipmentId=$id&page=0'),
+          )
+        else
+          Future.value({'items': <Object>[]}),
+        if (widget.api.can('MAINTENANCE_VIEW'))
+          widget.api.json(
+            'GET',
+            widget.api.scoped('/maintenance?equipmentId=$id&page=0'),
+          )
+        else
+          Future.value({'items': <Object>[]}),
       ]);
       if (mounted) {
         setState(() {
@@ -328,7 +334,8 @@ class _EquipmentMaintenanceCardState extends State<EquipmentMaintenanceCard> {
                   },
                   child: Text(l10n(context).m4ViewHistory),
                 ),
-                if (widget.equipment['archivedAt'] == null)
+                if (widget.api.can('ISSUE_MANAGE') &&
+                    widget.equipment['archivedAt'] == null)
                   TextButton(
                     onPressed: () async {
                       await m4Push(
@@ -342,7 +349,8 @@ class _EquipmentMaintenanceCardState extends State<EquipmentMaintenanceCard> {
                     },
                     child: Text(l10n(context).m4NewIssue),
                   ),
-                if (widget.equipment['archivedAt'] == null)
+                if (widget.api.can('MAINTENANCE_MANAGE') &&
+                    widget.equipment['archivedAt'] == null)
                   TextButton(
                     onPressed: () async {
                       await m4Push(
@@ -391,6 +399,11 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
   @override
   void initState() {
     super.initState();
+    if (tab == 0 &&
+        !widget.api.can('ISSUE_VIEW') &&
+        widget.api.can('MAINTENANCE_VIEW')) {
+      tab = 1;
+    }
     selectedEquipment = widget.equipment;
     load();
   }
@@ -498,16 +511,18 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: SegmentedButton<int>(
                 segments: [
-                  ButtonSegment(
-                    value: 0,
-                    label: Text(l10n(context).m4Issues),
-                    icon: const Icon(Icons.report_outlined),
-                  ),
-                  ButtonSegment(
-                    value: 1,
-                    label: Text(l10n(context).m4Maintenance),
-                    icon: const Icon(Icons.build_outlined),
-                  ),
+                  if (widget.api.can('ISSUE_VIEW'))
+                    ButtonSegment(
+                      value: 0,
+                      label: Text(l10n(context).m4Issues),
+                      icon: const Icon(Icons.report_outlined),
+                    ),
+                  if (widget.api.can('MAINTENANCE_VIEW'))
+                    ButtonSegment(
+                      value: 1,
+                      label: Text(l10n(context).m4Maintenance),
+                      icon: const Icon(Icons.build_outlined),
+                    ),
                 ],
                 selected: {tab},
                 onSelectionChanged: (selection) {
@@ -541,15 +556,18 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                                   load();
                                 },
                         ),
-                      FilledButton.icon(
-                        onPressed: add,
-                        icon: const Icon(Icons.add),
-                        label: Text(
-                          tab == 0
-                              ? l10n(context).m4NewIssue
-                              : l10n(context).m4AddMaintenance,
+                      if (widget.api.can(
+                        tab == 0 ? 'ISSUE_MANAGE' : 'MAINTENANCE_MANAGE',
+                      ))
+                        FilledButton.icon(
+                          onPressed: add,
+                          icon: const Icon(Icons.add),
+                          label: Text(
+                            tab == 0
+                                ? l10n(context).m4NewIssue
+                                : l10n(context).m4AddMaintenance,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1497,28 +1515,31 @@ class _IssueDetailPageState extends State<IssueDetailPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (d['status'] == 'OPEN')
+                    if (widget.api.can('ISSUE_MANAGE') && d['status'] == 'OPEN')
                       FilledButton.icon(
                         key: const Key('m4Start'),
                         onPressed: busy ? null : () => transition('start'),
                         icon: const Icon(Icons.play_arrow),
                         label: Text(l10n(context).m4Start),
                       ),
-                    if (d['status'] == 'OPEN' || d['status'] == 'IN_PROGRESS')
+                    if (widget.api.can('ISSUE_MANAGE') &&
+                        (d['status'] == 'OPEN' || d['status'] == 'IN_PROGRESS'))
                       FilledButton.icon(
                         key: const Key('m4Close'),
                         onPressed: busy ? null : close,
                         icon: const Icon(Icons.check),
                         label: Text(l10n(context).m4Close),
                       ),
-                    if (d['status'] == 'CLOSED')
+                    if (widget.api.can('ISSUE_MANAGE') &&
+                        d['status'] == 'CLOSED')
                       FilledButton.icon(
                         key: const Key('m4Reopen'),
                         onPressed: busy ? null : () => transition('reopen'),
                         icon: const Icon(Icons.restart_alt),
                         label: Text(l10n(context).m4Reopen),
                       ),
-                    if (d['status'] != 'CLOSED')
+                    if (widget.api.can('ISSUE_MANAGE') &&
+                        d['status'] != 'CLOSED')
                       OutlinedButton.icon(
                         onPressed: busy
                             ? null
@@ -1536,7 +1557,8 @@ class _IssueDetailPageState extends State<IssueDetailPage> {
                         icon: const Icon(Icons.edit),
                         label: Text(l10n(context).m4EditIssue),
                       ),
-                    if (d['equipmentArchived'] != true)
+                    if (widget.api.can('MAINTENANCE_MANAGE') &&
+                        d['equipmentArchived'] != true)
                       OutlinedButton.icon(
                         onPressed: () async {
                           await m4Push(
@@ -1560,7 +1582,9 @@ class _IssueDetailPageState extends State<IssueDetailPage> {
                   api: widget.api,
                   id: widget.id,
                   issue: true,
-                  readOnly: d['status'] == 'CLOSED',
+                  readOnly:
+                      d['status'] == 'CLOSED' ||
+                      !widget.api.can('ISSUE_MANAGE'),
                 ),
                 const Divider(height: 32),
                 Text(
@@ -1803,7 +1827,8 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                       ),
                     ),
                   ),
-                if (d['cancelledAt'] == null)
+                if (d['cancelledAt'] == null &&
+                    widget.api.can('MAINTENANCE_MANAGE'))
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -1837,41 +1862,45 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                   api: widget.api,
                   id: widget.id,
                   issue: false,
-                  readOnly: d['cancelledAt'] != null,
+                  readOnly:
+                      d['cancelledAt'] != null ||
+                      !widget.api.can('MAINTENANCE_MANAGE'),
                 ),
-                const Divider(height: 32),
-                Text(
-                  l10n(context).m4Expenses,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Builder(
-                  builder: (context) {
-                    final summary =
-                        d['financialSummary'] as Map<String, dynamic>;
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${l10n(context).m4LinkedCount}: ${summary['linkedExpenseCount']}',
-                            ),
-                            Text(
-                              '${l10n(context).m4ExpenseTotal}: ${localizedMoney(context, summary['totalActiveExpenseAmount'])}',
-                            ),
-                            Text(
-                              '${l10n(context).m4NetPaid}: ${localizedMoney(context, summary['netPaid'])}',
-                            ),
-                            Text(
-                              '${l10n(context).m4Remaining}: ${localizedMoney(context, summary['remaining'])}',
-                            ),
-                          ],
+                if (d['financialSummary'] != null) const Divider(height: 32),
+                if (d['financialSummary'] != null)
+                  Text(
+                    l10n(context).m4Expenses,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                if (d['financialSummary'] != null)
+                  Builder(
+                    builder: (context) {
+                      final summary =
+                          d['financialSummary'] as Map<String, dynamic>;
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${l10n(context).m4LinkedCount}: ${summary['linkedExpenseCount']}',
+                              ),
+                              Text(
+                                '${l10n(context).m4ExpenseTotal}: ${localizedMoney(context, summary['totalActiveExpenseAmount'])}',
+                              ),
+                              Text(
+                                '${l10n(context).m4NetPaid}: ${localizedMoney(context, summary['netPaid'])}',
+                              ),
+                              Text(
+                                '${l10n(context).m4Remaining}: ${localizedMoney(context, summary['remaining'])}',
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
                 for (final raw in (d['expenses'] as List? ?? []))
                   Builder(
                     builder: (context) {
@@ -1881,7 +1910,9 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                         subtitle: Text(
                           localizedMoney(context, expense['amount']),
                         ),
-                        trailing: d['cancelledAt'] == null
+                        trailing:
+                            d['cancelledAt'] == null &&
+                                widget.api.canPostFinance
                             ? IconButton(
                                 tooltip: l10n(context).m4UnlinkExpense,
                                 onPressed: () =>
@@ -1902,7 +1933,7 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                       );
                     },
                   ),
-                if (d['cancelledAt'] == null)
+                if (d['cancelledAt'] == null && widget.api.canPostFinance)
                   Wrap(
                     spacing: 8,
                     children: [
