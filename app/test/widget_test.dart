@@ -4,8 +4,9 @@ import 'dart:typed_data';
 
 import 'package:equipment_app/api.dart';
 import 'package:equipment_app/main.dart';
+import 'package:equipment_app/localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:http/http.dart' as http;
@@ -18,8 +19,8 @@ http.Response json(Object body, [int status = 200]) => http.Response(
 );
 Widget host(Widget child) => MaterialApp(
   locale: const Locale('ar'),
-  supportedLocales: const [Locale('ar')],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
   home: child,
 );
 final sampleEntry = {
@@ -1066,8 +1067,24 @@ void main() {
       expect(find.byKey(const Key('editEntry')), findsNothing);
       expect(find.byKey(const Key('cancelEntry')), findsNothing);
       expect(find.text('إضافة دفعة'), findsNothing);
-      expect(find.text('350.00 ريال'), findsOneWidget);
-      expect(find.text('100.00 ريال سعودي'), findsOneWidget);
+      expect(
+        find.text(
+          localizedMoney(
+            tester.element(find.byKey(const Key('addAttachment'))),
+            '350.00',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          localizedMoney(
+            tester.element(find.byKey(const Key('addAttachment'))),
+            '100.00',
+          ),
+        ),
+        findsWidgets,
+      );
       expect(find.byKey(const Key('addAttachment')), findsOneWidget);
     },
   );

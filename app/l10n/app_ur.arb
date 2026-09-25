@@ -1,0 +1,726 @@
+{
+  "@@locale": "ur",
+  "appTitle": "سامان کا انتظام",
+  "language": "زبان",
+  "settings": "ترتیبات",
+  "home": "ہوم",
+  "equipment": "سامان",
+  "ledger": "ریکارڈ",
+  "notifications": "اطلاعات",
+  "refresh": "تازہ کریں",
+  "logout": "لاگ آؤٹ",
+  "retry": "دوبارہ کوشش کریں",
+  "devNotice": "مقامی ترقیاتی ماحول • SMS نہیں بھیجا جاتا",
+  "restoreFailed": "سیشن بحال نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+  "addFirstEquipment": "پہلا سامان شامل کریں",
+  "equipmentSubtitle": "ہر سامان کا ریکارڈ ایک جگہ رکھیں",
+  "markAllRead": "سب کو پڑھا ہوا نشان زد کریں",
+  "noNotifications": "ابھی کوئی اطلاع نہیں",
+  "previous": "پچھلا",
+  "next": "اگلا",
+  "cancel": "منسوخ کریں",
+  "save": "محفوظ کریں",
+  "documents": "دستاویزات",
+  "attention": "توجہ",
+  "income": "آمدنی",
+  "expense": "اخراجات",
+  "draft": "مسودہ",
+  "settlement": "ادائیگی",
+  "refund": "رقم واپسی",
+  "archived": "محفوظ شدہ",
+  "active": "فعال",
+  "docPreviousVersion": "پچھلا ورژن",
+  "docMissingExpiry": "ختم ہونے کی تاریخ درج نہیں",
+  "docExpired": "میعاد ختم",
+  "docExpiresToday": "آج میعاد ختم ہو رہی ہے",
+  "docExpiringSoon": "جلد میعاد ختم ہو گی",
+  "docRegistration": "رجسٹریشن",
+  "docInsurance": "انشورنس",
+  "docInspection": "معیادی معائنہ",
+  "docPermit": "لائسنس / اجازت نامہ",
+  "other": "دیگر",
+  "docOther": "دوسری دستاویز",
+  "document": "دستاویز",
+  "docLoadFailed": "ڈیٹا لوڈ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+  "closeAttachment": "منسلکہ بند کریں",
+  "fileTypes": "تصاویر اور PDF فائلیں",
+  "fileTooLarge": "10 MB سے چھوٹی فائل منتخب کریں",
+  "unsupportedFile": "PNG، JPEG یا PDF منتخب کریں۔ اپ لوڈ سے پہلے HEIC کو JPEG میں بدلیں۔",
+  "networkError": "سرور سے رابطہ نہیں ہو سکا۔ اس کا چلنا یقینی بنائیں، پھر دوبارہ کوشش کریں۔",
+  "requestFailed": "درخواست مکمل نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "sessionRequired": "جاری رکھنے کے لیے لاگ ان کریں",
+  "financialTotalLocked": "پہلی ادائیگی یا واپسی کے بعد کل رقم تبدیل نہیں ہو سکتی",
+  "documentAlreadyRenewed": "اس دستاویز کی تجدید پہلے ہی ہو چکی ہے",
+  "accessDenied": "آپ کو اس معلومات تک رسائی حاصل نہیں",
+  "notificationDocumentExpiryTitle": "دستاویز کی میعاد جلد ختم ہو گی",
+  "notificationDocumentExpiryBody": "سامان کی دستاویز دیکھیں",
+  "notificationWeeklyTitle": "دستاویزات آپ کی توجہ چاہتی ہیں",
+  "notificationWeeklyBody": "میعاد ختم شدہ دستاویزات دیکھیں",
+  "unreadNotifications": "اطلاعات • {count} نہیں پڑھی گئیں",
+  "@unreadNotifications": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFuel": "ایندھن",
+  "categoryMaintenance": "مرمت",
+  "paidFull": "مکمل ادا شدہ",
+  "paidPartial": "جزوی ادا شدہ",
+  "unpaid": "غیر ادا شدہ",
+  "receivedFull": "مکمل وصول شدہ",
+  "receivedPartial": "جزوی وصول شدہ",
+  "unreceived": "وصول نہیں ہوا",
+  "cancelled": "منسوخ شدہ",
+  "generalExpense": "عمومی خرچ",
+  "addEquipment": "سامان شامل کریں",
+  "addExpense": "خرچ شامل کریں",
+  "addIncome": "آمدنی شامل کریں",
+  "addDocument": "دستاویز شامل کریں",
+  "saveDocument": "دستاویز محفوظ کریں",
+  "attachments": "منسلکات",
+  "archive": "محفوظ کریں",
+  "restoreDocument": "دستاویز بحال کریں",
+  "currentDocuments": "موجودہ دستاویزات",
+  "previousVersions": "پچھلے ورژن",
+  "noDocuments": "اس سامان کے لیے ابھی کوئی دستاویز نہیں",
+  "noAttachments": "ابھی کوئی منسلکہ نہیں",
+  "searchEquipment": "نام یا حوالہ نمبر سے تلاش کریں",
+  "searchLedger": "ریکارڈ میں تلاش کریں",
+  "noEquipmentMatches": "تلاش سے کوئی سامان نہیں ملا",
+  "noEntries": "ابھی کوئی ریکارڈ نہیں",
+  "signInCode": "تصدیقی کوڈ",
+  "phoneNumber": "موبائل نمبر",
+  "name": "نام",
+  "model": "ماڈل",
+  "documentType": "دستاویز کی قسم",
+  "newExpiryDate": "نئی تاریخ اختتام",
+  "renewDocument": "دستاویز کی تجدید کریں",
+  "viewAll": "سب دیکھیں",
+  "edit": "ترمیم کریں",
+  "update": "تازہ کریں",
+  "back": "واپس",
+  "general": "عمومی",
+  "ui2021OrFh16": "2021 یا FH16",
+  "uiEnterTheVerificationCode": "تصدیقی کوڈ درج کریں",
+  "uiArchiveDocument": "دستاویز محفوظ کریں",
+  "uiArchiveDocument005": "دستاویز محفوظ کریں؟",
+  "uiArchiveEquipment": "سامان محفوظ کریں",
+  "uiArchiveEquipment007": "سامان محفوظ کریں؟",
+  "uiRemoveTheDueDateOnceFullyPaid": "مکمل ادائیگی کے بعد مقررہ تاریخ ہٹا دیں",
+  "uiAddExpiryDate": "اختتام کی تاریخ شامل کریں",
+  "uiMultipleEquipment": "متعدد سامان",
+  "uiReturnedToTheCustomerOrOtherParty": "صارف یا دوسرے فریق کو واپس کیا گیا",
+  "uiTotalIncome": "کل آمدنی",
+  "uiTotalExpenses": "کل اخراجات",
+  "uiRemoveEquipment": "سامان ہٹائیں",
+  "uiRemoveDueDate": "مقررہ تاریخ ہٹائیں",
+  "uiAddReceipt": "وصولی شامل کریں",
+  "uiAddPayment": "ادائیگی شامل کریں",
+  "uiAddImageOrPdf": "تصویر یا PDF شامل کریں",
+  "uiAddImageOrPdfOptional": "تصویر یا PDF شامل کریں (اختیاری)",
+  "uiAddAttachment": "منسلکہ شامل کریں",
+  "uiAddSeparateDocument": "الگ دستاویز شامل کریں",
+  "uiAddGeneralExpense": "عمومی خرچ شامل کریں",
+  "uiUploadAttachmentAgain": "منسلکہ دوبارہ اپ لوڈ کریں",
+  "uiRetryTheSameSave": "اسی محفوظ کرنے کی کوشش دوبارہ کریں",
+  "uiRetryUploadingAttachments": "منسلکات دوبارہ اپ لوڈ کریں",
+  "uiRetryFileUpload": "فائل دوبارہ اپ لوڈ کریں",
+  "uiClose": "بند کریں",
+  "uiCancelEntry": "اندراج منسوخ کریں",
+  "uiToDate": "آخری تاریخ",
+  "uiSearchByEquipmentNameOrReference": "سامان کے نام یا حوالہ سے تلاش کریں",
+  "uiStartByAddingYourEquipment": "اپنا سامان شامل کرکے شروع کریں",
+  "uiStartWithEquipmentNameAndModel": "سامان کے نام اور ماڈل سے شروع کریں",
+  "uiStartWithYourMobileNumber": "اپنے موبائل نمبر سے شروع کریں",
+  "uiSelectTheEquipmentThisExpenseBelongsTo": "وہ سامان منتخب کریں جس سے یہ خرچ متعلق ہے",
+  "uiSelectEquipment": "سامان منتخب کریں",
+  "uiSelectIssueDate": "اجرا کی تاریخ منتخب کریں",
+  "uiSelectExpiryDate": "اختتام کی تاریخ منتخب کریں",
+  "uiSelectEquipment051": "سامان منتخب کریں",
+  "uiChooseAnotherFile": "دوسری فائل منتخب کریں",
+  "uiText054": "اردو",
+  "uiDiscardDraft": "مسودہ مسترد کریں",
+  "uiDiscardDraft056": "مسودہ مسترد کریں؟",
+  "uiExcludeGeneralExpenses": "عمومی اخراجات خارج کریں",
+  "uiRestoreEquipment": "سامان بحال کریں",
+  "uiRestoreTheEquipmentBeforeRestoringThisDocument": "اس دستاویز کو بحال کرنے سے پہلے سامان بحال کریں۔",
+  "uiCompleteAsIncome": "آمدنی کے طور پر مکمل کریں",
+  "uiCompleteAsExpense": "خرچ کے طور پر مکمل کریں",
+  "uiCompleteTheSavedInvoiceDetailsItsAttachments": "محفوظ شدہ رسید کی تفصیلات مکمل کریں؛ منسلکات اسی کے ساتھ رہیں گے۔",
+  "uiPartiallyReceived": "جزوی وصول ہوا",
+  "uiReceivedInFull": "مکمل وصول ہوا",
+  "uiReceived": "وصول ہوا",
+  "uiNameOfThePartyWhoWillPay": "ادائیگی کرنے والے فریق کا نام",
+  "uiNameOfThePartyOwed": "واجب الادا فریق کا نام",
+  "uiCustomerName": "صارف کا نام",
+  "uiDocumentName": "دستاویز کا نام",
+  "uiEquipmentName": "سامان کا نام",
+  "uiEquipmentNameReferencePartyOrNote": "سامان کا نام، حوالہ، فریق یا نوٹ",
+  "uiSupplierOrPartyName": "سپلائر یا فریق کا نام",
+  "uiEnterPartyName": "فریق کا نام درج کریں",
+  "uiEnterPartyNameWhenABalanceRemains": "باقی رقم ہونے پر فریق کا نام درج کریں",
+  "uiEnterPartyNameABalanceWillRemain": "فریق کا نام درج کریں؛ واپسی کے بعد رقم باقی رہے گی",
+  "uiEnterDocumentName": "دستاویز کا نام درج کریں",
+  "uiEnterEquipmentName": "سامان کا نام درج کریں",
+  "uiEnterYourNameToContinue": "جاری رکھنے کے لیے اپنا نام درج کریں",
+  "uiEnterTheDateLike20260925": "تاریخ اس طرح درج کریں: 2026-09-25",
+  "uiEnterModel": "ماڈل درج کریں",
+  "uiEnterCancellationReason": "منسوخی کی وجہ درج کریں",
+  "uiEnterRefundReason": "رقم واپسی کی وجہ درج کریں",
+  "uiEnterAValidRefundAmount": "رقم واپسی کی درست مقدار درج کریں",
+  "uiEnterAnAmountAboveZeroAndBelow": "صفر سے زیادہ اور کل رقم سے کم رقم درج کریں",
+  "uiEnterAnAmountAboveZeroUpTo": "صفر سے زیادہ رقم درج کریں، اعشاریہ کے دو ہندسوں تک",
+  "uiEnterAValidAmount": "درست رقم درج کریں",
+  "uiDevelopmentNumbers0500000001Or0500000002": "ترقیاتی نمبر: 0500000001 یا 0500000002",
+  "uiTotalSar": "کل (سعودی ریال)",
+  "uiRefunds": "رقم کی واپسی",
+  "uiNameAndModelAreEnoughToStart": "شروع کرنے کے لیے نام اور ماڈل کافی ہیں۔ حوالہ نمبر خود شامل ہو جائے گا۔",
+  "uiReceipts": "وصولیاں",
+  "uiPreviousPaymentsAreKeptAndDoNot": "پچھلی ادائیگیاں محفوظ رہتی ہیں اور ترمیم سے تبدیل نہیں ہوتیں۔",
+  "uiPayments": "ادائیگیاں",
+  "uiGeneralRecords": "عمومی ریکارڈ",
+  "uiArchivedRecords": "محفوظ شدہ ریکارڈ",
+  "uiText102": "العربية",
+  "uiAll": "سب",
+  "uiAmount": "رقم",
+  "uiAmountSar": "رقم (سعودی ریال)",
+  "uiInitialPayment": "ابتدائی ادائیگی",
+  "uiInitialReceipt": "ابتدائی وصولی",
+  "uiBalanceYouOwe": "آپ کے ذمے باقی رقم",
+  "uiBalanceOwedToYou": "آپ کی باقی وصولی",
+  "uiTotalPaid": "کل ادا شدہ",
+  "uiPaidAndRefundedAmountsBelowAreCalculated": "نیچے ادا شدہ اور واپس شدہ رقم کا حساب تقسیم کے مطابق ہے؛ اصل ادائیگیاں اور واپسی ایک بار خرچ میں درج ہیں۔",
+  "uiRefundedBySupplier": "سپلائر سے واپس وصول شدہ",
+  "uiTotalReceived": "کل وصول شدہ",
+  "uiDocument": "دستاویز",
+  "uiGeneralExpense": "عمومی خرچ",
+  "uiExpenseAppliesTo": "خرچ متعلق ہے",
+  "uiReturnedToCustomer": "صارف کو واپس کیا گیا",
+  "uiEquipment": "سامان",
+  "uiAwaitingCompletion": "تکمیل کا منتظر",
+  "uiAwaitingCompletionThisWillNotCountAs": "تکمیل کا منتظر • تفصیلات شامل ہونے تک اسے مالی اندراج میں شمار نہیں کیا جائے گا۔",
+  "uiSearch": "تلاش",
+  "uiNoExpiryDate": "اختتام کی تاریخ نہیں",
+  "uiABalanceWillRemainAfterTheRefund": "واپسی کے بعد رقم باقی رہے گی؛ پیروی کے لیے فریق کا نام درج کریں۔",
+  "uiWhatShouldWeCallYou": "ہم آپ کو کیا کہیں؟",
+  "uiDetailsToComplete": "مکمل کرنے کی تفصیلات",
+  "uiConfirmCancellation": "منسوخی کی تصدیق کریں",
+  "uiConfirmCode": "کوڈ کی تصدیق کریں",
+  "uiIssueDateOptional": "اجرا کی تاریخ (اختیاری)",
+  "uiIssueDateIsAfterExpiryDate": "اجرا کی تاریخ اختتام کی تاریخ کے بعد ہے",
+  "uiExpiryDateOptional": "اختتام کی تاریخ (اختیاری)",
+  "uiRenewCurrentDocument": "موجودہ دستاویز کی تجدید کریں",
+  "uiUpdateIncome": "آمدنی تازہ کریں",
+  "uiRefreshRecords": "ریکارڈ تازہ کریں",
+  "uiUpdateDocument": "دستاویز کی ترمیم محفوظ کریں",
+  "uiUpdateDraft": "مسودہ تازہ کریں",
+  "uiUpdateExpense": "خرچ تازہ کریں",
+  "uiLocalDevelopmentStorageMalwareScanningIsNot": "مقامی ترقیاتی ذخیرہ۔ نقصان دہ سافٹ ویئر کی جانچ فعال نہیں۔",
+  "uiRecordRefund": "رقم واپسی درج کریں",
+  "uiFilterRecords": "ریکارڈ چھانٹیں",
+  "uiUploadFailed": "اپ لوڈ ناکام",
+  "uiUploadFailedTryAgain": "اپ لوڈ ناکام؛ دوبارہ کوشش کریں",
+  "uiAttachmentUploadFailed": "منسلکہ اپ لوڈ نہیں ہو سکا",
+  "uiEditIncome": "آمدنی میں ترمیم کریں",
+  "uiEditDocument": "دستاویز میں ترمیم کریں",
+  "uiEditExpense": "خرچ میں ترمیم کریں",
+  "uiCouldNotLoadDocumentsTryAgain": "دستاویزات لوڈ نہیں ہو سکیں • دوبارہ کوشش کریں",
+  "uiCouldNotLoadDocumentsTryAgain161": "دستاویزات لوڈ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔",
+  "uiChangeNumberOrRequestANewCode": "نمبر بدلیں یا نیا کوڈ طلب کریں",
+  "uiIncomeDetails": "آمدنی کی تفصیلات",
+  "uiExpenseDetails": "خرچ کی تفصیلات",
+  "uiDownloadPdf": "PDF ڈاؤن لوڈ کریں",
+  "uiDownloadAttachment": "منسلکہ ڈاؤن لوڈ کریں",
+  "uiCancelling": "منسوخ ہو رہا ہے…",
+  "uiVerifying": "تصدیق ہو رہی ہے…",
+  "uiSaving": "محفوظ ہو رہا ہے...",
+  "uiSaving170": "محفوظ ہو رہا ہے…",
+  "uiSavingChanges": "تبدیلیاں محفوظ ہو رہی ہیں…",
+  "uiSavingEquipment": "سامان محفوظ ہو رہا ہے…",
+  "uiUploadingAndCheckingAttachment": "منسلکہ اپ لوڈ اور جانچ ہو رہی ہے…",
+  "uiReadyToRetryUpload": "اپ لوڈ دوبارہ کرنے کے لیے تیار",
+  "uiReadyToUpload": "اپ لوڈ کے لیے تیار",
+  "uiReadyToView": "دیکھنے کے لیے تیار",
+  "uiReceiptStatus": "وصولی کی حالت",
+  "uiSettlementStatus": "ادائیگی کی حالت",
+  "uiPaymentStatus": "ادائیگی کی حالت",
+  "uiEntryStatus": "اندراج کی حالت",
+  "uiSelectDifferentEquipmentAndMakeTheirAmounts": "مختلف سامان منتخب کریں اور ان کی رقوم کا مجموعہ کل خرچ کے برابر رکھیں",
+  "uiSaveRefund": "رقم واپسی محفوظ کریں",
+  "uiSaveReceipt": "وصولی محفوظ کریں",
+  "uiSaveChanges": "تبدیلیاں محفوظ کریں",
+  "uiSavePayment": "ادائیگی محفوظ کریں",
+  "uiSaveInvoiceNowAndCompleteDetailsLater": "رسید ابھی محفوظ کریں اور تفصیلات بعد میں مکمل کریں",
+  "uiSaveEquipment": "سامان محفوظ کریں",
+  "uiSaveInvoiceNow": "رسید ابھی محفوظ کریں",
+  "uiAttachmentSavedWithEntry": "منسلکہ اندراج کے ساتھ محفوظ ہو گیا",
+  "uiPaidPartOfIt": "کچھ رقم ادا کی",
+  "uiPaidInFull": "مکمل ادا کیا",
+  "uiPaid": "ادا شدہ",
+  "uiDocumentNumberOptional": "دستاویز نمبر (اختیاری)",
+  "uiDevelopmentCodeOnly123456": "صرف ترقیاتی کوڈ: 123456",
+  "uiCancellationReason": "منسوخی کی وجہ",
+  "uiRefundReason": "رقم واپسی کی وجہ",
+  "uiPaymentsAndAttachmentsWillRemainInThe": "ادائیگیاں اور منسلکات ریکارڈ میں رہیں گے۔ منسوخی سے رقم واپس نہیں ہوتی۔",
+  "uiUnsavedDataWillBeLostIfYou": "غیر محفوظ شدہ ڈیٹا ضائع ہو جائے گا۔ اگر محفوظ ہونے کی تصدیق نہیں ملی تو نئی درخواست سے پہلے ریکارڈ دیکھیں۔",
+  "uiEquipmentHistory": "سامان کی تاریخ",
+  "uiEquipmentHistoryAndDocumentsWillRemainSaved": "سامان کی تاریخ اور دستاویزات محفوظ رہیں گی۔ بحالی تک میعاد ختم ہونے کی یاد دہانیاں رک جائیں گی۔",
+  "uiThePreviousDocumentWillBeKeptIn": "پچھلی دستاویز تاریخ میں محفوظ رہے گی۔ تجدید شدہ دستاویز کے لیے نئی اختتامی تاریخ شامل کریں۔",
+  "uiNetPaid": "خالص ادا شدہ",
+  "uiNetReceived": "خالص وصول شدہ",
+  "uiImagesAndInvoicePdfs": "تصاویر اور رسید کی PDF فائلیں",
+  "uiRequestVerificationCode": "تصدیقی کوڈ طلب کریں",
+  "uiReturnedToYouByTheOtherParty": "دوسرے فریق سے آپ کو واپس ملا",
+  "uiSeveralEquipment": "کئی سامان",
+  "uiAdjustEachEquipmentAmountToMatchThe": "ہر سامان کی رقم بدلیں تاکہ کل کے برابر ہو۔",
+  "uiViewRecordsAndEntries": "ریکارڈ اور اندراجات دیکھیں ←",
+  "uiViewAttachment": "منسلکہ دیکھیں",
+  "uiViewDocuments": "دستاویزات دیکھیں",
+  "uiUnsettled": "غیر ادا شدہ",
+  "uiOpenPdf": "PDF کھولیں",
+  "uiOpenSavedDraft": "محفوظ شدہ مسودہ کھولیں",
+  "uiTipper1": "ڈمپر 1",
+  "uiEachEntryItsPaymentsAndAttachmentsIn": "ہر اندراج، اس کی ادائیگیاں اور منسلکات ایک ریکارڈ میں",
+  "uiNoEntriesMatchYourSearchOrFilters": "تلاش یا فلٹر سے کوئی اندراج نہیں ملا۔ انہیں بدلیں یا صاف کریں۔",
+  "uiNoInvoicesAwaitingCompletion": "تکمیل کے منتظر کوئی رسید نہیں",
+  "uiNoDocumentsNeedAttentionNow": "فی الحال کوئی دستاویز توجہ نہیں چاہتی",
+  "uiNoDocumentsHaveMissingInformation": "کسی دستاویز کی معلومات نامکمل نہیں",
+  "uiNoMatchingEquipment": "کوئی مماثل سامان نہیں",
+  "uiNoPreviousVersionsYet": "ابھی کوئی پچھلا ورژن نہیں",
+  "uiTheTotalCannotChangeAfterAPayment": "ادائیگی، وصولی یا واپسی درج ہونے کے بعد کل رقم تبدیل نہیں ہو سکتی",
+  "uiTheTotalCannotChangeBecauseAPayment": "ادائیگی، وصولی یا واپسی موجود ہونے کی وجہ سے کل رقم تبدیل نہیں ہو سکتی۔",
+  "uiNotPaid": "ادا نہیں کیا",
+  "uiNotReceived": "وصول نہیں ہوا",
+  "uiUploadIncomplete": "اپ لوڈ نامکمل",
+  "uiThisWillNotCountAsAFinancial": "یہ مالی اندراج میں شمار نہیں ہو گا۔ مسترد کرنے کے بعد منسلکات فہرست سے ہٹ جائیں گے۔",
+  "uiThisDocumentWillNoLongerAppearAmong": "یہ دستاویز موجودہ دستاویزات میں نہیں دکھے گی اور میعاد کی یاد دہانی نہیں آئے گی۔ یہ تاریخ میں محفوظ رہے گی۔",
+  "uiRefundAmount": "واپسی کی رقم",
+  "uiRefundAmountExceedsWhatIsAvailable": "واپسی کی رقم دستیاب رقم سے زیادہ ہے",
+  "uiAmountPerEquipment": "ہر سامان کی رقم",
+  "uiContinueEntry": "اندراج جاری رکھیں",
+  "uiWorkspace": "کام کی جگہ",
+  "uiClearFilters": "فلٹر صاف کریں",
+  "uiPartiallySettled": "جزوی ادا شدہ",
+  "uiFullySettled": "مکمل ادا شدہ",
+  "uiGeneralExpensesOnly": "صرف عمومی اخراجات",
+  "uiAWorkspaceExpenseItIsNotAssigned": "کام کی جگہ کا خرچ؛ کسی سامان سے متعلق نہیں",
+  "uiYourEquipmentAndExpensesInOnePlace": "آپ کا سامان اور اخراجات ایک جگہ",
+  "uiOneEquipment": "ایک سامان",
+  "uiLeave": "چھوڑ دیں",
+  "uiNoteOptional": "نوٹ (اختیاری)",
+  "uiFromDate": "ابتدائی تاریخ",
+  "uiDueDateOptional": "مقررہ تاریخ (اختیاری)",
+  "uiPreviousVersionIsViewOnly": "پچھلا ورژن صرف دیکھنے کے لیے ہے",
+  "uiActive": "فعال",
+  "uiSharePerEquipment": "ہر سامان کا حصہ",
+  "uiEntryType": "اندراج کی قسم",
+  "uiExpenseType": "خرچ کی قسم",
+  "uiThisInvoiceIsSavedForLaterCompletion": "یہ رسید بعد میں مکمل کرنے کے لیے محفوظ ہے اور ابھی مالی مجموعوں میں شامل نہیں۔",
+  "uiLeaveThisForm": "یہ فارم چھوڑ دیں؟",
+  "uiNeedsAttention": "توجہ درکار",
+  "uiExpenseAppliesTo276": "خرچ متعلق ہے",
+  "uiThisIncomeIsRecordedUnderThisEquipment": "یہ آمدنی اس سامان کے تحت درج ہوتی ہے",
+  "verifyPhone": "{phone} کی تصدیق کریں",
+  "@verifyPhone": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "modelValue": "ماڈل: {model}",
+  "@modelValue": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "fromDateValue": "{date} سے",
+  "@fromDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "toDateValue": "{date} تک",
+  "@toDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryDateStatus": "{date}\n{status}",
+  "@entryDateStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "draftUploadFailed": "مسودہ محفوظ ہو گیا، لیکن فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔ {error}",
+  "@draftUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "draftNote": "تکمیل کا منتظر\n{note}",
+  "@draftNote": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "noteValue": "نوٹ: {note}",
+  "@noteValue": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "allocationRemaining": "تقسیم کے لیے باقی: {amount}",
+  "@allocationRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "operationDate": "اندراج کی تاریخ: {date}",
+  "@operationDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentDate": "ادائیگی کی تاریخ: {date}",
+  "@paymentDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptDate": "وصولی کی تاریخ: {date}",
+  "@receiptDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dueDateValue": "مقررہ تاریخ: {date}",
+  "@dueDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "attachmentAfterSave": "{kind} محفوظ کرنے کے بعد تصویر یا PDF شامل کر سکتے ہیں۔",
+  "@attachmentAfterSave": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "savingKind": "{kind} محفوظ ہو رہا ہے…",
+  "@savingKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "saveKind": "{kind} محفوظ کریں",
+  "@saveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "remainingValue": "{label}: {amount}",
+  "@remainingValue": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundIncomeHelp": "صارف یا دوسرے فریق کو واپس کی گئی رقم۔ واپسی کے لیے دستیاب: {amount}",
+  "@refundIncomeHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundExpenseHelp": "سپلائر یا دوسرے فریق سے آپ کو واپس ملی رقم۔ واپسی کے لیے دستیاب: {amount}",
+  "@refundExpenseHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundDate": "رقم واپسی کی تاریخ: {date}",
+  "@refundDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryUploadFailed": "اندراج محفوظ ہو گیا، لیکن منسلکہ اپ لوڈ نہیں ہوا۔ {error}",
+  "@entryUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "entryAttachmentLabel": "اندراج کا منسلکہ: {filename}",
+  "@entryAttachmentLabel": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelReasonValue": "وجہ: {reason}",
+  "@cancelReasonValue": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelDateValue": "منسوخی کی تاریخ: {date}",
+  "@cancelDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "partAmount": "{equipment}: {amount}",
+  "@partAmount": {
+    "placeholders": {
+      "equipment": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "partNetRemaining": "خالص ادا شدہ کا حسابی حصہ: {paid} • باقی: {remaining}",
+  "@partNetRemaining": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "partyValue": "فریق: {party}",
+  "@partyValue": {
+    "placeholders": {
+      "party": {
+        "type": "String"
+      }
+    }
+  },
+  "paidOn": "{date} کو ادا ہوا",
+  "@paidOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "receivedOn": "{date} کو وصول ہوا",
+  "@receivedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "refundRecord": "{kind} {date} کو\nوجہ: {reason}",
+  "@refundRecord": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "filesHelp": "PNG یا JPEG تصویر، یا PDF • ہر فائل 10 MB تک",
+  "noEntryAttachments": "ابھی کوئی منسلکہ شامل نہیں؛ اندراج محفوظ ہے۔",
+  "documentSummary": "{total} دستاویزات • {expired} میعاد ختم • {soon} جلد ختم • {missing} بغیر اختتامی تاریخ",
+  "@documentSummary": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "expired": {
+        "type": "String"
+      },
+      "soon": {
+        "type": "String"
+      },
+      "missing": {
+        "type": "String"
+      }
+    }
+  },
+  "equipmentDocumentsTitle": "{equipment} کی دستاویزات",
+  "@equipmentDocumentsTitle": {
+    "placeholders": {
+      "equipment": {
+        "type": "String"
+      }
+    }
+  },
+  "documentAlreadyExists": "اس سامان کے لیے موجودہ {document} پہلے سے ہے۔ الگ دستاویز شامل کرنے کے بجائے تجدید کریں؟",
+  "@documentAlreadyExists": {
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryValue": "{date} کو میعاد ختم ہو گی",
+  "@expiryValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "numberValue": "نمبر: {number}",
+  "@numberValue": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "issueDateValue": "اجرا کی تاریخ: {date}",
+  "@issueDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "versionNumber": "ورژن {number}",
+  "@versionNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "versionExpiry": "اختتام: {expiry}",
+  "@versionExpiry": {
+    "placeholders": {
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
+  "versionIssue": "اجرا: {date}",
+  "@versionIssue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "versionNumberLabel": "ورژن نمبر: {number}",
+  "@versionNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "documentNumberLabel": "دستاویز نمبر: {number}",
+  "@documentNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryDateValue": "اختتامی تاریخ: {date}",
+  "@expiryDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "missingDocumentsCount": "{count} دستاویزات بغیر اختتامی تاریخ",
+  "@missingDocumentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "versionAttachments": "اس ورژن کے منسلکات",
+  "noAttachmentsShort": "کوئی منسلکہ نہیں",
+  "addExpiryDate": "اختتامی تاریخ شامل کریں",
+  "documentTypeExists": "اس قسم کی دستاویز پہلے سے ہے",
+  "refreshDocuments": "دستاویزات تازہ کریں",
+  "cancelledAmountsHistory": "نیچے درج رقوم اور ادائیگیاں تاریخ میں محفوظ ہیں اور فعال مجموعوں میں شامل نہیں۔",
+  "cancelledEntry": "منسوخ شدہ اندراج",
+  "timeoutMessage": "درخواست میں بہت وقت لگا۔ اگر آپ معلومات محفوظ کر رہے تھے تو دوبارہ کوشش سے پہلے ریکارڈ دیکھیں۔",
+  "documentExpiryInDays": "{days} دن میں میعاد ختم ہو گی",
+  "@documentExpiryInDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "documentExpiryToday": "آج میعاد ختم ہو گی",
+  "documentExpiryPast": "میعاد ختم",
+  "weeklyExpiredCount": "{count} میعاد ختم شدہ دستاویزات کا جائزہ لیں",
+  "@weeklyExpiredCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadFailed": "فائل اپ لوڈ نہیں ہو سکی",
+  "sarUnit": "سعودی ریال"
+}

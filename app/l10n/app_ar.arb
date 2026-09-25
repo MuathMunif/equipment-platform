@@ -1,0 +1,726 @@
+{
+  "@@locale": "ar",
+  "appTitle": "إدارة المعدات",
+  "language": "اللغة",
+  "settings": "الإعدادات",
+  "home": "الرئيسية",
+  "equipment": "المعدات",
+  "ledger": "السجل",
+  "notifications": "الإشعارات",
+  "refresh": "تحديث البيانات",
+  "logout": "تسجيل الخروج",
+  "retry": "إعادة المحاولة",
+  "devNotice": "بيئة تطوير محلية • لا تُرسل رسائل SMS",
+  "restoreFailed": "تعذر استعادة الجلسة؛ أعد المحاولة",
+  "addFirstEquipment": "أضف أول معدة",
+  "equipmentSubtitle": "كل معدة وسجلها، من أول عملية",
+  "markAllRead": "تحديد الكل كمقروء",
+  "noNotifications": "لا توجد إشعارات بعد",
+  "previous": "السابق",
+  "next": "التالي",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "documents": "المستندات",
+  "attention": "الانتباه",
+  "income": "إيراد",
+  "expense": "مصروف",
+  "draft": "مسودة",
+  "settlement": "تسوية",
+  "refund": "استرداد",
+  "archived": "مؤرشف",
+  "active": "ساري",
+  "docPreviousVersion": "نسخة سابقة",
+  "docMissingExpiry": "تاريخ الانتهاء غير مضاف",
+  "docExpired": "منتهي",
+  "docExpiresToday": "ينتهي اليوم",
+  "docExpiringSoon": "ينتهي قريبًا",
+  "docRegistration": "الاستمارة",
+  "docInsurance": "التأمين",
+  "docInspection": "الفحص الدوري",
+  "docPermit": "ترخيص / تصريح",
+  "other": "أخرى",
+  "docOther": "مستند آخر",
+  "document": "مستند",
+  "docLoadFailed": "تعذر تحميل البيانات. حاول مرة أخرى.",
+  "closeAttachment": "إغلاق المرفق",
+  "fileTypes": "صور وملفات PDF",
+  "fileTooLarge": "اختر ملفًا لا يتجاوز 10 ميغابايت",
+  "unsupportedFile": "اختر PNG أو JPEG أو PDF؛ حوّل HEIC إلى JPEG قبل الرفع",
+  "networkError": "تعذر الاتصال بالخادم؛ تحقق من تشغيله ثم أعد المحاولة",
+  "requestFailed": "تعذر إكمال الطلب؛ أعد المحاولة",
+  "sessionRequired": "سجّل الدخول للمتابعة",
+  "financialTotalLocked": "لا يمكن تغيير الإجمالي بعد أول حركة مالية",
+  "documentAlreadyRenewed": "جُدد هذا المستند بالفعل",
+  "accessDenied": "لا تملك صلاحية الوصول لهذه البيانات",
+  "notificationDocumentExpiryTitle": "مستند ينتهي قريبًا",
+  "notificationDocumentExpiryBody": "راجع مستند المعدة",
+  "notificationWeeklyTitle": "مستندات تحتاج انتباهك",
+  "notificationWeeklyBody": "راجع المستندات المنتهية",
+  "unreadNotifications": "الإشعارات • {count} غير مقروء",
+  "@unreadNotifications": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFuel": "وقود",
+  "categoryMaintenance": "صيانة",
+  "paidFull": "مدفوع كاملًا",
+  "paidPartial": "مدفوع جزئيًا",
+  "unpaid": "غير مدفوع",
+  "receivedFull": "مستلم كاملًا",
+  "receivedPartial": "مستلم جزئيًا",
+  "unreceived": "غير مستلم",
+  "cancelled": "ملغاة",
+  "generalExpense": "مصروف عام",
+  "addEquipment": "إضافة معدة",
+  "addExpense": "إضافة مصروف",
+  "addIncome": "إضافة إيراد",
+  "addDocument": "إضافة مستند",
+  "saveDocument": "حفظ المستند",
+  "attachments": "المرفقات",
+  "archive": "أرشفة",
+  "restoreDocument": "استعادة المستند",
+  "currentDocuments": "المستندات الحالية",
+  "previousVersions": "النسخ السابقة",
+  "noDocuments": "لم تضف مستندات لهذه المعدة بعد",
+  "noAttachments": "لا توجد مرفقات بعد",
+  "searchEquipment": "ابحث بالاسم أو الرقم الداخلي",
+  "searchLedger": "ابحث في السجل",
+  "noEquipmentMatches": "لا توجد معدات تطابق البحث",
+  "noEntries": "لا توجد عمليات مسجلة بعد",
+  "signInCode": "رمز التحقق",
+  "phoneNumber": "رقم الجوال",
+  "name": "الاسم",
+  "model": "الموديل",
+  "documentType": "نوع المستند",
+  "newExpiryDate": "تاريخ الانتهاء الجديد",
+  "renewDocument": "تجديد المستند",
+  "viewAll": "عرض الكل",
+  "edit": "تعديل",
+  "update": "تحديث",
+  "back": "رجوع",
+  "general": "عام",
+  "ui2021OrFh16": "2021 أو FH16",
+  "uiEnterTheVerificationCode": "أدخل رمز التحقق",
+  "uiArchiveDocument": "أرشفة المستند",
+  "uiArchiveDocument005": "أرشفة المستند؟",
+  "uiArchiveEquipment": "أرشفة المعدة",
+  "uiArchiveEquipment007": "أرشفة المعدة؟",
+  "uiRemoveTheDueDateOnceFullyPaid": "أزل موعد الاستحقاق عند سداد الإجمالي",
+  "uiAddExpiryDate": "أضف تاريخ الانتهاء",
+  "uiMultipleEquipment": "أكثر من معدة",
+  "uiReturnedToTheCustomerOrOtherParty": "أُعيد إلى العميل أو الطرف الآخر",
+  "uiTotalIncome": "إجمالي الإيراد",
+  "uiTotalExpenses": "إجمالي المصروف",
+  "uiRemoveEquipment": "إزالة المعدة",
+  "uiRemoveDueDate": "إزالة موعد الاستحقاق",
+  "uiAddReceipt": "إضافة تحصيل",
+  "uiAddPayment": "إضافة دفعة",
+  "uiAddImageOrPdf": "إضافة صورة أو PDF",
+  "uiAddImageOrPdfOptional": "إضافة صورة أو PDF (اختياري)",
+  "uiAddAttachment": "إضافة مرفق",
+  "uiAddSeparateDocument": "إضافة مستند منفصل",
+  "uiAddGeneralExpense": "إضافة مصروف عام",
+  "uiUploadAttachmentAgain": "إعادة رفع المرفق",
+  "uiRetryTheSameSave": "إعادة محاولة الحفظ نفسه",
+  "uiRetryUploadingAttachments": "إعادة محاولة رفع المرفقات",
+  "uiRetryFileUpload": "إعادة محاولة رفع الملف",
+  "uiClose": "إغلاق",
+  "uiCancelEntry": "إلغاء العملية",
+  "uiToDate": "إلى تاريخ",
+  "uiSearchByEquipmentNameOrReference": "ابحث باسم المعدة أو مرجعها",
+  "uiStartByAddingYourEquipment": "ابدأ بإضافة معداتك",
+  "uiStartWithEquipmentNameAndModel": "ابدأ باسم المعدة وموديلها",
+  "uiStartWithYourMobileNumber": "ابدأ برقم جوالك",
+  "uiSelectTheEquipmentThisExpenseBelongsTo": "اختر المعدات التي يخصها المصروف",
+  "uiSelectEquipment": "اختر المعدة",
+  "uiSelectIssueDate": "اختر تاريخ الإصدار",
+  "uiSelectExpiryDate": "اختر تاريخ الانتهاء",
+  "uiSelectEquipment051": "اختر معدة",
+  "uiChooseAnotherFile": "اختيار ملف آخر",
+  "uiText054": "اردو",
+  "uiDiscardDraft": "استبعاد المسودة",
+  "uiDiscardDraft056": "استبعاد المسودة؟",
+  "uiExcludeGeneralExpenses": "استبعاد المصروف العام",
+  "uiRestoreEquipment": "استعادة المعدة",
+  "uiRestoreTheEquipmentBeforeRestoringThisDocument": "استعد المعدة أولًا لاستعادة المستند.",
+  "uiCompleteAsIncome": "استكمال كإيراد",
+  "uiCompleteAsExpense": "استكمال كمصروف",
+  "uiCompleteTheSavedInvoiceDetailsItsAttachments": "استكمل بيانات الفاتورة المحفوظة؛ المرفقات ستبقى معها.",
+  "uiPartiallyReceived": "استلمت جزءًا",
+  "uiReceivedInFull": "استلمته كاملًا",
+  "uiReceived": "استُلمت",
+  "uiNameOfThePartyWhoWillPay": "اسم الطرف الذي سيدفع",
+  "uiNameOfThePartyOwed": "اسم الطرف المستحق",
+  "uiCustomerName": "اسم العميل",
+  "uiDocumentName": "اسم المستند",
+  "uiEquipmentName": "اسم المعدة",
+  "uiEquipmentNameReferencePartyOrNote": "اسم المعدة أو مرجعها أو الطرف أو الملاحظة",
+  "uiSupplierOrPartyName": "اسم المورد أو الطرف",
+  "uiEnterPartyName": "اكتب اسم الطرف",
+  "uiEnterPartyNameWhenABalanceRemains": "اكتب اسم الطرف عند وجود متبقٍ",
+  "uiEnterPartyNameABalanceWillRemain": "اكتب اسم الطرف؛ بعد الاسترداد سيبقى مبلغ مستحق",
+  "uiEnterDocumentName": "اكتب اسم المستند",
+  "uiEnterEquipmentName": "اكتب اسم المعدة",
+  "uiEnterYourNameToContinue": "اكتب الاسم للمتابعة",
+  "uiEnterTheDateLike20260925": "اكتب التاريخ بهذا الشكل: 2026-09-25",
+  "uiEnterModel": "اكتب الموديل",
+  "uiEnterCancellationReason": "اكتب سبب الإلغاء",
+  "uiEnterRefundReason": "اكتب سبب الاسترداد",
+  "uiEnterAValidRefundAmount": "اكتب مبلغ استرداد صحيحًا",
+  "uiEnterAnAmountAboveZeroAndBelow": "اكتب مبلغًا أكبر من صفر وأقل من الإجمالي",
+  "uiEnterAnAmountAboveZeroUpTo": "اكتب مبلغًا أكبر من صفر، حتى منزلتين عشريتين",
+  "uiEnterAValidAmount": "اكتب مبلغًا صحيحًا",
+  "uiDevelopmentNumbers0500000001Or0500000002": "الأرقام التجريبية: 0500000001 أو 0500000002",
+  "uiTotalSar": "الإجمالي (ريال سعودي)",
+  "uiRefunds": "الاستردادات",
+  "uiNameAndModelAreEnoughToStart": "الاسم والموديل يكفيان للبداية. نضيف رقمًا داخليًا تلقائيًا.",
+  "uiReceipts": "التحصيلات",
+  "uiPreviousPaymentsAreKeptAndDoNot": "التسويات السابقة محفوظة ولا تتغير بالتعديل.",
+  "uiPayments": "الدفعات",
+  "uiGeneralRecords": "السجل العام",
+  "uiArchivedRecords": "السجل المؤرشف",
+  "uiText102": "العربية",
+  "uiAll": "الكل",
+  "uiAmount": "المبلغ",
+  "uiAmountSar": "المبلغ (ريال سعودي)",
+  "uiInitialPayment": "المبلغ المدفوع أولًا",
+  "uiInitialReceipt": "المبلغ المستلم أولًا",
+  "uiBalanceYouOwe": "المتبقي عليك",
+  "uiBalanceOwedToYou": "المتبقي لك",
+  "uiTotalPaid": "المدفوع إجمالًا",
+  "uiPaidAndRefundedAmountsBelowAreCalculated": "المدفوع والمسترد أدناه حصص محسوبة؛ الدفعات والاستردادات الأصلية مسجلة مرة واحدة على المصروف.",
+  "uiRefundedBySupplier": "المسترد من المورد",
+  "uiTotalReceived": "المستلم إجمالًا",
+  "uiDocument": "المستند",
+  "uiGeneralExpense": "المصروف العام",
+  "uiExpenseAppliesTo": "المصروف يخص",
+  "uiReturnedToCustomer": "المعاد للعميل",
+  "uiEquipment": "المعدة",
+  "uiAwaitingCompletion": "بانتظار الاستكمال",
+  "uiAwaitingCompletionThisWillNotCountAs": "بانتظار الاستكمال • لن تُحتسب كعملية مالية حتى تُدخل بياناتها لاحقًا.",
+  "uiSearch": "بحث",
+  "uiNoExpiryDate": "بدون تاريخ انتهاء",
+  "uiABalanceWillRemainAfterTheRefund": "بعد الاسترداد سيبقى مبلغ مستحق؛ سجّل اسم الطرف للمتابعة.",
+  "uiWhatShouldWeCallYou": "بماذا نناديك؟",
+  "uiDetailsToComplete": "بيانات تحتاج استكمال",
+  "uiConfirmCancellation": "تأكيد الإلغاء",
+  "uiConfirmCode": "تأكيد الرمز",
+  "uiIssueDateOptional": "تاريخ الإصدار (اختياري)",
+  "uiIssueDateIsAfterExpiryDate": "تاريخ الإصدار بعد تاريخ الانتهاء",
+  "uiExpiryDateOptional": "تاريخ الانتهاء (اختياري)",
+  "uiRenewCurrentDocument": "تجديد الحالي",
+  "uiUpdateIncome": "تحديث الإيراد",
+  "uiRefreshRecords": "تحديث السجل",
+  "uiUpdateDocument": "تحديث المستند",
+  "uiUpdateDraft": "تحديث المسودة",
+  "uiUpdateExpense": "تحديث المصروف",
+  "uiLocalDevelopmentStorageMalwareScanningIsNot": "تخزين تطوير محلي. لم يُفعّل فحص البرمجيات الضارة.",
+  "uiRecordRefund": "تسجيل استرداد",
+  "uiFilterRecords": "تصفية السجل",
+  "uiUploadFailed": "تعثر الرفع",
+  "uiUploadFailedTryAgain": "تعثر الرفع؛ أعد المحاولة",
+  "uiAttachmentUploadFailed": "تعثر رفع المرفق",
+  "uiEditIncome": "تعديل الإيراد",
+  "uiEditDocument": "تعديل المستند",
+  "uiEditExpense": "تعديل المصروف",
+  "uiCouldNotLoadDocumentsTryAgain": "تعذر تحميل المستندات • إعادة المحاولة",
+  "uiCouldNotLoadDocumentsTryAgain161": "تعذر تحميل المستندات. حاول مرة أخرى.",
+  "uiChangeNumberOrRequestANewCode": "تغيير الرقم أو طلب رمز جديد",
+  "uiIncomeDetails": "تفاصيل الإيراد",
+  "uiExpenseDetails": "تفاصيل المصروف",
+  "uiDownloadPdf": "تنزيل PDF",
+  "uiDownloadAttachment": "تنزيل المرفق",
+  "uiCancelling": "جارٍ الإلغاء…",
+  "uiVerifying": "جارٍ التحقق…",
+  "uiSaving": "جارٍ الحفظ...",
+  "uiSaving170": "جارٍ الحفظ…",
+  "uiSavingChanges": "جارٍ حفظ التعديل…",
+  "uiSavingEquipment": "جارٍ حفظ المعدة…",
+  "uiUploadingAndCheckingAttachment": "جارٍ رفع المرفق والتحقق منه…",
+  "uiReadyToRetryUpload": "جاهز لإعادة محاولة الرفع",
+  "uiReadyToUpload": "جاهز للرفع",
+  "uiReadyToView": "جاهز للعرض",
+  "uiReceiptStatus": "حالة الاستلام",
+  "uiSettlementStatus": "حالة التسوية",
+  "uiPaymentStatus": "حالة الدفع",
+  "uiEntryStatus": "حالة العملية",
+  "uiSelectDifferentEquipmentAndMakeTheirAmounts": "حدد معدات مختلفة واجعل مجموع مبالغها يساوي إجمالي المصروف",
+  "uiSaveRefund": "حفظ الاسترداد",
+  "uiSaveReceipt": "حفظ التحصيل",
+  "uiSaveChanges": "حفظ التعديل",
+  "uiSavePayment": "حفظ الدفعة",
+  "uiSaveInvoiceNowAndCompleteDetailsLater": "حفظ الفاتورة الآن وإكمال البيانات لاحقًا",
+  "uiSaveEquipment": "حفظ المعدة",
+  "uiSaveInvoiceNow": "حفظ فاتورة الآن",
+  "uiAttachmentSavedWithEntry": "حُفظ المرفق داخل العملية",
+  "uiPaidPartOfIt": "دفعت جزءًا",
+  "uiPaidInFull": "دفعته كاملًا",
+  "uiPaid": "دُفعت",
+  "uiDocumentNumberOptional": "رقم المستند (اختياري)",
+  "uiDevelopmentCodeOnly123456": "رمز التطوير فقط: 123456",
+  "uiCancellationReason": "سبب الإلغاء",
+  "uiRefundReason": "سبب الاسترداد",
+  "uiPaymentsAndAttachmentsWillRemainInThe": "ستبقى الدفعات والمرفقات في السجل. الإلغاء ليس استردادًا للمال.",
+  "uiUnsavedDataWillBeLostIfYou": "ستفقد البيانات غير المحفوظة. إذا لم يصل تأكيد الحفظ، راجع السجل قبل إنشاء طلب آخر.",
+  "uiEquipmentHistory": "سجل المعدة",
+  "uiEquipmentHistoryAndDocumentsWillRemainSaved": "سيبقى سجل المعدة ومستنداتها محفوظًا، وتتوقف تنبيهات انتهاء مستنداتها حتى استعادتها.",
+  "uiThePreviousDocumentWillBeKeptIn": "سيُحفظ المستند السابق في السجل. أضف تاريخ انتهاء جديدًا للمستند المجدد.",
+  "uiNetPaid": "صافي المدفوع",
+  "uiNetReceived": "صافي المستلم",
+  "uiImagesAndInvoicePdfs": "صور وفواتير PDF",
+  "uiRequestVerificationCode": "طلب رمز التحقق",
+  "uiReturnedToYouByTheOtherParty": "عاد إليك من الطرف الآخر",
+  "uiSeveralEquipment": "عدة معدات",
+  "uiAdjustEachEquipmentAmountToMatchThe": "عدّل مبلغ كل معدة بحيث يساوي الإجمالي.",
+  "uiViewRecordsAndEntries": "عرض السجل والعمليات ←",
+  "uiViewAttachment": "عرض المرفق",
+  "uiViewDocuments": "عرض المستندات",
+  "uiUnsettled": "غير مسوّى",
+  "uiOpenPdf": "فتح PDF",
+  "uiOpenSavedDraft": "فتح المسودة المحفوظة",
+  "uiTipper1": "قلاب ١",
+  "uiEachEntryItsPaymentsAndAttachmentsIn": "كل عملية ودفعاتها ومرفقاتها في سجل واحد",
+  "uiNoEntriesMatchYourSearchOrFilters": "لا توجد عمليات تطابق البحث أو المرشحات. جرّب تغييرها أو مسحها.",
+  "uiNoInvoicesAwaitingCompletion": "لا توجد فواتير بانتظار الاستكمال",
+  "uiNoDocumentsNeedAttentionNow": "لا توجد مستندات تحتاج انتباه الآن",
+  "uiNoDocumentsHaveMissingInformation": "لا توجد مستندات ناقصة البيانات",
+  "uiNoMatchingEquipment": "لا توجد معدات مطابقة للبحث",
+  "uiNoPreviousVersionsYet": "لا توجد نسخ سابقة بعد",
+  "uiTheTotalCannotChangeAfterAPayment": "لا يمكن تغيير الإجمالي بعد تسجيل دفعة أو تحصيل أو استرداد",
+  "uiTheTotalCannotChangeBecauseAPayment": "لا يمكن تغيير الإجمالي لوجود دفعة أو تحصيل أو استرداد.",
+  "uiNotPaid": "لم أدفعه",
+  "uiNotReceived": "لم أستلمه",
+  "uiUploadIncomplete": "لم يكتمل الرفع",
+  "uiThisWillNotCountAsAFinancial": "لن تُحتسب كعملية مالية. ستختفي المرفقات من القائمة بعد الاستبعاد.",
+  "uiThisDocumentWillNoLongerAppearAmong": "لن يظهر المستند ضمن المستندات الحالية ولن تصلك تنبيهات انتهاء خاصة به. سيبقى محفوظًا في السجل.",
+  "uiRefundAmount": "مبلغ الاسترداد",
+  "uiRefundAmountExceedsWhatIsAvailable": "مبلغ الاسترداد أكبر من المتاح",
+  "uiAmountPerEquipment": "مبلغ كل معدة",
+  "uiContinueEntry": "متابعة الإدخال",
+  "uiWorkspace": "مساحة العمل",
+  "uiClearFilters": "مسح المرشحات",
+  "uiPartiallySettled": "مسوّى جزئيًا",
+  "uiFullySettled": "مسوّى كاملًا",
+  "uiGeneralExpensesOnly": "مصروف عام فقط",
+  "uiAWorkspaceExpenseItIsNotAssigned": "مصروف عام لمساحة العمل؛ لا يُحمّل على معدة",
+  "uiYourEquipmentAndExpensesInOnePlace": "معداتك ومصروفاتك في مكان واحد",
+  "uiOneEquipment": "معدة واحدة",
+  "uiLeave": "مغادرة",
+  "uiNoteOptional": "ملاحظة (اختياري)",
+  "uiFromDate": "من تاريخ",
+  "uiDueDateOptional": "موعد الاستحقاق (اختياري)",
+  "uiPreviousVersionIsViewOnly": "نسخة سابقة للعرض فقط",
+  "uiActive": "نشطة",
+  "uiSharePerEquipment": "نصيب كل معدة",
+  "uiEntryType": "نوع العملية",
+  "uiExpenseType": "نوع المصروف",
+  "uiThisInvoiceIsSavedForLaterCompletion": "هذه الفاتورة محفوظة بانتظار الاستكمال، ولا تدخل المجاميع المالية بعد.",
+  "uiLeaveThisForm": "هل تريد مغادرة النموذج؟",
+  "uiNeedsAttention": "يحتاج انتباه",
+  "uiExpenseAppliesTo276": "يخص المصروف",
+  "uiThisIncomeIsRecordedUnderThisEquipment": "يُسجّل هذا الإيراد على هذه المعدة",
+  "verifyPhone": "التحقق من {phone}",
+  "@verifyPhone": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "modelValue": "الموديل: {model}",
+  "@modelValue": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "fromDateValue": "من {date}",
+  "@fromDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "toDateValue": "إلى {date}",
+  "@toDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryDateStatus": "{date} ميلادي\n{status}",
+  "@entryDateStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "draftUploadFailed": "حُفظت المسودة، وتعذر رفع الملف. أعد المحاولة. {error}",
+  "@draftUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "draftNote": "بانتظار الاستكمال\n{note}",
+  "@draftNote": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "noteValue": "ملاحظة: {note}",
+  "@noteValue": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "allocationRemaining": "المتبقي للتوزيع: {amount}",
+  "@allocationRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "operationDate": "تاريخ العملية: {date}",
+  "@operationDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentDate": "تاريخ الدفع: {date}",
+  "@paymentDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptDate": "تاريخ الاستلام: {date}",
+  "@receiptDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dueDateValue": "موعد الاستحقاق: {date}",
+  "@dueDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "attachmentAfterSave": "يمكنك إرفاق صورة أو PDF بعد حفظ {kind}.",
+  "@attachmentAfterSave": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "savingKind": "جارٍ حفظ {kind}…",
+  "@savingKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "saveKind": "حفظ {kind}",
+  "@saveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "remainingValue": "{label}: {amount}",
+  "@remainingValue": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundIncomeHelp": "مبلغ أُعيد إلى العميل أو الطرف الآخر. المتاح للاسترداد: {amount}",
+  "@refundIncomeHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundExpenseHelp": "مبلغ عاد إليك من المورد أو الطرف الآخر. المتاح للاسترداد: {amount}",
+  "@refundExpenseHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundDate": "تاريخ عودة المال: {date}",
+  "@refundDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryUploadFailed": "حُفظت العملية، وتعذر رفع المرفق. {error}",
+  "@entryUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "entryAttachmentLabel": "مرفق العملية: {filename}",
+  "@entryAttachmentLabel": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelReasonValue": "السبب: {reason}",
+  "@cancelReasonValue": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelDateValue": "تاريخ الإلغاء: {date}",
+  "@cancelDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "partAmount": "{equipment}: {amount}",
+  "@partAmount": {
+    "placeholders": {
+      "equipment": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "partNetRemaining": "حصة محسوبة من صافي المدفوع: {paid} • المتبقي: {remaining}",
+  "@partNetRemaining": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "partyValue": "الطرف: {party}",
+  "@partyValue": {
+    "placeholders": {
+      "party": {
+        "type": "String"
+      }
+    }
+  },
+  "paidOn": "دُفعت في {date}",
+  "@paidOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "receivedOn": "استُلمت في {date}",
+  "@receivedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "refundRecord": "{kind} في {date}\nالسبب: {reason}",
+  "@refundRecord": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "filesHelp": "صورة PNG أو JPEG، أو PDF • حتى 10 ميغابايت للملف",
+  "noEntryAttachments": "لم تُضف مرفقات بعد؛ العملية محفوظة.",
+  "documentSummary": "{total} مستندات • {expired} منتهي • {soon} ينتهي قريبًا • {missing} بدون تاريخ انتهاء",
+  "@documentSummary": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "expired": {
+        "type": "String"
+      },
+      "soon": {
+        "type": "String"
+      },
+      "missing": {
+        "type": "String"
+      }
+    }
+  },
+  "equipmentDocumentsTitle": "مستندات {equipment}",
+  "@equipmentDocumentsTitle": {
+    "placeholders": {
+      "equipment": {
+        "type": "String"
+      }
+    }
+  },
+  "documentAlreadyExists": "يوجد {document} حالي لهذه المعدة. هل تريد تجديده بدل إضافة مستند منفصل؟",
+  "@documentAlreadyExists": {
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryValue": "ينتهي في {date}",
+  "@expiryValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "numberValue": "الرقم: {number}",
+  "@numberValue": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "issueDateValue": "تاريخ الإصدار: {date}",
+  "@issueDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "versionNumber": "النسخة {number}",
+  "@versionNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "versionExpiry": "انتهاء: {expiry}",
+  "@versionExpiry": {
+    "placeholders": {
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
+  "versionIssue": "إصدار: {date}",
+  "@versionIssue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "versionNumberLabel": "رقم النسخة: {number}",
+  "@versionNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "documentNumberLabel": "رقم المستند: {number}",
+  "@documentNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryDateValue": "تاريخ الانتهاء: {date}",
+  "@expiryDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "missingDocumentsCount": "{count} مستند بدون تاريخ انتهاء",
+  "@missingDocumentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "versionAttachments": "مرفقات هذه النسخة",
+  "noAttachmentsShort": "لا توجد مرفقات",
+  "addExpiryDate": "إضافة تاريخ الانتهاء",
+  "documentTypeExists": "يوجد مستند من هذا النوع",
+  "refreshDocuments": "تحديث المستندات",
+  "cancelledAmountsHistory": "المبالغ والتسويات أدناه محفوظة للسجل، ولا تدخل العملية في المجاميع النشطة.",
+  "cancelledEntry": "عملية ملغاة",
+  "timeoutMessage": "استغرق الطلب وقتًا طويلًا. إذا كنت تحفظ بيانات، راجع السجل قبل إعادة المحاولة.",
+  "documentExpiryInDays": "ينتهي بعد {days} أيام",
+  "@documentExpiryInDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "documentExpiryToday": "ينتهي اليوم",
+  "documentExpiryPast": "منتهي",
+  "weeklyExpiredCount": "{count} مستندات منتهية تحتاج مراجعة",
+  "@weeklyExpiredCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadFailed": "تعذر رفع الملف",
+  "sarUnit": "ر.س"
+}

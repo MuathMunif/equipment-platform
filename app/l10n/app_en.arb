@@ -1,0 +1,726 @@
+{
+  "@@locale": "en",
+  "appTitle": "Equipment Manager",
+  "language": "Language",
+  "settings": "Settings",
+  "home": "Home",
+  "equipment": "Equipment",
+  "ledger": "Records",
+  "notifications": "Notifications",
+  "refresh": "Refresh",
+  "logout": "Sign out",
+  "retry": "Try again",
+  "devNotice": "Local development environment • No SMS is sent",
+  "restoreFailed": "Could not restore your session. Try again.",
+  "addFirstEquipment": "Add your first equipment",
+  "equipmentSubtitle": "Keep each equipment record in one place",
+  "markAllRead": "Mark all as read",
+  "noNotifications": "No notifications yet",
+  "previous": "Previous",
+  "next": "Next",
+  "cancel": "Cancel",
+  "save": "Save",
+  "documents": "Documents",
+  "attention": "Attention",
+  "income": "Income",
+  "expense": "Expense",
+  "draft": "Draft",
+  "settlement": "Settlement",
+  "refund": "Refund",
+  "archived": "Archived",
+  "active": "Active",
+  "docPreviousVersion": "Previous version",
+  "docMissingExpiry": "No expiry date",
+  "docExpired": "Expired",
+  "docExpiresToday": "Expires today",
+  "docExpiringSoon": "Expiring soon",
+  "docRegistration": "Registration",
+  "docInsurance": "Insurance",
+  "docInspection": "Periodic inspection",
+  "docPermit": "License / permit",
+  "other": "Other",
+  "docOther": "Other document",
+  "document": "Document",
+  "docLoadFailed": "Could not load the data. Try again.",
+  "closeAttachment": "Close attachment",
+  "fileTypes": "Images and PDF files",
+  "fileTooLarge": "Choose a file smaller than 10 MB",
+  "unsupportedFile": "Choose PNG, JPEG, or PDF. Convert HEIC to JPEG before uploading.",
+  "networkError": "Could not connect to the server. Check that it is running, then try again.",
+  "requestFailed": "Could not complete the request. Try again.",
+  "sessionRequired": "Sign in to continue",
+  "financialTotalLocked": "The total is locked after the first payment or refund",
+  "documentAlreadyRenewed": "This document has already been renewed",
+  "accessDenied": "You do not have access to this information",
+  "notificationDocumentExpiryTitle": "Document expiring soon",
+  "notificationDocumentExpiryBody": "Review the equipment document",
+  "notificationWeeklyTitle": "Documents need your attention",
+  "notificationWeeklyBody": "Review expired documents",
+  "unreadNotifications": "Notifications • {count} unread",
+  "@unreadNotifications": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFuel": "Fuel",
+  "categoryMaintenance": "Maintenance",
+  "paidFull": "Paid in full",
+  "paidPartial": "Partially paid",
+  "unpaid": "Unpaid",
+  "receivedFull": "Received in full",
+  "receivedPartial": "Partially received",
+  "unreceived": "Not received",
+  "cancelled": "Cancelled",
+  "generalExpense": "General expense",
+  "addEquipment": "Add equipment",
+  "addExpense": "Add expense",
+  "addIncome": "Add income",
+  "addDocument": "Add document",
+  "saveDocument": "Save document",
+  "attachments": "Attachments",
+  "archive": "Archive",
+  "restoreDocument": "Restore document",
+  "currentDocuments": "Current documents",
+  "previousVersions": "Previous versions",
+  "noDocuments": "No documents for this equipment yet",
+  "noAttachments": "No attachments yet",
+  "searchEquipment": "Search by name or reference",
+  "searchLedger": "Search records",
+  "noEquipmentMatches": "No equipment matches your search",
+  "noEntries": "No records yet",
+  "signInCode": "Verification code",
+  "phoneNumber": "Mobile number",
+  "name": "Name",
+  "model": "Model",
+  "documentType": "Document type",
+  "newExpiryDate": "New expiry date",
+  "renewDocument": "Renew document",
+  "viewAll": "View all",
+  "edit": "Edit",
+  "update": "Update",
+  "back": "Back",
+  "general": "General",
+  "ui2021OrFh16": "2021 or FH16",
+  "uiEnterTheVerificationCode": "Enter the verification code",
+  "uiArchiveDocument": "Archive document",
+  "uiArchiveDocument005": "Archive document?",
+  "uiArchiveEquipment": "Archive equipment",
+  "uiArchiveEquipment007": "Archive equipment?",
+  "uiRemoveTheDueDateOnceFullyPaid": "Remove the due date once fully paid",
+  "uiAddExpiryDate": "Add expiry date",
+  "uiMultipleEquipment": "Multiple equipment",
+  "uiReturnedToTheCustomerOrOtherParty": "Returned to the customer or other party",
+  "uiTotalIncome": "Total income",
+  "uiTotalExpenses": "Total expenses",
+  "uiRemoveEquipment": "Remove equipment",
+  "uiRemoveDueDate": "Remove due date",
+  "uiAddReceipt": "Add receipt",
+  "uiAddPayment": "Add payment",
+  "uiAddImageOrPdf": "Add image or PDF",
+  "uiAddImageOrPdfOptional": "Add image or PDF (optional)",
+  "uiAddAttachment": "Add attachment",
+  "uiAddSeparateDocument": "Add separate document",
+  "uiAddGeneralExpense": "Add general expense",
+  "uiUploadAttachmentAgain": "Upload attachment again",
+  "uiRetryTheSameSave": "Retry the same save",
+  "uiRetryUploadingAttachments": "Retry uploading attachments",
+  "uiRetryFileUpload": "Retry file upload",
+  "uiClose": "Close",
+  "uiCancelEntry": "Cancel entry",
+  "uiToDate": "To date",
+  "uiSearchByEquipmentNameOrReference": "Search by equipment name or reference",
+  "uiStartByAddingYourEquipment": "Start by adding your equipment",
+  "uiStartWithEquipmentNameAndModel": "Start with equipment name and model",
+  "uiStartWithYourMobileNumber": "Start with your mobile number",
+  "uiSelectTheEquipmentThisExpenseBelongsTo": "Select the equipment this expense belongs to",
+  "uiSelectEquipment": "Select equipment",
+  "uiSelectIssueDate": "Select issue date",
+  "uiSelectExpiryDate": "Select expiry date",
+  "uiSelectEquipment051": "Select equipment",
+  "uiChooseAnotherFile": "Choose another file",
+  "uiText054": "اردو",
+  "uiDiscardDraft": "Discard draft",
+  "uiDiscardDraft056": "Discard draft?",
+  "uiExcludeGeneralExpenses": "Exclude general expenses",
+  "uiRestoreEquipment": "Restore equipment",
+  "uiRestoreTheEquipmentBeforeRestoringThisDocument": "Restore the equipment before restoring this document.",
+  "uiCompleteAsIncome": "Complete as income",
+  "uiCompleteAsExpense": "Complete as expense",
+  "uiCompleteTheSavedInvoiceDetailsItsAttachments": "Complete the saved invoice details; its attachments will stay with it.",
+  "uiPartiallyReceived": "Partially received",
+  "uiReceivedInFull": "Received in full",
+  "uiReceived": "Received",
+  "uiNameOfThePartyWhoWillPay": "Name of the party who will pay",
+  "uiNameOfThePartyOwed": "Name of the party owed",
+  "uiCustomerName": "Customer name",
+  "uiDocumentName": "Document name",
+  "uiEquipmentName": "Equipment name",
+  "uiEquipmentNameReferencePartyOrNote": "Equipment name, reference, party, or note",
+  "uiSupplierOrPartyName": "Supplier or party name",
+  "uiEnterPartyName": "Enter party name",
+  "uiEnterPartyNameWhenABalanceRemains": "Enter party name when a balance remains",
+  "uiEnterPartyNameABalanceWillRemain": "Enter party name; a balance will remain after the refund",
+  "uiEnterDocumentName": "Enter document name",
+  "uiEnterEquipmentName": "Enter equipment name",
+  "uiEnterYourNameToContinue": "Enter your name to continue",
+  "uiEnterTheDateLike20260925": "Enter the date like 2026-09-25",
+  "uiEnterModel": "Enter model",
+  "uiEnterCancellationReason": "Enter cancellation reason",
+  "uiEnterRefundReason": "Enter refund reason",
+  "uiEnterAValidRefundAmount": "Enter a valid refund amount",
+  "uiEnterAnAmountAboveZeroAndBelow": "Enter an amount above zero and below the total",
+  "uiEnterAnAmountAboveZeroUpTo": "Enter an amount above zero, up to two decimal places",
+  "uiEnterAValidAmount": "Enter a valid amount",
+  "uiDevelopmentNumbers0500000001Or0500000002": "Development numbers: 0500000001 or 0500000002",
+  "uiTotalSar": "Total (SAR)",
+  "uiRefunds": "Refunds",
+  "uiNameAndModelAreEnoughToStart": "Name and model are enough to start. We add a reference automatically.",
+  "uiReceipts": "Receipts",
+  "uiPreviousPaymentsAreKeptAndDoNot": "Previous payments are kept and do not change when editing.",
+  "uiPayments": "Payments",
+  "uiGeneralRecords": "General records",
+  "uiArchivedRecords": "Archived records",
+  "uiText102": "العربية",
+  "uiAll": "All",
+  "uiAmount": "Amount",
+  "uiAmountSar": "Amount (SAR)",
+  "uiInitialPayment": "Initial payment",
+  "uiInitialReceipt": "Initial receipt",
+  "uiBalanceYouOwe": "Balance you owe",
+  "uiBalanceOwedToYou": "Balance owed to you",
+  "uiTotalPaid": "Total paid",
+  "uiPaidAndRefundedAmountsBelowAreCalculated": "Paid and refunded amounts below are calculated shares; original payments and refunds are recorded once on the expense.",
+  "uiRefundedBySupplier": "Refunded by supplier",
+  "uiTotalReceived": "Total received",
+  "uiDocument": "Document",
+  "uiGeneralExpense": "General expense",
+  "uiExpenseAppliesTo": "Expense applies to",
+  "uiReturnedToCustomer": "Returned to customer",
+  "uiEquipment": "Equipment",
+  "uiAwaitingCompletion": "Awaiting completion",
+  "uiAwaitingCompletionThisWillNotCountAs": "Awaiting completion • This will not count as a financial entry until you add its details.",
+  "uiSearch": "Search",
+  "uiNoExpiryDate": "No expiry date",
+  "uiABalanceWillRemainAfterTheRefund": "A balance will remain after the refund; record the party name for follow-up.",
+  "uiWhatShouldWeCallYou": "What should we call you?",
+  "uiDetailsToComplete": "Details to complete",
+  "uiConfirmCancellation": "Confirm cancellation",
+  "uiConfirmCode": "Confirm code",
+  "uiIssueDateOptional": "Issue date (optional)",
+  "uiIssueDateIsAfterExpiryDate": "Issue date is after expiry date",
+  "uiExpiryDateOptional": "Expiry date (optional)",
+  "uiRenewCurrentDocument": "Renew current document",
+  "uiUpdateIncome": "Update income",
+  "uiRefreshRecords": "Refresh records",
+  "uiUpdateDocument": "Update document",
+  "uiUpdateDraft": "Update draft",
+  "uiUpdateExpense": "Update expense",
+  "uiLocalDevelopmentStorageMalwareScanningIsNot": "Local development storage. Malware scanning is not enabled.",
+  "uiRecordRefund": "Record refund",
+  "uiFilterRecords": "Filter records",
+  "uiUploadFailed": "Upload failed",
+  "uiUploadFailedTryAgain": "Upload failed; try again",
+  "uiAttachmentUploadFailed": "Attachment upload failed",
+  "uiEditIncome": "Edit income",
+  "uiEditDocument": "Edit document",
+  "uiEditExpense": "Edit expense",
+  "uiCouldNotLoadDocumentsTryAgain": "Could not load documents • Try again",
+  "uiCouldNotLoadDocumentsTryAgain161": "Could not load documents. Try again.",
+  "uiChangeNumberOrRequestANewCode": "Change number or request a new code",
+  "uiIncomeDetails": "Income details",
+  "uiExpenseDetails": "Expense details",
+  "uiDownloadPdf": "Download PDF",
+  "uiDownloadAttachment": "Download attachment",
+  "uiCancelling": "Cancelling…",
+  "uiVerifying": "Verifying…",
+  "uiSaving": "Saving...",
+  "uiSaving170": "Saving…",
+  "uiSavingChanges": "Saving changes…",
+  "uiSavingEquipment": "Saving equipment…",
+  "uiUploadingAndCheckingAttachment": "Uploading and checking attachment…",
+  "uiReadyToRetryUpload": "Ready to retry upload",
+  "uiReadyToUpload": "Ready to upload",
+  "uiReadyToView": "Ready to view",
+  "uiReceiptStatus": "Receipt status",
+  "uiSettlementStatus": "Settlement status",
+  "uiPaymentStatus": "Payment status",
+  "uiEntryStatus": "Entry status",
+  "uiSelectDifferentEquipmentAndMakeTheirAmounts": "Select different equipment and make their amounts add up to the expense total",
+  "uiSaveRefund": "Save refund",
+  "uiSaveReceipt": "Save receipt",
+  "uiSaveChanges": "Save changes",
+  "uiSavePayment": "Save payment",
+  "uiSaveInvoiceNowAndCompleteDetailsLater": "Save invoice now and complete details later",
+  "uiSaveEquipment": "Save equipment",
+  "uiSaveInvoiceNow": "Save invoice now",
+  "uiAttachmentSavedWithEntry": "Attachment saved with entry",
+  "uiPaidPartOfIt": "Paid part of it",
+  "uiPaidInFull": "Paid in full",
+  "uiPaid": "Paid",
+  "uiDocumentNumberOptional": "Document number (optional)",
+  "uiDevelopmentCodeOnly123456": "Development code only: 123456",
+  "uiCancellationReason": "Cancellation reason",
+  "uiRefundReason": "Refund reason",
+  "uiPaymentsAndAttachmentsWillRemainInThe": "Payments and attachments will remain in the record. Cancelling does not refund money.",
+  "uiUnsavedDataWillBeLostIfYou": "Unsaved data will be lost. If you did not receive save confirmation, check records before creating another request.",
+  "uiEquipmentHistory": "Equipment history",
+  "uiEquipmentHistoryAndDocumentsWillRemainSaved": "Equipment history and documents will remain saved. Expiry reminders stop until restoration.",
+  "uiThePreviousDocumentWillBeKeptIn": "The previous document will be kept in history. Add a new expiry date for the renewed document.",
+  "uiNetPaid": "Net paid",
+  "uiNetReceived": "Net received",
+  "uiImagesAndInvoicePdfs": "Images and invoice PDFs",
+  "uiRequestVerificationCode": "Request verification code",
+  "uiReturnedToYouByTheOtherParty": "Returned to you by the other party",
+  "uiSeveralEquipment": "Several equipment",
+  "uiAdjustEachEquipmentAmountToMatchThe": "Adjust each equipment amount to match the total.",
+  "uiViewRecordsAndEntries": "View records and entries →",
+  "uiViewAttachment": "View attachment",
+  "uiViewDocuments": "View documents",
+  "uiUnsettled": "Unsettled",
+  "uiOpenPdf": "Open PDF",
+  "uiOpenSavedDraft": "Open saved draft",
+  "uiTipper1": "Tipper 1",
+  "uiEachEntryItsPaymentsAndAttachmentsIn": "Each entry, its payments, and attachments in one record",
+  "uiNoEntriesMatchYourSearchOrFilters": "No entries match your search or filters. Change or clear them.",
+  "uiNoInvoicesAwaitingCompletion": "No invoices awaiting completion",
+  "uiNoDocumentsNeedAttentionNow": "No documents need attention now",
+  "uiNoDocumentsHaveMissingInformation": "No documents have missing information",
+  "uiNoMatchingEquipment": "No matching equipment",
+  "uiNoPreviousVersionsYet": "No previous versions yet",
+  "uiTheTotalCannotChangeAfterAPayment": "The total cannot change after a payment, receipt, or refund is recorded",
+  "uiTheTotalCannotChangeBecauseAPayment": "The total cannot change because a payment, receipt, or refund exists.",
+  "uiNotPaid": "Not paid",
+  "uiNotReceived": "Not received",
+  "uiUploadIncomplete": "Upload incomplete",
+  "uiThisWillNotCountAsAFinancial": "This will not count as a financial entry. Attachments will disappear from the list after discard.",
+  "uiThisDocumentWillNoLongerAppearAmong": "This document will no longer appear among current documents or receive expiry reminders. It remains in history.",
+  "uiRefundAmount": "Refund amount",
+  "uiRefundAmountExceedsWhatIsAvailable": "Refund amount exceeds what is available",
+  "uiAmountPerEquipment": "Amount per equipment",
+  "uiContinueEntry": "Continue entry",
+  "uiWorkspace": "Workspace",
+  "uiClearFilters": "Clear filters",
+  "uiPartiallySettled": "Partially settled",
+  "uiFullySettled": "Fully settled",
+  "uiGeneralExpensesOnly": "General expenses only",
+  "uiAWorkspaceExpenseItIsNotAssigned": "A workspace expense; it is not assigned to equipment",
+  "uiYourEquipmentAndExpensesInOnePlace": "Your equipment and expenses in one place",
+  "uiOneEquipment": "One equipment",
+  "uiLeave": "Leave",
+  "uiNoteOptional": "Note (optional)",
+  "uiFromDate": "From date",
+  "uiDueDateOptional": "Due date (optional)",
+  "uiPreviousVersionIsViewOnly": "Previous version is view only",
+  "uiActive": "Active",
+  "uiSharePerEquipment": "Share per equipment",
+  "uiEntryType": "Entry type",
+  "uiExpenseType": "Expense type",
+  "uiThisInvoiceIsSavedForLaterCompletion": "This invoice is saved for later completion and is not yet included in financial totals.",
+  "uiLeaveThisForm": "Leave this form?",
+  "uiNeedsAttention": "Needs attention",
+  "uiExpenseAppliesTo276": "Expense applies to",
+  "uiThisIncomeIsRecordedUnderThisEquipment": "This income is recorded under this equipment",
+  "verifyPhone": "Verify {phone}",
+  "@verifyPhone": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "modelValue": "Model: {model}",
+  "@modelValue": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "fromDateValue": "From {date}",
+  "@fromDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "toDateValue": "To {date}",
+  "@toDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryDateStatus": "{date}\n{status}",
+  "@entryDateStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "draftUploadFailed": "Draft saved, but the file could not be uploaded. Try again. {error}",
+  "@draftUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "draftNote": "Awaiting completion\n{note}",
+  "@draftNote": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "noteValue": "Note: {note}",
+  "@noteValue": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "allocationRemaining": "Remaining to allocate: {amount}",
+  "@allocationRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "operationDate": "Entry date: {date}",
+  "@operationDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentDate": "Payment date: {date}",
+  "@paymentDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptDate": "Receipt date: {date}",
+  "@receiptDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dueDateValue": "Due date: {date}",
+  "@dueDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "attachmentAfterSave": "You can add an image or PDF after saving {kind}.",
+  "@attachmentAfterSave": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "savingKind": "Saving {kind}…",
+  "@savingKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "saveKind": "Save {kind}",
+  "@saveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "remainingValue": "{label}: {amount}",
+  "@remainingValue": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundIncomeHelp": "Money returned to the customer or other party. Available to refund: {amount}",
+  "@refundIncomeHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundExpenseHelp": "Money returned to you by the supplier or other party. Available to refund: {amount}",
+  "@refundExpenseHelp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundDate": "Refund date: {date}",
+  "@refundDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryUploadFailed": "Entry saved, but the attachment upload failed. {error}",
+  "@entryUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "entryAttachmentLabel": "Entry attachment: {filename}",
+  "@entryAttachmentLabel": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelReasonValue": "Reason: {reason}",
+  "@cancelReasonValue": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelDateValue": "Cancelled: {date}",
+  "@cancelDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "partAmount": "{equipment}: {amount}",
+  "@partAmount": {
+    "placeholders": {
+      "equipment": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "partNetRemaining": "Calculated share of net paid: {paid} • Remaining: {remaining}",
+  "@partNetRemaining": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "partyValue": "Party: {party}",
+  "@partyValue": {
+    "placeholders": {
+      "party": {
+        "type": "String"
+      }
+    }
+  },
+  "paidOn": "Paid on {date}",
+  "@paidOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "receivedOn": "Received on {date}",
+  "@receivedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "refundRecord": "{kind} on {date}\nReason: {reason}",
+  "@refundRecord": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "filesHelp": "PNG or JPEG image, or PDF • up to 10 MB per file",
+  "noEntryAttachments": "No attachments added yet; the entry is saved.",
+  "documentSummary": "{total} documents • {expired} expired • {soon} expiring soon • {missing} without expiry date",
+  "@documentSummary": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "expired": {
+        "type": "String"
+      },
+      "soon": {
+        "type": "String"
+      },
+      "missing": {
+        "type": "String"
+      }
+    }
+  },
+  "equipmentDocumentsTitle": "{equipment} documents",
+  "@equipmentDocumentsTitle": {
+    "placeholders": {
+      "equipment": {
+        "type": "String"
+      }
+    }
+  },
+  "documentAlreadyExists": "A current {document} already exists for this equipment. Renew it instead of adding a separate document?",
+  "@documentAlreadyExists": {
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryValue": "Expires on {date}",
+  "@expiryValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "numberValue": "Number: {number}",
+  "@numberValue": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "issueDateValue": "Issue date: {date}",
+  "@issueDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "versionNumber": "Version {number}",
+  "@versionNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "versionExpiry": "Expiry: {expiry}",
+  "@versionExpiry": {
+    "placeholders": {
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
+  "versionIssue": "Issued: {date}",
+  "@versionIssue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "versionNumberLabel": "Version number: {number}",
+  "@versionNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "documentNumberLabel": "Document number: {number}",
+  "@documentNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryDateValue": "Expiry date: {date}",
+  "@expiryDateValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "missingDocumentsCount": "{count} documents without an expiry date",
+  "@missingDocumentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "versionAttachments": "Attachments for this version",
+  "noAttachmentsShort": "No attachments",
+  "addExpiryDate": "Add expiry date",
+  "documentTypeExists": "A document of this type exists",
+  "refreshDocuments": "Refresh documents",
+  "cancelledAmountsHistory": "The amounts and settlements below remain in history and are excluded from active totals.",
+  "cancelledEntry": "Cancelled entry",
+  "timeoutMessage": "The request took too long. If you were saving, check the records before trying again.",
+  "documentExpiryInDays": "Expires in {days} days",
+  "@documentExpiryInDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "documentExpiryToday": "Expires today",
+  "documentExpiryPast": "Expired",
+  "weeklyExpiredCount": "{count} expired documents need review",
+  "@weeklyExpiredCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadFailed": "Could not upload the file",
+  "sarUnit": "SAR"
+}

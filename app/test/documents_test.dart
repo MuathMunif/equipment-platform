@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:equipment_app/api.dart';
 import 'package:equipment_app/documents.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -16,8 +16,8 @@ http.Response reply(Object value, [int status = 200]) => http.Response(
 );
 Widget host(Widget page) => MaterialApp(
   locale: const Locale('ar'),
-  supportedLocales: const [Locale('ar')],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
   home: page,
 );
 Api apiWith(Future<http.Response> Function(http.Request) handler) =>
@@ -186,20 +186,27 @@ void main() {
     expect(find.text('أضف تاريخ الانتهاء'), findsOneWidget);
     expect(find.textContaining('سيُحفظ المستند السابق'), findsOneWidget);
   });
-  testWidgets('document edit sends the version shown to the user', (tester) async {
+  testWidgets('document edit sends the version shown to the user', (
+    tester,
+  ) async {
     Map<String, dynamic>? sent;
     final api = apiWith((request) async {
-      if (request.method == 'PUT' && request.url.path.endsWith('/documents/d')) {
+      if (request.method == 'PUT' &&
+          request.url.path.endsWith('/documents/d')) {
         sent = jsonDecode(request.body) as Map<String, dynamic>;
         return reply(doc(version: 2));
       }
       return reply([]);
     });
-    await tester.pumpWidget(launcher((_) => DocumentFormPage(
-      api: api,
-      equipment: equipment,
-      document: doc(version: 2),
-    )));
+    await tester.pumpWidget(
+      launcher(
+        (_) => DocumentFormPage(
+          api: api,
+          equipment: equipment,
+          document: doc(version: 2),
+        ),
+      ),
+    );
     await tester.tap(find.text('فتح'));
     await tester.pumpAndSettle();
     await tapVisible(tester, find.byKey(const Key('saveDocument')));
