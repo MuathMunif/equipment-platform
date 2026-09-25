@@ -5,6 +5,7 @@ import 'package:file_selector/file_selector.dart';
 import 'api.dart';
 import 'file_export.dart';
 import 'documents.dart';
+import 'maintenance.dart';
 import 'localization.dart';
 import 'l10n/app_localizations.dart';
 
@@ -452,8 +453,13 @@ class _WorkspacePageState extends State<WorkspacePage> {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 850;
-    final content = selected == 2
+    final content = selected == 3
         ? LedgerPage(key: ValueKey('ledger-$revision'), api: widget.api)
+        : selected == 2
+        ? MaintenanceHub(
+            key: ValueKey('maintenance-$revision'),
+            api: widget.api,
+          )
         : EquipmentList(
             key: ValueKey('equipment-$revision'),
             api: widget.api,
@@ -540,6 +546,10 @@ class _WorkspacePageState extends State<WorkspacePage> {
                         label: Text(l10n(context).equipment),
                       ),
                       NavigationRailDestination(
+                        icon: Icon(Icons.build_outlined),
+                        label: Text(l10n(context).m4Hub),
+                      ),
+                      NavigationRailDestination(
                         icon: Icon(Icons.receipt_long_outlined),
                         label: Text(l10n(context).ledger),
                       ),
@@ -564,6 +574,10 @@ class _WorkspacePageState extends State<WorkspacePage> {
                 NavigationDestination(
                   icon: Icon(Icons.local_shipping_outlined),
                   label: l10n(context).equipment,
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.build_outlined),
+                  label: l10n(context).m4Hub,
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.receipt_long_outlined),
@@ -1006,9 +1020,7 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
         context: context,
         builder: (dialog) => AlertDialog(
           title: Text(l10n(context).uiArchiveEquipment007),
-          content: Text(
-            l10n(context).uiEquipmentHistoryAndDocumentsWillRemainSaved,
-          ),
+          content: Text(l10n(context).m4ArchivedWarning),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialog, false),
@@ -1513,6 +1525,10 @@ class _LedgerPageState extends State<LedgerPage> {
         if (widget.equipment != null) ...[
           const SizedBox(height: 16),
           EquipmentDocumentsCard(api: widget.api, equipment: widget.equipment!),
+          EquipmentMaintenanceCard(
+            api: widget.api,
+            equipment: widget.equipment!,
+          ),
         ],
         const SizedBox(height: 20),
         Row(
@@ -2332,6 +2348,7 @@ class ExpenseForm extends StatefulWidget {
   final String initialScope;
   final String? draftId;
   final String? draftNote;
+  final String? maintenanceId;
   const ExpenseForm({
     super.key,
     required this.api,
@@ -2340,6 +2357,7 @@ class ExpenseForm extends StatefulWidget {
     this.initialScope = 'SINGLE',
     this.draftId,
     this.draftNote,
+    this.maintenanceId,
   });
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
@@ -2374,6 +2392,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
   void initState() {
     super.initState();
     expenseScope = widget.initialScope;
+    if (widget.maintenanceId != null) category = 'MAINTENANCE';
     if (widget.draftNote != null) note.text = widget.draftNote!;
   }
 
@@ -2497,7 +2516,9 @@ class _ExpenseFormState extends State<ExpenseForm> {
         'POST',
         widget.api.scoped(
           widget.draftId == null
-              ? '/entries'
+              ? widget.maintenanceId == null
+                    ? '/entries'
+                    : '/maintenance/${widget.maintenanceId}/expenses'
               : '/drafts/${widget.draftId}/completion',
         ),
         key: key,
@@ -2577,32 +2598,33 @@ class _ExpenseFormState extends State<ExpenseForm> {
             else ...[
               Text(l10n(context).uiSelectTheEquipmentThisExpenseBelongsTo),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                key: const Key('expenseScope'),
-                initialValue: expenseScope,
-                decoration: InputDecoration(
-                  labelText: l10n(context).uiExpenseAppliesTo276,
+              if (widget.maintenanceId == null)
+                DropdownButtonFormField<String>(
+                  key: const Key('expenseScope'),
+                  initialValue: expenseScope,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiExpenseAppliesTo276,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'SINGLE',
+                      child: Text(l10n(context).uiOneEquipment),
+                    ),
+                    DropdownMenuItem(
+                      value: 'SHARED',
+                      child: Text(l10n(context).uiMultipleEquipment),
+                    ),
+                    DropdownMenuItem(
+                      value: 'GENERAL',
+                      child: Text(l10n(context).generalExpense),
+                    ),
+                  ],
+                  onChanged: busy || uncertain
+                      ? null
+                      : (value) {
+                          if (value != null) changeScope(value);
+                        },
                 ),
-                items: [
-                  DropdownMenuItem(
-                    value: 'SINGLE',
-                    child: Text(l10n(context).uiOneEquipment),
-                  ),
-                  DropdownMenuItem(
-                    value: 'SHARED',
-                    child: Text(l10n(context).uiMultipleEquipment),
-                  ),
-                  DropdownMenuItem(
-                    value: 'GENERAL',
-                    child: Text(l10n(context).generalExpense),
-                  ),
-                ],
-                onChanged: busy || uncertain
-                    ? null
-                    : (value) {
-                        if (value != null) changeScope(value);
-                      },
-              ),
             ],
             const SizedBox(height: 24),
             TextFormField(

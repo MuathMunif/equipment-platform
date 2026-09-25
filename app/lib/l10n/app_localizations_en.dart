@@ -1318,4 +1318,240 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sarUnit => 'SAR';
+
+  @override
+  String get m4Hub => 'Maintenance & issues';
+
+  @override
+  String get m4Issues => 'Issues';
+
+  @override
+  String get m4Maintenance => 'Maintenance records';
+
+  @override
+  String get m4NewIssue => 'New issue';
+
+  @override
+  String get m4AddMaintenance => 'Add maintenance';
+
+  @override
+  String get m4Problem => 'What is the problem?';
+
+  @override
+  String get m4WorkDone => 'What was done?';
+
+  @override
+  String get m4IssueType => 'Issue type (optional)';
+
+  @override
+  String get m4MaintenanceType => 'Maintenance type (optional)';
+
+  @override
+  String get m4Stopped => 'This problem stopped the equipment';
+
+  @override
+  String get m4StoppedBadge => 'Equipment stopped';
+
+  @override
+  String get m4Open => 'Open';
+
+  @override
+  String get m4InProgress => 'In progress';
+
+  @override
+  String get m4Closed => 'Closed';
+
+  @override
+  String get m4Start => 'Start processing';
+
+  @override
+  String get m4Close => 'Close issue';
+
+  @override
+  String get m4Reopen => 'Reopen issue';
+
+  @override
+  String get m4Resolution => 'Resolution';
+
+  @override
+  String get m4ResolutionRequired => 'Describe how the problem was resolved';
+
+  @override
+  String get m4Mechanical => 'Mechanical';
+
+  @override
+  String get m4Electrical => 'Electrical';
+
+  @override
+  String get m4Tires => 'Tires';
+
+  @override
+  String get m4Accident => 'Accident or damage';
+
+  @override
+  String get m4Repair => 'Repair';
+
+  @override
+  String get m4Periodic => 'Periodic service';
+
+  @override
+  String get m4Inspection => 'Inspection';
+
+  @override
+  String get m4Unclassified => 'Unclassified';
+
+  @override
+  String get m4Description => 'Work performed';
+
+  @override
+  String get m4Date => 'Maintenance date';
+
+  @override
+  String get m4Workshop => 'Workshop or service provider (optional)';
+
+  @override
+  String get m4LinkedIssue => 'Linked issue (optional)';
+
+  @override
+  String get m4IssueHistory => 'Closure history';
+
+  @override
+  String get m4RelatedMaintenance => 'Related maintenance';
+
+  @override
+  String get m4NoIssues => 'No issues for this equipment';
+
+  @override
+  String get m4NoMaintenance => 'No maintenance records for this equipment';
+
+  @override
+  String get m4NoResults => 'No matching records';
+
+  @override
+  String get m4IssueSearch => 'Search issues';
+
+  @override
+  String get m4MaintenanceSearch => 'Search maintenance';
+
+  @override
+  String get m4AllStatuses => 'All statuses';
+
+  @override
+  String get m4AllTypes => 'All types';
+
+  @override
+  String get m4OnlyStopped => 'Stopped equipment only';
+
+  @override
+  String get m4Cancelled => 'Cancelled record';
+
+  @override
+  String get m4ShowCancelled => 'Show cancelled';
+
+  @override
+  String get m4CancelMaintenance => 'Cancel maintenance record';
+
+  @override
+  String get m4CancelWarning =>
+      'Cancelling maintenance will not cancel linked expenses.';
+
+  @override
+  String get m4CancellationReason => 'Cancellation reason';
+
+  @override
+  String get m4Expenses => 'Linked expenses';
+
+  @override
+  String get m4AddExpense => 'Add expense';
+
+  @override
+  String get m4LinkExpense => 'Link existing expense';
+
+  @override
+  String get m4UnlinkExpense => 'Unlink expense';
+
+  @override
+  String get m4ExpenseTotal => 'Active expense total';
+
+  @override
+  String get m4NetPaid => 'Net paid';
+
+  @override
+  String get m4Remaining => 'Remaining';
+
+  @override
+  String get m4NoEligible => 'No eligible expenses to link';
+
+  @override
+  String get m4NoAttachments => 'No attachments';
+
+  @override
+  String get m4CreateIssue => 'Save issue';
+
+  @override
+  String get m4SaveMaintenance => 'Save maintenance';
+
+  @override
+  String get m4IssueUpdated => 'Issue updated';
+
+  @override
+  String get m4AttentionEmpty => 'No issues or documents need attention now';
+
+  @override
+  String get m4AttentionOpenIssue => 'Open issue';
+
+  @override
+  String get m4ArchivedWarning =>
+      'Issues and maintenance remain saved. Open issues leave Attention until equipment is restored.';
+
+  @override
+  String get m4SelectEquipment => 'Select equipment';
+
+  @override
+  String get m4IssueDetails => 'Issue details';
+
+  @override
+  String get m4MaintenanceDetails => 'Maintenance details';
+
+  @override
+  String get m4EditIssue => 'Edit issue';
+
+  @override
+  String get m4EditMaintenance => 'Edit maintenance';
+
+  @override
+  String get m4Required => 'This field is required';
+
+  @override
+  String get m4AllEquipment => 'All equipment';
+
+  @override
+  String get m4LinkedCount => 'Linked expenses';
+
+  @override
+  String get m4ViewHistory => 'View history';
+
+  @override
+  String get m4RemoveAttachment => 'Remove attachment';
+
+  @override
+  String get m4NoLinkedIssue => 'No linked issue';
+
+  @override
+  String get m4DateRange => 'Date range';
+
+  @override
+  String get m4ClearDateRange => 'Clear date range';
+
+  @override
+  String get m4NoIssuesGlobal => 'No issues yet';
+
+  @override
+  String get m4NoMaintenanceGlobal => 'No maintenance records yet';
+
+  @override
+  String get m4SelectIssue => 'Select issue';
+
+  @override
+  String get m4ClearIssue => 'Clear linked issue';
 }

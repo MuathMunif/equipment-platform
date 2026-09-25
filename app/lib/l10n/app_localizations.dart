@@ -2420,6 +2420,474 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ر.س'**
   String get sarUnit;
+
+  /// No description provided for @m4Hub.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة والبلاغات'**
+  String get m4Hub;
+
+  /// No description provided for @m4Issues.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلاغات'**
+  String get m4Issues;
+
+  /// No description provided for @m4Maintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجلات الصيانة'**
+  String get m4Maintenance;
+
+  /// No description provided for @m4NewIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغ جديد'**
+  String get m4NewIssue;
+
+  /// No description provided for @m4AddMaintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة صيانة'**
+  String get m4AddMaintenance;
+
+  /// No description provided for @m4Problem.
+  ///
+  /// In ar, this message translates to:
+  /// **'وش المشكلة؟'**
+  String get m4Problem;
+
+  /// No description provided for @m4WorkDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'وش تم؟'**
+  String get m4WorkDone;
+
+  /// No description provided for @m4IssueType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع المشكلة (اختياري)'**
+  String get m4IssueType;
+
+  /// No description provided for @m4MaintenanceType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الصيانة (اختياري)'**
+  String get m4MaintenanceType;
+
+  /// No description provided for @m4Stopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشكلة أوقفت المعدة عن العمل'**
+  String get m4Stopped;
+
+  /// No description provided for @m4StoppedBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعدة متوقفة'**
+  String get m4StoppedBadge;
+
+  /// No description provided for @m4Open.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوح'**
+  String get m4Open;
+
+  /// No description provided for @m4InProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ العمل'**
+  String get m4InProgress;
+
+  /// No description provided for @m4Closed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغلق'**
+  String get m4Closed;
+
+  /// No description provided for @m4Start.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء المعالجة'**
+  String get m4Start;
+
+  /// No description provided for @m4Close.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق البلاغ'**
+  String get m4Close;
+
+  /// No description provided for @m4Reopen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة فتح البلاغ'**
+  String get m4Reopen;
+
+  /// No description provided for @m4Resolution.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصف الحل'**
+  String get m4Resolution;
+
+  /// No description provided for @m4ResolutionRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب ما تم لحل المشكلة'**
+  String get m4ResolutionRequired;
+
+  /// No description provided for @m4Mechanical.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميكانيكي'**
+  String get m4Mechanical;
+
+  /// No description provided for @m4Electrical.
+  ///
+  /// In ar, this message translates to:
+  /// **'كهربائي'**
+  String get m4Electrical;
+
+  /// No description provided for @m4Tires.
+  ///
+  /// In ar, this message translates to:
+  /// **'إطارات'**
+  String get m4Tires;
+
+  /// No description provided for @m4Accident.
+  ///
+  /// In ar, this message translates to:
+  /// **'حادث أو ضرر'**
+  String get m4Accident;
+
+  /// No description provided for @m4Repair.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصلاح'**
+  String get m4Repair;
+
+  /// No description provided for @m4Periodic.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة دورية'**
+  String get m4Periodic;
+
+  /// No description provided for @m4Inspection.
+  ///
+  /// In ar, this message translates to:
+  /// **'فحص'**
+  String get m4Inspection;
+
+  /// No description provided for @m4Unclassified.
+  ///
+  /// In ar, this message translates to:
+  /// **'دون تصنيف'**
+  String get m4Unclassified;
+
+  /// No description provided for @m4Description.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصف العمل المنجز'**
+  String get m4Description;
+
+  /// No description provided for @m4Date.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الصيانة'**
+  String get m4Date;
+
+  /// No description provided for @m4Workshop.
+  ///
+  /// In ar, this message translates to:
+  /// **'الورشة أو مقدم الخدمة (اختياري)'**
+  String get m4Workshop;
+
+  /// No description provided for @m4LinkedIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلاغ المرتبط (اختياري)'**
+  String get m4LinkedIssue;
+
+  /// No description provided for @m4IssueHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل الإغلاقات'**
+  String get m4IssueHistory;
+
+  /// No description provided for @m4RelatedMaintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة المرتبطة'**
+  String get m4RelatedMaintenance;
+
+  /// No description provided for @m4NoIssues.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بلاغات لهذه المعدة'**
+  String get m4NoIssues;
+
+  /// No description provided for @m4NoMaintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد سجلات صيانة لهذه المعدة'**
+  String get m4NoMaintenance;
+
+  /// No description provided for @m4NoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج مطابقة'**
+  String get m4NoResults;
+
+  /// No description provided for @m4IssueSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في البلاغات'**
+  String get m4IssueSearch;
+
+  /// No description provided for @m4MaintenanceSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في الصيانة'**
+  String get m4MaintenanceSearch;
+
+  /// No description provided for @m4AllStatuses.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الحالات'**
+  String get m4AllStatuses;
+
+  /// No description provided for @m4AllTypes.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الأنواع'**
+  String get m4AllTypes;
+
+  /// No description provided for @m4OnlyStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعدات المتوقفة فقط'**
+  String get m4OnlyStopped;
+
+  /// No description provided for @m4Cancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل ملغى'**
+  String get m4Cancelled;
+
+  /// No description provided for @m4ShowCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الملغى'**
+  String get m4ShowCancelled;
+
+  /// No description provided for @m4CancelMaintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء سجل الصيانة'**
+  String get m4CancelMaintenance;
+
+  /// No description provided for @m4CancelWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء سجل الصيانة لن يلغي المصروفات المرتبطة.'**
+  String get m4CancelWarning;
+
+  /// No description provided for @m4CancellationReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الإلغاء'**
+  String get m4CancellationReason;
+
+  /// No description provided for @m4Expenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات المرتبطة'**
+  String get m4Expenses;
+
+  /// No description provided for @m4AddExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مصروف'**
+  String get m4AddExpense;
+
+  /// No description provided for @m4LinkExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'ربط مصروف موجود'**
+  String get m4LinkExpense;
+
+  /// No description provided for @m4UnlinkExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل المصروف'**
+  String get m4UnlinkExpense;
+
+  /// No description provided for @m4ExpenseTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المصروفات النشطة'**
+  String get m4ExpenseTotal;
+
+  /// No description provided for @m4NetPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصافي المدفوع'**
+  String get m4NetPaid;
+
+  /// No description provided for @m4Remaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي'**
+  String get m4Remaining;
+
+  /// No description provided for @m4NoEligible.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مصروفات مناسبة للربط'**
+  String get m4NoEligible;
+
+  /// No description provided for @m4NoAttachments.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مرفقات'**
+  String get m4NoAttachments;
+
+  /// No description provided for @m4CreateIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ البلاغ'**
+  String get m4CreateIssue;
+
+  /// No description provided for @m4SaveMaintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ الصيانة'**
+  String get m4SaveMaintenance;
+
+  /// No description provided for @m4IssueUpdated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث البلاغ'**
+  String get m4IssueUpdated;
+
+  /// No description provided for @m4AttentionEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بلاغات أو مستندات تحتاج انتباهًا الآن'**
+  String get m4AttentionEmpty;
+
+  /// No description provided for @m4AttentionOpenIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغ مفتوح'**
+  String get m4AttentionOpenIssue;
+
+  /// No description provided for @m4ArchivedWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستبقى البلاغات والصيانة محفوظة، لكن البلاغات المفتوحة ستختفي من الانتباه حتى استعادة المعدة.'**
+  String get m4ArchivedWarning;
+
+  /// No description provided for @m4SelectEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر المعدة'**
+  String get m4SelectEquipment;
+
+  /// No description provided for @m4IssueDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل البلاغ'**
+  String get m4IssueDetails;
+
+  /// No description provided for @m4MaintenanceDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الصيانة'**
+  String get m4MaintenanceDetails;
+
+  /// No description provided for @m4EditIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل البلاغ'**
+  String get m4EditIssue;
+
+  /// No description provided for @m4EditMaintenance.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الصيانة'**
+  String get m4EditMaintenance;
+
+  /// No description provided for @m4Required.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الحقل مطلوب'**
+  String get m4Required;
+
+  /// No description provided for @m4AllEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المعدات'**
+  String get m4AllEquipment;
+
+  /// No description provided for @m4LinkedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروفات مرتبطة'**
+  String get m4LinkedCount;
+
+  /// No description provided for @m4ViewHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض السجل'**
+  String get m4ViewHistory;
+
+  /// No description provided for @m4RemoveAttachment.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة المرفق'**
+  String get m4RemoveAttachment;
+
+  /// No description provided for @m4NoLinkedIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'دون بلاغ مرتبط'**
+  String get m4NoLinkedIssue;
+
+  /// No description provided for @m4DateRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفترة الزمنية'**
+  String get m4DateRange;
+
+  /// No description provided for @m4ClearDateRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الفترة'**
+  String get m4ClearDateRange;
+
+  /// No description provided for @m4NoIssuesGlobal.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بلاغات بعد'**
+  String get m4NoIssuesGlobal;
+
+  /// No description provided for @m4NoMaintenanceGlobal.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد سجلات صيانة بعد'**
+  String get m4NoMaintenanceGlobal;
+
+  /// No description provided for @m4SelectIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار بلاغ'**
+  String get m4SelectIssue;
+
+  /// No description provided for @m4ClearIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة ربط البلاغ'**
+  String get m4ClearIssue;
 }
 
 class _AppLocalizationsDelegate
