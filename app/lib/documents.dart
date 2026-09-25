@@ -85,6 +85,17 @@ String localizedDocumentStatus(BuildContext context, Map<String, dynamic> doc) {
 bool documentNeedsAttention(Map<String, dynamic> doc) =>
     {'EXPIRED', 'EXPIRES_TODAY', 'EXPIRING_SOON'}.contains(doc['status']);
 
+String localizedAttentionBody(BuildContext context, Map<String, dynamic> doc) =>
+    localizedNotification(context, {
+      'templateKey': 'DOCUMENT_EXPIRY',
+      'params': {
+        'documentType': doc['type'],
+        'customTypeName': doc['customTypeName'],
+        'equipmentName': doc['equipmentName'],
+        'daysRemaining': doc['daysRemaining'],
+      },
+    }).$2;
+
 Widget documentLoadFailure(BuildContext context, VoidCallback retry) => Center(
   child: Column(
     mainAxisSize: MainAxisSize.min,
@@ -1587,7 +1598,7 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                   (d) => ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(localizedDocumentName(context, d)),
-                    subtitle: Text('${d['equipmentName']} • ${d['body']}'),
+                    subtitle: Text(localizedAttentionBody(context, d)),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1704,7 +1715,7 @@ class _AttentionPageState extends State<AttentionPage> {
                 (d) => Card(
                   child: ListTile(
                     title: Text(localizedDocumentName(context, d)),
-                    subtitle: Text('${d['equipmentName']} • ${d['body']}'),
+                    subtitle: Text(localizedAttentionBody(context, d)),
                     onTap: () async {
                       await Navigator.push(
                         context,

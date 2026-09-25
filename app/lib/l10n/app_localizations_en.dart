@@ -169,6 +169,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accessDenied => 'You do not have access to this information';
 
   @override
+  String get invalidInput => 'Check the information you entered and try again';
+
+  @override
+  String get invalidOtp =>
+      'The code is incorrect or expired. Request a new code';
+
+  @override
+  String get sessionExpired => 'Your session has expired. Sign in again';
+
+  @override
+  String get otpThrottled => 'Wait a moment before requesting another code';
+
+  @override
+  String get recordNotFound => 'The requested record could not be found';
+
+  @override
+  String get documentVersionChanged =>
+      'This document changed. Refresh before editing';
+
+  @override
+  String get documentLocked =>
+      'This document cannot be edited in its current state';
+
+  @override
+  String get fileUnavailable => 'The file is unavailable. Try again later';
+
+  @override
+  String get attachmentLimit => 'You have reached the attachment limit';
+
+  @override
+  String get idempotencyConflict =>
+      'The request changed. Check the records before saving again';
+
+  @override
+  String get immutableAttachment =>
+      'This attachment is saved. Add a new one to replace it';
+
+  @override
+  String get unsupportedLocale => 'Choose a supported language';
+
+  @override
   String get notificationDocumentExpiryTitle => 'Document expiring soon';
 
   @override

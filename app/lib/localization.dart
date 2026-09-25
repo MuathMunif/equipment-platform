@@ -34,13 +34,23 @@ String localizedRiyadhDateTime(BuildContext context, String value) {
 }
 
 String localizedMoney(BuildContext context, Object? value) {
-  final decimal = num.tryParse('$value');
-  if (decimal == null) return '$value';
+  final raw = '$value';
+  if (!RegExp(r'^-?[0-9]+\.[0-9]{2}$').hasMatch(raw)) return raw;
   final language = Localizations.localeOf(context).languageCode;
-  final amount = NumberFormat.decimalPatternDigits(
-    locale: language,
-    decimalDigits: 2,
-  ).format(decimal);
+  final parts = raw.split('.');
+  final format = NumberFormat.decimalPattern(language);
+  final symbols = format.symbols;
+  String digits(String value) =>
+      value.split('').map((digit) => format.format(int.parse(digit))).join();
+  final negative = parts.first.startsWith('-');
+  final whole = negative ? parts.first.substring(1) : parts.first;
+  final groups = <String>[];
+  for (var end = whole.length; end > 0; end -= 3) {
+    groups.insert(0, digits(whole.substring(end < 3 ? 0 : end - 3, end)));
+  }
+  final integer =
+      '${negative ? symbols.MINUS_SIGN : ''}${groups.join(symbols.GROUP_SEP)}';
+  final amount = '$integer${symbols.DECIMAL_SEP}${digits(parts.last)}';
   return '$amount ${l10n(context).sarUnit}';
 }
 
@@ -53,6 +63,23 @@ String localizedErrorForLocale(Locale locale, Object error) {
   return switch (error.localeCode) {
     'FINANCIAL_TOTAL_LOCKED' => loc.financialTotalLocked,
     'DOCUMENT_ALREADY_RENEWED' => loc.documentAlreadyRenewed,
+    'INVALID_INPUT' => loc.invalidInput,
+    'INVALID_OTP' => loc.invalidOtp,
+    'SESSION_EXPIRED' => loc.sessionExpired,
+    'OTP_THROTTLED' => loc.otpThrottled,
+    'NOT_FOUND' => loc.recordNotFound,
+    'DOCUMENT_VERSION_CHANGED' => loc.documentVersionChanged,
+    'DOCUMENT_ARCHIVED' ||
+    'EQUIPMENT_ARCHIVED' ||
+    'HISTORICAL_VERSION' ||
+    'TYPE_LOCKED' => loc.documentLocked,
+    'FILE_NOT_READY' || 'FILE_UNAVAILABLE' => loc.fileUnavailable,
+    'ATTACHMENT_LIMIT' => loc.attachmentLimit,
+    'IDEMPOTENCY_CONFLICT' => loc.idempotencyConflict,
+    'IMMUTABLE_ATTACHMENT' => loc.immutableAttachment,
+    'UNSUPPORTED_LOCALE' => loc.unsupportedLocale,
+    'MEMBERSHIP_REQUIRED' || 'ORIGIN_DENIED' => loc.accessDenied,
+    'CSRF_REQUIRED' => loc.sessionExpired,
     'CROSS_WORKSPACE_ACCESS_DENIED' || 'ACCESS_DENIED' => loc.accessDenied,
     'SESSION_REQUIRED' => loc.sessionRequired,
     'NETWORK' => loc.networkError,

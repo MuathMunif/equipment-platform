@@ -22,6 +22,59 @@ void main() {
       expect(initialLocale('xx', const Locale('fr')).languageCode, 'ar');
     },
   );
+  test('known backend business errors use localized copy in each language', () {
+    for (final language in ['ar', 'en', 'ur']) {
+      final locale = Locale(language);
+      final generic = lookupAppLocalizations(locale).requestFailed;
+      for (final code in [
+        'INVALID_INPUT',
+        'INVALID_OTP',
+        'SESSION_EXPIRED',
+        'OTP_THROTTLED',
+        'NOT_FOUND',
+        'DOCUMENT_VERSION_CHANGED',
+        'DOCUMENT_ARCHIVED',
+        'EQUIPMENT_ARCHIVED',
+        'FILE_NOT_READY',
+        'FILE_UNAVAILABLE',
+        'ATTACHMENT_LIMIT',
+        'IDEMPOTENCY_CONFLICT',
+        'IMMUTABLE_ATTACHMENT',
+        'UNSUPPORTED_LOCALE',
+        'FINANCIAL_TOTAL_LOCKED',
+      ]) {
+        final rendered = localizedErrorForLocale(
+          locale,
+          ApiError(409, code, 'raw server message'),
+        );
+        expect(rendered, isNot('raw server message'));
+        expect(rendered, isNot(generic), reason: '$language $code');
+      }
+    }
+  });
+  testWidgets('date display changes with locale without changing stored date', (
+    tester,
+  ) async {
+    final displayed = <String, String>{};
+    for (final language in ['ar', 'en', 'ur']) {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(language),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Builder(
+            builder: (context) {
+              displayed[language] = localizedDate(context, '2026-09-25');
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+    expect(displayed.values.toSet().length, 3);
+    expect(displayed['en'], contains('2026'));
+  });
 
   for (final (code, direction) in [
     ('ar', TextDirection.rtl),
@@ -68,6 +121,12 @@ void main() {
               );
               expect(localizedDate(context, '2026-09-25'), isNotEmpty);
               expect(localizedMoney(context, '350.00'), contains('350'));
+              if (code == 'en') {
+                expect(
+                  localizedMoney(context, '999999999.99'),
+                  contains('999,999,999.99'),
+                );
+              }
               return Text(l10n(context).appTitle);
             },
           ),

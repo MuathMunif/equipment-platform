@@ -323,6 +323,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('renewDocument')), findsOneWidget);
   });
+  for (final language in ['en', 'ur']) {
+    for (final width in [390.0, 1440.0]) {
+      testWidgets('$language attention at $width ignores Arabic server body', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final api = apiWith(
+          (request) async => reply([
+            {
+              'documentId': 'd',
+              'equipmentId': 'eq',
+              'equipmentName': 'Truck 1',
+              'type': 'INSURANCE',
+              'body': 'ينتهي بعد 5 أيام',
+              'expiryDate': '2026-09-30',
+              'daysRemaining': 5,
+              'status': 'EXPIRING_SOON',
+            },
+          ]),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: Locale(language),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: AttentionPage(api: api),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('ينتهي بعد'), findsNothing);
+        expect(find.textContaining('Truck 1'), findsOneWidget);
+        expect(
+          find.textContaining(language == 'en' ? 'Expires in' : 'دن میں'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
   testWidgets('incomplete document directly opens expiry edit form', (
     tester,
   ) async {

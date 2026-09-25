@@ -169,6 +169,44 @@ class AppLocalizationsAr extends AppLocalizations {
   String get accessDenied => 'لا تملك صلاحية الوصول لهذه البيانات';
 
   @override
+  String get invalidInput => 'راجع البيانات المدخلة وأعد المحاولة';
+
+  @override
+  String get invalidOtp => 'الرمز غير صحيح أو انتهت صلاحيته؛ اطلب رمزًا جديدًا';
+
+  @override
+  String get sessionExpired => 'انتهت جلستك؛ سجّل الدخول من جديد';
+
+  @override
+  String get otpThrottled => 'انتظر قليلًا قبل طلب رمز جديد';
+
+  @override
+  String get recordNotFound => 'تعذر العثور على السجل المطلوب';
+
+  @override
+  String get documentVersionChanged =>
+      'تغيرت نسخة المستند؛ حدّث الصفحة قبل التعديل';
+
+  @override
+  String get documentLocked => 'لا يمكن تعديل هذا المستند في حالته الحالية';
+
+  @override
+  String get fileUnavailable => 'الملف غير متاح الآن؛ أعد المحاولة لاحقًا';
+
+  @override
+  String get attachmentLimit => 'وصلت إلى الحد المسموح للمرفقات';
+
+  @override
+  String get idempotencyConflict =>
+      'تغيرت بيانات الطلب؛ راجع السجل قبل إعادة الحفظ';
+
+  @override
+  String get immutableAttachment => 'المرفق محفوظ؛ أضف مرفقًا جديدًا لتغييره';
+
+  @override
+  String get unsupportedLocale => 'اختر لغة مدعومة';
+
+  @override
   String get notificationDocumentExpiryTitle => 'مستند ينتهي قريبًا';
 
   @override

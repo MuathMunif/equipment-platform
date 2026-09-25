@@ -412,6 +412,78 @@ abstract class AppLocalizations {
   /// **'لا تملك صلاحية الوصول لهذه البيانات'**
   String get accessDenied;
 
+  /// No description provided for @invalidInput.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع البيانات المدخلة وأعد المحاولة'**
+  String get invalidInput;
+
+  /// No description provided for @invalidOtp.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز غير صحيح أو انتهت صلاحيته؛ اطلب رمزًا جديدًا'**
+  String get invalidOtp;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت جلستك؛ سجّل الدخول من جديد'**
+  String get sessionExpired;
+
+  /// No description provided for @otpThrottled.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتظر قليلًا قبل طلب رمز جديد'**
+  String get otpThrottled;
+
+  /// No description provided for @recordNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر العثور على السجل المطلوب'**
+  String get recordNotFound;
+
+  /// No description provided for @documentVersionChanged.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيرت نسخة المستند؛ حدّث الصفحة قبل التعديل'**
+  String get documentVersionChanged;
+
+  /// No description provided for @documentLocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن تعديل هذا المستند في حالته الحالية'**
+  String get documentLocked;
+
+  /// No description provided for @fileUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف غير متاح الآن؛ أعد المحاولة لاحقًا'**
+  String get fileUnavailable;
+
+  /// No description provided for @attachmentLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى الحد المسموح للمرفقات'**
+  String get attachmentLimit;
+
+  /// No description provided for @idempotencyConflict.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيرت بيانات الطلب؛ راجع السجل قبل إعادة الحفظ'**
+  String get idempotencyConflict;
+
+  /// No description provided for @immutableAttachment.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرفق محفوظ؛ أضف مرفقًا جديدًا لتغييره'**
+  String get immutableAttachment;
+
+  /// No description provided for @unsupportedLocale.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر لغة مدعومة'**
+  String get unsupportedLocale;
+
   /// No description provided for @notificationDocumentExpiryTitle.
   ///
   /// In ar, this message translates to:

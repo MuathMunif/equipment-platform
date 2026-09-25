@@ -169,6 +169,47 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accessDenied => 'آپ کو اس معلومات تک رسائی حاصل نہیں';
 
   @override
+  String get invalidInput => 'درج کی گئی معلومات چیک کریں اور دوبارہ کوشش کریں';
+
+  @override
+  String get invalidOtp =>
+      'کوڈ غلط ہے یا اس کی مدت ختم ہو گئی ہے۔ نیا کوڈ مانگیں';
+
+  @override
+  String get sessionExpired => 'آپ کا سیشن ختم ہو گیا ہے۔ دوبارہ لاگ ان کریں';
+
+  @override
+  String get otpThrottled => 'نیا کوڈ مانگنے سے پہلے کچھ دیر انتظار کریں';
+
+  @override
+  String get recordNotFound => 'مطلوبہ ریکارڈ نہیں ملا';
+
+  @override
+  String get documentVersionChanged =>
+      'دستاویز بدل گئی ہے۔ ترمیم سے پہلے صفحہ تازہ کریں';
+
+  @override
+  String get documentLocked => 'اس حالت میں اس دستاویز کی ترمیم نہیں ہو سکتی';
+
+  @override
+  String get fileUnavailable =>
+      'فائل ابھی دستیاب نہیں۔ بعد میں دوبارہ کوشش کریں';
+
+  @override
+  String get attachmentLimit => 'منسلکات کی حد پوری ہو گئی ہے';
+
+  @override
+  String get idempotencyConflict =>
+      'درخواست کی معلومات بدل گئی ہیں۔ دوبارہ محفوظ کرنے سے پہلے ریکارڈ دیکھیں';
+
+  @override
+  String get immutableAttachment =>
+      'یہ منسلکہ محفوظ ہو چکا ہے۔ اسے بدلنے کے لیے نیا منسلکہ شامل کریں';
+
+  @override
+  String get unsupportedLocale => 'دستیاب زبان منتخب کریں';
+
+  @override
   String get notificationDocumentExpiryTitle =>
       'دستاویز کی میعاد جلد ختم ہو گی';
 
