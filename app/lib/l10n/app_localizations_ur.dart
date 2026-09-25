@@ -1964,4 +1964,190 @@ class AppLocalizationsUr extends AppLocalizations {
   String m5ConfirmMoveDriver(String driverName, String sourceEquipment) {
     return '$driverName کی $sourceEquipment پر موجودہ تعیناتی ختم ہو جائے گی۔';
   }
+
+  @override
+  String get m6Organizations => 'ادارے';
+
+  @override
+  String get m6OrganizationsOptional =>
+      'ادارے اختیاری ہیں۔ آپ ان کے بغیر بھی پوری ایپ استعمال کر سکتے ہیں۔';
+
+  @override
+  String get m6SearchOrganizations => 'ادارے تلاش کریں';
+
+  @override
+  String get m6NoOrganizations =>
+      'ابھی کوئی ادارہ نہیں۔ آپ براہ راست آلات سے شروع کر سکتے ہیں۔';
+
+  @override
+  String get m6AddOrganization => 'ادارہ شامل کریں';
+
+  @override
+  String get m6OrganizationName => 'ادارے کا نام';
+
+  @override
+  String get m6IdentifierOptional => 'شناختی نمبر (اختیاری)';
+
+  @override
+  String get m6NameRequired => 'جاری رکھنے کے لیے نام درج کریں';
+
+  @override
+  String get m6ProjectsContracts => 'منصوبے اور معاہدے';
+
+  @override
+  String get m6ManageEquipment => 'منسلک آلات کا انتظام';
+
+  @override
+  String get m6AddProject => 'منصوبہ یا معاہدہ شامل کریں';
+
+  @override
+  String get m6ArchiveOrganizationConfirm =>
+      'آرکائیو کرنے سے تاریخ محفوظ رہے گی۔ پہلے آلات کی تفویض ختم کریں اور منصوبے یا معاہدے آرکائیو کریں۔';
+
+  @override
+  String get m6NoOrganization => 'بغیر ادارے کے';
+
+  @override
+  String get m6AssignEquipment => 'آلے کو ادارے سے منسلک کریں';
+
+  @override
+  String get m6ConfirmAction => 'عمل کی تصدیق';
+
+  @override
+  String get m6ProjectsOptional =>
+      'ضرورت کے وقت منصوبے یا معاہدے منسلک کریں۔ آلات اور مالیات ان کے بغیر بھی کام کرتے ہیں۔';
+
+  @override
+  String get m6SearchProjects => 'نام، گاہک یا معاہدہ نمبر تلاش کریں';
+
+  @override
+  String get m6All => 'سب';
+
+  @override
+  String get m6Completed => 'مکمل';
+
+  @override
+  String get m6NoProjects => 'کوئی مماثل منصوبہ یا معاہدہ نہیں';
+
+  @override
+  String get m6Project => 'منصوبہ';
+
+  @override
+  String get m6Contract => 'معاہدہ';
+
+  @override
+  String get m6RecordKind => 'ریکارڈ کی قسم';
+
+  @override
+  String get m6OrganizationOptional => 'ادارہ (اختیاری)';
+
+  @override
+  String get m6ClientOptional => 'گاہک (اختیاری)';
+
+  @override
+  String get m6ContractNumberOptional => 'معاہدہ نمبر (اختیاری)';
+
+  @override
+  String get m6StartDateOptional => 'آغاز کی تاریخ (اختیاری)';
+
+  @override
+  String get m6EndDateOptional => 'اختتام کی تاریخ (اختیاری)';
+
+  @override
+  String get m6DateOrder =>
+      'آغاز کی تاریخ اختتام کی تاریخ سے پہلے یا برابر ہونی چاہیے';
+
+  @override
+  String get m6CompleteConfirm =>
+      'مکمل کرنے سے آلات کے فعال روابط ختم ہوں گے۔ مالیات، منسلکات اور تاریخ محفوظ رہیں گے۔';
+
+  @override
+  String get m6ArchiveProjectConfirm =>
+      'آرکائیو سے یہ ریکارڈ عام فہرست سے چھپ جائے گا جبکہ مالیات، منسلکات اور تاریخ محفوظ رہیں گے۔';
+
+  @override
+  String get m6FinancialSummary => 'مالی خلاصہ';
+
+  @override
+  String get m6RecordedIncome => 'درج شدہ آمدنی';
+
+  @override
+  String get m6RecordedExpenses => 'درج شدہ اخراجات';
+
+  @override
+  String get m6RecordedDifference => 'درج شدہ آمدنی اور اخراجات کا فرق';
+
+  @override
+  String get m6Collected => 'وصول شدہ';
+
+  @override
+  String get m6Paid => 'ادا شدہ';
+
+  @override
+  String get m6ReceivablesRemaining => 'وصولی کے لیے باقی';
+
+  @override
+  String get m6PayablesRemaining => 'ادائیگی کے لیے باقی';
+
+  @override
+  String get m6LinkEquipmentFirst =>
+      'آمدنی شامل کرنے سے پہلے آلہ منصوبے سے منسلک کریں';
+
+  @override
+  String get m6Complete => 'منصوبہ مکمل کریں';
+
+  @override
+  String get m6Reopen => 'منصوبہ دوبارہ کھولیں';
+
+  @override
+  String get m6WorkspaceProjectEquipment =>
+      'کسی بھی ادارے یا بغیر ادارے کے آلات منسلک کیے جا سکتے ہیں۔';
+
+  @override
+  String get m6OrganizationProjectEquipment =>
+      'صرف اس منصوبے کے ادارے سے وابستہ موجودہ آلات اہل ہیں۔';
+
+  @override
+  String get m6ProjectClassification => 'منصوبہ یا معاہدہ (اختیاری)';
+
+  @override
+  String get m6AdditionalDetails => 'اضافی تفصیلات';
+
+  @override
+  String get m6ScopeOrganizations => 'منتخب ادارے';
+
+  @override
+  String get m6ScopeOrganizationsHint =>
+      'ان اداروں کے موجودہ اور آئندہ آلات شامل ہیں۔ غیر منسلک آلات شامل نہیں۔';
+
+  @override
+  String get m6ChooseOrganizations => 'کم از کم ایک ادارہ منتخب کریں';
+
+  @override
+  String get m6OrganizationProjectBlocked =>
+      'آلہ منتقل کرنے سے پہلے اسے فعال منصوبے سے الگ کریں';
+
+  @override
+  String get m6OrganizationInUse =>
+      'منسلک آلات یا غیر آرکائیو منصوبوں کی موجودگی میں ادارہ آرکائیو نہیں ہو سکتا';
+
+  @override
+  String get m6ProjectInactive => 'یہ منصوبہ اس عمل کے لیے فعال نہیں';
+
+  @override
+  String get m6ProjectMismatch =>
+      'آلہ اس منصوبے کے موجودہ ادارے سے وابستہ نہیں';
+
+  @override
+  String get m6ActiveProjects => 'فعال منصوبے اور معاہدے';
+
+  @override
+  String get m6NoActiveProjects => 'کوئی فعال منصوبہ منسلک نہیں';
+
+  @override
+  String get m6RetrySameFile => 'دوبارہ اپ لوڈ کے لیے وہی فائل منتخب کریں';
+
+  @override
+  String get m6MoveEquipmentConfirm =>
+      'یہ موجودہ ادارے کی تفویض ختم کر کے آلہ منتقل یا غیر منسلک کرے گا۔ تفویض کی تاریخ محفوظ رہے گی۔';
 }

@@ -19,4 +19,6 @@ public class FinanceController {
     @PostMapping("/{id}/refunds") FinanceService.Entry refund(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id,@RequestHeader("Idempotency-Key") String key,@RequestBody FinanceService.CreateRefund request) { return service.refund(actor,workspace,id,key,request); }
     @PutMapping("/{id}") FinanceService.Entry edit(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id,@RequestBody FinanceService.Edit request) { return service.edit(actor,workspace,id,request); }
     @PostMapping("/{id}/cancellation") FinanceService.Entry cancel(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id,@RequestBody FinanceService.Cancel request) { return service.cancel(actor,workspace,id,request); }
+    public record ProjectClassification(UUID projectId) {}
+    @PutMapping("/{id}/project") FinanceService.Entry classifyProject(@RequestAttribute Actor actor,@PathVariable UUID workspace,@PathVariable UUID id,@RequestBody ProjectClassification request) { return service.classifyProject(actor,workspace,id,request.projectId()); }
 }

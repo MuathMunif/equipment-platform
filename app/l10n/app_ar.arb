@@ -922,7 +922,13 @@
   "m5NotificationSubmissionRejected": "رُفض طلبك المالي",
   "m5AttentionReview": "طلبات مالية تحتاج مراجعة",
   "m5PendingReviewsCount": "{count} طلبات مالية بانتظار المراجعة",
-  "@m5PendingReviewsCount": {"placeholders": {"count": {"type": "String"}}},
+  "@m5PendingReviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "m5RoleChangeResetsPermissions": "تغيير الدور سيعيد الصلاحيات إلى إعدادات الدور الجديد ويلغي تخصيصاتها السابقة. هل تريد المتابعة؟",
   "m5DirectExpenseHint": "أكمل بيانات المصروف وسجله مباشرة.",
   "m5DirectExpenseConfirm": "تسجيل هذا المصروف؟",
@@ -938,11 +944,104 @@
   "m5ChooseDriver": "اختر السائق",
   "m5NoEligibleDrivers": "لا يوجد سائقون متاحون لهذه المعدة",
   "m5DriverCurrentlyOnEquipment": "السائق معيّن حاليًا على {equipmentName}",
-  "@m5DriverCurrentlyOnEquipment": {"placeholders": {"equipmentName": {"type": "String"}}},
+  "@m5DriverCurrentlyOnEquipment": {
+    "placeholders": {
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmAssignDriver": "تعيين {driverName} على {equipmentName}؟",
-  "@m5ConfirmAssignDriver": {"placeholders": {"driverName": {"type": "String"}, "equipmentName": {"type": "String"}}},
+  "@m5ConfirmAssignDriver": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmReplaceDriver": "استبدال {currentDriver} بـ {newDriver} على {equipmentName}؟",
-  "@m5ConfirmReplaceDriver": {"placeholders": {"currentDriver": {"type": "String"}, "newDriver": {"type": "String"}, "equipmentName": {"type": "String"}}},
+  "@m5ConfirmReplaceDriver": {
+    "placeholders": {
+      "currentDriver": {
+        "type": "String"
+      },
+      "newDriver": {
+        "type": "String"
+      },
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmMoveDriver": "سينتهي تعيين {driverName} الحالي على {sourceEquipment}.",
-  "@m5ConfirmMoveDriver": {"placeholders": {"driverName": {"type": "String"}, "sourceEquipment": {"type": "String"}}}
+  "@m5ConfirmMoveDriver": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "sourceEquipment": {
+        "type": "String"
+      }
+    }
+  },
+  "m6Organizations": "المؤسسات",
+  "m6OrganizationsOptional": "المؤسسات اختيارية. يمكنك استخدام التطبيق كاملًا دون إنشاء مؤسسة.",
+  "m6SearchOrganizations": "ابحث عن مؤسسة",
+  "m6NoOrganizations": "لا توجد مؤسسات بعد. يمكنك البدء بالمعدات مباشرة.",
+  "m6AddOrganization": "إضافة مؤسسة",
+  "m6OrganizationName": "اسم المؤسسة",
+  "m6IdentifierOptional": "رقم التعريف (اختياري)",
+  "m6NameRequired": "أدخل الاسم للمتابعة",
+  "m6ProjectsContracts": "المشاريع والعقود",
+  "m6ManageEquipment": "إدارة المعدات المرتبطة",
+  "m6AddProject": "إضافة مشروع أو عقد",
+  "m6ArchiveOrganizationConfirm": "أرشفة المؤسسة تحفظ تاريخها. يجب أولًا إزالة تعيين المعدات وأرشفة المشاريع والعقود غير المؤرشفة.",
+  "m6NoOrganization": "بدون مؤسسة",
+  "m6AssignEquipment": "تعيين مؤسسة للمعدة",
+  "m6ConfirmAction": "تأكيد الإجراء",
+  "m6ProjectsOptional": "اربط المشاريع والعقود عند الحاجة؛ يمكنك إدارة المعدات والمال دونها.",
+  "m6SearchProjects": "ابحث بالاسم أو العميل أو رقم العقد",
+  "m6All": "الكل",
+  "m6Completed": "مكتمل",
+  "m6NoProjects": "لا توجد مشاريع أو عقود تطابق العرض",
+  "m6Project": "مشروع",
+  "m6Contract": "عقد",
+  "m6RecordKind": "نوع السجل",
+  "m6OrganizationOptional": "المؤسسة (اختياري)",
+  "m6ClientOptional": "العميل (اختياري)",
+  "m6ContractNumberOptional": "رقم العقد (اختياري)",
+  "m6StartDateOptional": "تاريخ البداية (اختياري)",
+  "m6EndDateOptional": "تاريخ النهاية (اختياري)",
+  "m6DateOrder": "يجب أن يسبق تاريخ البداية تاريخ النهاية أو يساويه",
+  "m6CompleteConfirm": "سيكتمل المشروع وتنتهي روابط المعدات النشطة. تبقى العمليات المالية والمرفقات والتاريخ محفوظة.",
+  "m6ArchiveProjectConfirm": "الأرشفة تخفي السجل من القوائم العادية وتحفظ المال والمرفقات والتاريخ.",
+  "m6FinancialSummary": "ملخص مالي مشتق",
+  "m6RecordedIncome": "الإيرادات المسجلة",
+  "m6RecordedExpenses": "المصروفات المسجلة",
+  "m6RecordedDifference": "الفرق بين الإيرادات والمصروفات المسجلة",
+  "m6Collected": "المحصّل",
+  "m6Paid": "المدفوع",
+  "m6ReceivablesRemaining": "المتبقي للتحصيل",
+  "m6PayablesRemaining": "المتبقي للدفع",
+  "m6LinkEquipmentFirst": "اربط معدة بالمشروع أولًا لإضافة إيراد",
+  "m6Complete": "إكمال المشروع",
+  "m6Reopen": "إعادة فتح المشروع",
+  "m6WorkspaceProjectEquipment": "يمكن ربط معدات من مؤسسات مختلفة أو بدون مؤسسة.",
+  "m6OrganizationProjectEquipment": "تظهر المعدات التابعة حاليًا لمؤسسة المشروع فقط.",
+  "m6ProjectClassification": "المشروع أو العقد (اختياري)",
+  "m6AdditionalDetails": "تفاصيل إضافية",
+  "m6ScopeOrganizations": "مؤسسات محددة",
+  "m6ScopeOrganizationsHint": "يشمل معدات هذه المؤسسات الآن وكل معدة تنضم إليها مستقبلًا. لا يشمل المعدات غير التابعة لمؤسسة.",
+  "m6ChooseOrganizations": "اختر مؤسسة واحدة على الأقل",
+  "m6OrganizationProjectBlocked": "افصل المعدة من المشروع النشط قبل نقلها إلى مؤسسة أخرى",
+  "m6OrganizationInUse": "تعذر أرشفة المؤسسة لوجود معدات معيّنة أو مشاريع وعقود غير مؤرشفة",
+  "m6ProjectInactive": "المشروع غير نشط لهذا الإجراء",
+  "m6ProjectMismatch": "المعدة لا تتبع مؤسسة المشروع الحالية",
+  "m6ActiveProjects": "المشاريع والعقود النشطة",
+  "m6NoActiveProjects": "لا توجد روابط مشاريع نشطة",
+  "m6RetrySameFile": "اختر الملف نفسه لإعادة الرفع",
+  "m6MoveEquipmentConfirm": "سيُنهي هذا الإجراء تعيين المعدة الحالي وينقلها أو يتركها دون مؤسسة. سيبقى تاريخ التعيين محفوظًا."
 }

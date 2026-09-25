@@ -25,6 +25,8 @@ public class DriverService {
         Access.Member caller=access.member(actor,workspace);
         String scope=caller.scope().equals("ALL_EQUIPMENT")?"":caller.scope().equals("SELECTED_EQUIPMENT")
             ?" and (a.equipment_id is null or exists(select 1 from membership_equipment me where me.workspace_id=m.workspace_id and me.user_id=? and me.equipment_id=a.equipment_id))"
+            :caller.scope().equals("SELECTED_ORGANIZATIONS")
+            ?" and (a.equipment_id is null or exists(select 1 from equipment_organization_assignment oa join membership_organization mo on mo.workspace_id=oa.workspace_id and mo.organization_id=oa.organization_id where oa.workspace_id=m.workspace_id and oa.equipment_id=a.equipment_id and oa.ended_at is null and mo.user_id=?))"
             :" and (a.equipment_id is null or exists(select 1 from driver_assignment mine where mine.workspace_id=m.workspace_id and mine.driver_user_id=? and mine.equipment_id=a.equipment_id and mine.ended_at is null))";
         String sql="select m.user_id,coalesce(m.display_name,u.name) as display_name,a.equipment_id as current_equipment_id,e.name as current_equipment_name,a.started_at from membership m join app_user u on u.id=m.user_id left join driver_assignment a on a.workspace_id=m.workspace_id and a.driver_user_id=m.user_id and a.ended_at is null left join equipment e on e.workspace_id=a.workspace_id and e.id=a.equipment_id where m.workspace_id=? and m.role='DRIVER' and m.active=true"+scope+" order by coalesce(m.display_name,u.name),m.user_id limit 100";
         Object[] args=scope.isEmpty()?new Object[]{workspace}:new Object[]{workspace,actor.userId()};

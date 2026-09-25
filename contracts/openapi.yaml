@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: Equipment Platform — isolated development M5
-  version: 0.5.0
+  title: Equipment Platform — isolated development M6
+  version: 0.6.0
   description: |
-    Local M5 team slice. Production startup is intentionally rejected.
+    Local M6 optional organizations and unified project/contract slice. Production startup is intentionally rejected.
     Protected resources check active workspace membership, effective capabilities and equipment scope.
     Money is an exact SAR decimal string with two fractional digits (0.01–999999999.99).
     Business dates use YYYY-MM-DD independently of audit instants; UI defaults to Asia/Riyadh.
@@ -148,6 +148,7 @@ paths:
       parameters:
         - {$ref: '#/components/parameters/Page'}
         - {in: query, name: search, schema: {type: string, maxLength: 100}, description: Literal name/reference substring}
+        - {in: query, name: organizationId, schema: {type: string, format: uuid}, description: Current optional organization assignment filter}
       responses:
         '200':
           description: Authorized equipment page
@@ -313,6 +314,7 @@ paths:
                 partyName: {type: string, maxLength: 100, description: Required when an amount remains}
                 dueDate: {type: string, format: date, description: Optional when an amount remains}
                 note: {type: [string, 'null'], maxLength: 1000}
+                projectId: {type: [string, 'null'], format: uuid, description: Optional project/contract classification; money remains on this M2 entry}
       responses:
         '200': {description: One posted expense or income with optional initial settlement, or authorized replay, content: {application/json: {schema: {$ref: '#/components/schemas/Entry'}}}}
         '400': {$ref: '#/components/responses/Error'}
@@ -924,6 +926,122 @@ paths:
       summary: Reject with required reason; no financial entry created
       requestBody: {required: true, content: {application/json: {schema: {type: object, required: [reason], properties: {reason: {type: string, minLength: 1, maxLength: 500}}}}}}
       responses: {'200': {description: Rejected submission}, '409': {description: Already reviewed}}
+  /workspaces/{workspace}/organizations:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      parameters:
+        - {in: query, name: archived, schema: {type: boolean, default: false}}
+        - {in: query, name: search, schema: {type: string, maxLength: 100}}
+      responses: {'200': {description: Authorized organization list, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Organization'}}}}}}
+    post:
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OrganizationInput'}}}}
+      responses: {'200': {description: Created organization, content: {application/json: {schema: {$ref: '#/components/schemas/Organization'}}}}}
+  /workspaces/{workspace}/organizations/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses: {'200': {description: Authorized organization detail, content: {application/json: {schema: {$ref: '#/components/schemas/Organization'}}}}}
+    put:
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OrganizationInput'}}}}
+      responses: {'200': {description: Updated organization, content: {application/json: {schema: {$ref: '#/components/schemas/Organization'}}}}}
+  /workspaces/{workspace}/organizations/{id}/archive:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      responses: {'200': {description: Archived when no current equipment or non-archived projects remain}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/organizations/{id}/restore:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      responses: {'200': {description: Restored organization}}
+  /workspaces/{workspace}/equipment/{equipment}/organization:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    put:
+      description: Atomic assignment, move or unassignment. Null organizationId unassigns. Active organization project links block a move.
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [organizationId], properties: {organizationId: {type: [string, 'null'], format: uuid}}}}}}
+      responses: {'200': {description: Current equipment organization}, '409': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/equipment/{equipment}/organization-history:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses: {'200': {description: Assignment history including ended records}}
+  /workspaces/{workspace}/projects:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      parameters:
+        - {in: query, name: archived, schema: {type: boolean, default: false}}
+        - {in: query, name: kind, schema: {type: string, enum: [PROJECT, CONTRACT]}}
+        - {in: query, name: status, schema: {type: string, enum: [ACTIVE, COMPLETED]}}
+        - {in: query, name: organizationId, schema: {type: string, format: uuid}}
+        - {in: query, name: search, schema: {type: string, maxLength: 100}}
+      responses: {'200': {description: Authorized unified project/contract list, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ProjectOrContract'}}}}}}
+    post:
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProjectInput'}}}}
+      responses: {'200': {description: Created ACTIVE project or contract}}
+  /workspaces/{workspace}/projects/{id}:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses: {'200': {description: Full project detail only with project capability and scope}, '404': {$ref: '#/components/responses/Error'}}
+    put:
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProjectInput'}}}}
+      responses: {'200': {description: Updated project or contract}}
+  /workspaces/{workspace}/projects/{id}/complete:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      responses: {'200': {description: COMPLETED; all active equipment links ended}}
+  /workspaces/{workspace}/projects/{id}/reopen:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      responses: {'200': {description: ACTIVE; old equipment links remain ended}}
+  /workspaces/{workspace}/projects/{id}/archive:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      responses: {'200': {description: Archived, preserving finance and attachment history}}
+  /workspaces/{workspace}/projects/{id}/restore:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      responses: {'200': {description: Restored previous ACTIVE or COMPLETED status}}
+  /workspaces/{workspace}/projects/{id}/equipment:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      responses: {'200': {description: Current and historical project equipment links}}
+  /workspaces/{workspace}/projects/equipment/{equipment}/active-projects:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    get:
+      description: Minimal active project context for an equipment detail; requires equipment view and project scope.
+      responses: {'200': {description: Accessible active project and contract id, name and kind only}}
+  /workspaces/{workspace}/projects/{id}/equipment/{equipment}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/Id'}
+      - {in: path, name: equipment, required: true, schema: {type: string, format: uuid}}
+    post:
+      responses: {'200': {description: New active equipment link}, '409': {$ref: '#/components/responses/Error'}}
+    delete:
+      responses: {'200': {description: Active link ended; history preserved}}
+  /workspaces/{workspace}/projects/{id}/financial-summary:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    get:
+      description: Requires PROJECT_VIEW and FINANCE_VIEW and current resource scope; all values derive from M2, difference is not profit.
+      responses: {'200': {description: Exact SAR decimal strings for recordedIncome, recordedExpenses, recordedDifference, collected, paid, receivablesRemaining, payablesRemaining}, '404': {$ref: '#/components/responses/Error'}}
+  /workspaces/{workspace}/projects/{project}/attachments:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: project, required: true, schema: {type: string, format: uuid}}
+    get:
+      responses: {'200': {description: Project attachment metadata using full project access rules}}
+    post:
+      parameters: [{$ref: '#/components/parameters/Idempotency'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [filename, mediaType, size], properties: {filename: {type: string}, mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}, size: {type: integer, maximum: 10485760}}}}}}
+      responses: {'200': {description: 'PENDING project attachment; upload via existing attachment content endpoint'}}
+  /workspaces/{workspace}/entries/{id}/project:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    put:
+      description: Change or clear optional project classification on a POSTED entry, even after settlement or refund; monetary history is unchanged.
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [projectId], properties: {projectId: {type: [string, 'null'], format: uuid}}}}}}
+      responses: {'200': {description: Updated M2 entry}, '409': {$ref: '#/components/responses/Error'}}
 components:
   securitySchemes:
     bearerSession: {type: http, scheme: bearer}
@@ -971,7 +1089,8 @@ components:
         displayName: {type: string, minLength: 1, maxLength: 100}
         phone: {type: string, description: Synthetic development number normalized to +9665...}
         role: {type: string, enum: [MANAGER, ACCOUNTANT, DRIVER]}
-        scope: {type: string, enum: [ALL_EQUIPMENT, SELECTED_EQUIPMENT], description: Omit for DRIVER}
+        scope: {type: string, enum: [ALL_EQUIPMENT, SELECTED_ORGANIZATIONS, SELECTED_EQUIPMENT], description: Omit for DRIVER}
+        organizationIds: {type: array, items: {type: string, format: uuid}}
         equipmentIds: {type: array, items: {type: string, format: uuid}}
         capabilities: {type: array, uniqueItems: true, items: {type: string}}
         financialMode: {type: string, enum: [DIRECT, REVIEW]}
@@ -980,7 +1099,8 @@ components:
       description: Omitted fields retain current values except role change resets capability defaults.
       properties:
         role: {type: string, enum: [MANAGER, ACCOUNTANT, DRIVER]}
-        scope: {type: string, enum: [ALL_EQUIPMENT, SELECTED_EQUIPMENT]}
+        scope: {type: string, enum: [ALL_EQUIPMENT, SELECTED_ORGANIZATIONS, SELECTED_EQUIPMENT]}
+        organizationIds: {type: array, items: {type: string, format: uuid}}
         equipmentIds: {type: array, items: {type: string, format: uuid}}
         capabilities: {type: array, uniqueItems: true, items: {type: string}}
         financialMode: {type: string, enum: [DIRECT, REVIEW]}
@@ -1016,6 +1136,46 @@ components:
         dueDate: {type: string, format: date}
         entryType: {const: EXPENSE}
         expenseScope: {const: SINGLE}
+        projectId: {type: [string, 'null'], format: uuid, description: Reviewer may select before approval; driver submission has no project field}
+    OrganizationInput:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        identifier: {type: [string, 'null'], maxLength: 100}
+        notes: {type: [string, 'null'], maxLength: 1000}
+    Organization:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        name: {type: string}
+        identifier: {type: [string, 'null']}
+        notes: {type: [string, 'null']}
+        archived_at: {type: [string, 'null'], format: date-time}
+        equipment_count: {type: integer}
+        project_count: {type: integer}
+    ProjectInput:
+      type: object
+      required: [kind, name]
+      properties:
+        kind: {type: string, enum: [PROJECT, CONTRACT]}
+        name: {type: string, minLength: 1, maxLength: 100}
+        organizationId: {type: [string, 'null'], format: uuid}
+        clientName: {type: [string, 'null'], maxLength: 100}
+        contractNumber: {type: [string, 'null'], maxLength: 100}
+        startDate: {type: [string, 'null'], format: date}
+        endDate: {type: [string, 'null'], format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
+    ProjectOrContract:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [PROJECT, CONTRACT]}
+        name: {type: string}
+        organization_id: {type: [string, 'null'], format: uuid}
+        status: {type: string, enum: [ACTIVE, COMPLETED]}
+        archived_at: {type: [string, 'null'], format: date-time}
     Money: {type: string, pattern: '^(0|[1-9][0-9]{0,8})\.[0-9]{2}$', example: '350.00'}
     IssueInput:
       type: object
@@ -1145,7 +1305,7 @@ components:
         notes: {type: [string, 'null'], maxLength: 1000}
     Equipment:
       type: object
-      required: [id, reference, name, model, createdAt]
+      required: [id, reference, name, model, createdAt, organizationId, organizationName]
       properties:
         id: {type: string, format: uuid}
         reference: {type: string}
@@ -1153,6 +1313,8 @@ components:
         model: {type: string}
         createdAt: {type: string, format: date-time}
         archivedAt: {type: [string, 'null'], format: date-time}
+        organizationId: {type: [string, 'null'], format: uuid, description: Current optional organization assignment}
+        organizationName: {type: [string, 'null']}
     Draft:
       type: object
       required: [id, equipmentId, equipmentName, note, lifecycle, createdBy, createdAt, discardedBy, discardedAt]
@@ -1186,7 +1348,7 @@ components:
         remainingShare: {$ref: '#/components/schemas/Money'}
     Entry:
       type: object
-      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations, createdBy, completedBy, completedAt, submittedBy, submissionId]
+      required: [id, equipmentId, equipmentName, entryType, amount, currency, category, operationDate, note, lifecycle, paid, refunded, netPaid, refundable, remaining, settlementStatus, partyName, dueDate, createdAt, cancellationReason, cancelledAt, cancelledBy, settlements, refunds, expenseScope, allocations, createdBy, completedBy, completedAt, submittedBy, submissionId, projectId]
       properties:
         id: {type: string, format: uuid}
         equipmentId: {type: [string, 'null'], format: uuid, description: Null for shared/general expenses}
@@ -1215,6 +1377,7 @@ components:
         createdBy: {type: string, format: uuid}
         submittedBy: {type: [string, 'null'], format: uuid, description: Original submitter when entry was approved from a review request}
         submissionId: {type: [string, 'null'], format: uuid, description: Linked M5 financial submission}
+        projectId: {type: [string, 'null'], format: uuid, description: Optional unified PROJECT or CONTRACT classification}
         completedBy: {type: [string, 'null'], format: uuid, description: Present when posted by completing a draft}
         completedAt: {type: [string, 'null'], format: date-time}
         settlements:
@@ -1239,13 +1402,14 @@ components:
               createdAt: {type: string, format: date-time}
     Attachment:
       type: object
-      required: [id, entryId, documentVersionId, issueId, maintenanceId, filename, mediaType, size, state, scanStatus]
+      required: [id, entryId, documentVersionId, issueId, maintenanceId, projectId, filename, mediaType, size, state, scanStatus]
       properties:
         id: {type: string, format: uuid}
         entryId: {type: [string, 'null'], format: uuid}
         documentVersionId: {type: [string, 'null'], format: uuid}
         issueId: {type: [string, 'null'], format: uuid}
         maintenanceId: {type: [string, 'null'], format: uuid}
+        projectId: {type: [string, 'null'], format: uuid}
         filename: {type: string}
         mediaType: {type: string, enum: [image/png, image/jpeg, application/pdf]}
         size: {type: integer}

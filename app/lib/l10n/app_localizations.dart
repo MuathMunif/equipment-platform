@@ -3654,6 +3654,348 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'سينتهي تعيين {driverName} الحالي على {sourceEquipment}.'**
   String m5ConfirmMoveDriver(String driverName, String sourceEquipment);
+
+  /// No description provided for @m6Organizations.
+  ///
+  /// In ar, this message translates to:
+  /// **'المؤسسات'**
+  String get m6Organizations;
+
+  /// No description provided for @m6OrganizationsOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'المؤسسات اختيارية. يمكنك استخدام التطبيق كاملًا دون إنشاء مؤسسة.'**
+  String get m6OrganizationsOptional;
+
+  /// No description provided for @m6SearchOrganizations.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن مؤسسة'**
+  String get m6SearchOrganizations;
+
+  /// No description provided for @m6NoOrganizations.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مؤسسات بعد. يمكنك البدء بالمعدات مباشرة.'**
+  String get m6NoOrganizations;
+
+  /// No description provided for @m6AddOrganization.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مؤسسة'**
+  String get m6AddOrganization;
+
+  /// No description provided for @m6OrganizationName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المؤسسة'**
+  String get m6OrganizationName;
+
+  /// No description provided for @m6IdentifierOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم التعريف (اختياري)'**
+  String get m6IdentifierOptional;
+
+  /// No description provided for @m6NameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الاسم للمتابعة'**
+  String get m6NameRequired;
+
+  /// No description provided for @m6ProjectsContracts.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشاريع والعقود'**
+  String get m6ProjectsContracts;
+
+  /// No description provided for @m6ManageEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة المعدات المرتبطة'**
+  String get m6ManageEquipment;
+
+  /// No description provided for @m6AddProject.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مشروع أو عقد'**
+  String get m6AddProject;
+
+  /// No description provided for @m6ArchiveOrganizationConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرشفة المؤسسة تحفظ تاريخها. يجب أولًا إزالة تعيين المعدات وأرشفة المشاريع والعقود غير المؤرشفة.'**
+  String get m6ArchiveOrganizationConfirm;
+
+  /// No description provided for @m6NoOrganization.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مؤسسة'**
+  String get m6NoOrganization;
+
+  /// No description provided for @m6AssignEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين مؤسسة للمعدة'**
+  String get m6AssignEquipment;
+
+  /// No description provided for @m6ConfirmAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الإجراء'**
+  String get m6ConfirmAction;
+
+  /// No description provided for @m6ProjectsOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط المشاريع والعقود عند الحاجة؛ يمكنك إدارة المعدات والمال دونها.'**
+  String get m6ProjectsOptional;
+
+  /// No description provided for @m6SearchProjects.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث بالاسم أو العميل أو رقم العقد'**
+  String get m6SearchProjects;
+
+  /// No description provided for @m6All.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get m6All;
+
+  /// No description provided for @m6Completed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتمل'**
+  String get m6Completed;
+
+  /// No description provided for @m6NoProjects.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مشاريع أو عقود تطابق العرض'**
+  String get m6NoProjects;
+
+  /// No description provided for @m6Project.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشروع'**
+  String get m6Project;
+
+  /// No description provided for @m6Contract.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقد'**
+  String get m6Contract;
+
+  /// No description provided for @m6RecordKind.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع السجل'**
+  String get m6RecordKind;
+
+  /// No description provided for @m6OrganizationOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'المؤسسة (اختياري)'**
+  String get m6OrganizationOptional;
+
+  /// No description provided for @m6ClientOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل (اختياري)'**
+  String get m6ClientOptional;
+
+  /// No description provided for @m6ContractNumberOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم العقد (اختياري)'**
+  String get m6ContractNumberOptional;
+
+  /// No description provided for @m6StartDateOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ البداية (اختياري)'**
+  String get m6StartDateOptional;
+
+  /// No description provided for @m6EndDateOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ النهاية (اختياري)'**
+  String get m6EndDateOptional;
+
+  /// No description provided for @m6DateOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن يسبق تاريخ البداية تاريخ النهاية أو يساويه'**
+  String get m6DateOrder;
+
+  /// No description provided for @m6CompleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيكتمل المشروع وتنتهي روابط المعدات النشطة. تبقى العمليات المالية والمرفقات والتاريخ محفوظة.'**
+  String get m6CompleteConfirm;
+
+  /// No description provided for @m6ArchiveProjectConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرشفة تخفي السجل من القوائم العادية وتحفظ المال والمرفقات والتاريخ.'**
+  String get m6ArchiveProjectConfirm;
+
+  /// No description provided for @m6FinancialSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص مالي مشتق'**
+  String get m6FinancialSummary;
+
+  /// No description provided for @m6RecordedIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيرادات المسجلة'**
+  String get m6RecordedIncome;
+
+  /// No description provided for @m6RecordedExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات المسجلة'**
+  String get m6RecordedExpenses;
+
+  /// No description provided for @m6RecordedDifference.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفرق بين الإيرادات والمصروفات المسجلة'**
+  String get m6RecordedDifference;
+
+  /// No description provided for @m6Collected.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحصّل'**
+  String get m6Collected;
+
+  /// No description provided for @m6Paid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع'**
+  String get m6Paid;
+
+  /// No description provided for @m6ReceivablesRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي للتحصيل'**
+  String get m6ReceivablesRemaining;
+
+  /// No description provided for @m6PayablesRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي للدفع'**
+  String get m6PayablesRemaining;
+
+  /// No description provided for @m6LinkEquipmentFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط معدة بالمشروع أولًا لإضافة إيراد'**
+  String get m6LinkEquipmentFirst;
+
+  /// No description provided for @m6Complete.
+  ///
+  /// In ar, this message translates to:
+  /// **'إكمال المشروع'**
+  String get m6Complete;
+
+  /// No description provided for @m6Reopen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة فتح المشروع'**
+  String get m6Reopen;
+
+  /// No description provided for @m6WorkspaceProjectEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكن ربط معدات من مؤسسات مختلفة أو بدون مؤسسة.'**
+  String get m6WorkspaceProjectEquipment;
+
+  /// No description provided for @m6OrganizationProjectEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر المعدات التابعة حاليًا لمؤسسة المشروع فقط.'**
+  String get m6OrganizationProjectEquipment;
+
+  /// No description provided for @m6ProjectClassification.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشروع أو العقد (اختياري)'**
+  String get m6ProjectClassification;
+
+  /// No description provided for @m6AdditionalDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل إضافية'**
+  String get m6AdditionalDetails;
+
+  /// No description provided for @m6ScopeOrganizations.
+  ///
+  /// In ar, this message translates to:
+  /// **'مؤسسات محددة'**
+  String get m6ScopeOrganizations;
+
+  /// No description provided for @m6ScopeOrganizationsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يشمل معدات هذه المؤسسات الآن وكل معدة تنضم إليها مستقبلًا. لا يشمل المعدات غير التابعة لمؤسسة.'**
+  String get m6ScopeOrganizationsHint;
+
+  /// No description provided for @m6ChooseOrganizations.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مؤسسة واحدة على الأقل'**
+  String get m6ChooseOrganizations;
+
+  /// No description provided for @m6OrganizationProjectBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'افصل المعدة من المشروع النشط قبل نقلها إلى مؤسسة أخرى'**
+  String get m6OrganizationProjectBlocked;
+
+  /// No description provided for @m6OrganizationInUse.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر أرشفة المؤسسة لوجود معدات معيّنة أو مشاريع وعقود غير مؤرشفة'**
+  String get m6OrganizationInUse;
+
+  /// No description provided for @m6ProjectInactive.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشروع غير نشط لهذا الإجراء'**
+  String get m6ProjectInactive;
+
+  /// No description provided for @m6ProjectMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعدة لا تتبع مؤسسة المشروع الحالية'**
+  String get m6ProjectMismatch;
+
+  /// No description provided for @m6ActiveProjects.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشاريع والعقود النشطة'**
+  String get m6ActiveProjects;
+
+  /// No description provided for @m6NoActiveProjects.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد روابط مشاريع نشطة'**
+  String get m6NoActiveProjects;
+
+  /// No description provided for @m6RetrySameFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الملف نفسه لإعادة الرفع'**
+  String get m6RetrySameFile;
+
+  /// No description provided for @m6MoveEquipmentConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُنهي هذا الإجراء تعيين المعدة الحالي وينقلها أو يتركها دون مؤسسة. سيبقى تاريخ التعيين محفوظًا.'**
+  String get m6MoveEquipmentConfirm;
 }
 
 class _AppLocalizationsDelegate

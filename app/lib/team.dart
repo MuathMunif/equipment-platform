@@ -49,6 +49,10 @@ String m5Capability(BuildContext context, String value) {
     'DRIVER_ASSIGNMENT_MANAGE' => loc.m5DriverAssignmentManage,
     'REPORT_VIEW' => loc.m5ReportView,
     'TEAM_MANAGE' => loc.m5TeamManage,
+    'ORGANIZATION_VIEW' => loc.m6Organizations,
+    'ORGANIZATION_MANAGE' => loc.m6AddOrganization,
+    'PROJECT_VIEW' => loc.m6ProjectsContracts,
+    'PROJECT_MANAGE' => loc.m6AddProject,
     _ => value,
   };
 }
@@ -68,6 +72,10 @@ const m5CapabilityCodes = [
   'DRIVER_ASSIGNMENT_MANAGE',
   'REPORT_VIEW',
   'TEAM_MANAGE',
+  'ORGANIZATION_VIEW',
+  'ORGANIZATION_MANAGE',
+  'PROJECT_VIEW',
+  'PROJECT_MANAGE',
 ];
 
 const m5CapabilityGroups = <String, List<String>>{
@@ -82,6 +90,8 @@ const m5CapabilityGroups = <String, List<String>>{
   'issues': ['ISSUE_VIEW', 'ISSUE_MANAGE'],
   'maintenance': ['MAINTENANCE_VIEW', 'MAINTENANCE_MANAGE'],
   'team': ['DRIVER_ASSIGNMENT_MANAGE', 'TEAM_MANAGE'],
+  'organization': ['ORGANIZATION_VIEW', 'ORGANIZATION_MANAGE'],
+  'project': ['PROJECT_VIEW', 'PROJECT_MANAGE'],
 };
 
 String m5Group(BuildContext context, String group) => switch (group) {
@@ -90,6 +100,8 @@ String m5Group(BuildContext context, String group) => switch (group) {
   'documents' => l10n(context).documents,
   'issues' => l10n(context).m5Issues,
   'maintenance' => l10n(context).m4Hub,
+  'organization' => l10n(context).m6Organizations,
+  'project' => l10n(context).m6ProjectsContracts,
   _ => l10n(context).m5Team,
 };
 
@@ -108,6 +120,10 @@ const m5DefaultCapabilities = <String, Set<String>>{
     'MAINTENANCE_MANAGE',
     'DRIVER_ASSIGNMENT_MANAGE',
     'REPORT_VIEW',
+    'ORGANIZATION_VIEW',
+    'ORGANIZATION_MANAGE',
+    'PROJECT_VIEW',
+    'PROJECT_MANAGE',
   },
   'ACCOUNTANT': {
     'EQUIPMENT_VIEW',
@@ -121,6 +137,8 @@ const m5DefaultCapabilities = <String, Set<String>>{
     'MAINTENANCE_VIEW',
     'MAINTENANCE_MANAGE',
     'REPORT_VIEW',
+    'ORGANIZATION_VIEW',
+    'PROJECT_VIEW',
   },
   'DRIVER': {
     'EQUIPMENT_VIEW',
@@ -457,8 +475,9 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
   String role = 'DRIVER',
       scope = 'ASSIGNED_EQUIPMENT',
       financialMode = 'REVIEW';
-  final Set<String> equipmentIds = {}, capabilities = {};
+  final Set<String> equipmentIds = {}, organizationIds = {}, capabilities = {};
   List<Map<String, dynamic>> equipment = [];
+  List<Map<String, dynamic>> organizations = [];
   String equipmentSearch = '';
   bool loading = true, busy = false;
   String? error;
@@ -474,6 +493,9 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
       financialMode = '${member['financialMode'] ?? 'REVIEW'}';
       equipmentIds.addAll(
         (member['equipmentIds'] as List<dynamic>? ?? []).cast<String>(),
+      );
+      organizationIds.addAll(
+        (member['organizationIds'] as List<dynamic>? ?? []).cast<String>(),
       );
       capabilities.addAll(
         (member['capabilities'] as List<dynamic>? ?? []).cast<String>(),
@@ -505,6 +527,15 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
         page++;
       }
       if (mounted) setState(() => equipment = all);
+      try {
+        final orgs = await widget.api.json(
+          'GET',
+          widget.api.scoped('/organizations'),
+        );
+        if (mounted) setState(() => organizations = records(orgs));
+      } catch (_) {
+        /* Existing M5 team flow works with no organization permission. */
+      }
     } catch (e) {
       if (mounted) setState(() => error = localizedError(context, e));
     } finally {
@@ -520,6 +551,10 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
     }
     if (scope == 'SELECTED_EQUIPMENT' && equipmentIds.isEmpty) {
       setState(() => error = l10n(context).m5ChooseEquipment);
+      return;
+    }
+    if (scope == 'SELECTED_ORGANIZATIONS' && organizationIds.isEmpty) {
+      setState(() => error = l10n(context).m6ChooseOrganizations);
       return;
     }
     if (widget.member != null &&
@@ -545,6 +580,9 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
         'scope': role == 'DRIVER' ? 'ASSIGNED_EQUIPMENT' : scope,
         'equipmentIds': scope == 'SELECTED_EQUIPMENT' && role != 'DRIVER'
             ? equipmentIds.toList()
+            : <String>[],
+        'organizationIds': scope == 'SELECTED_ORGANIZATIONS' && role != 'DRIVER'
+            ? organizationIds.toList()
             : <String>[],
         'capabilities': capabilities.toList(),
         'financialMode': financialMode,
@@ -629,6 +667,10 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
                       value: 'SELECTED_EQUIPMENT',
                       child: Text(l10n(context).m5SelectedEquipment),
                     ),
+                    DropdownMenuItem(
+                      value: 'SELECTED_ORGANIZATIONS',
+                      child: Text(l10n(context).m6ScopeOrganizations),
+                    ),
                   ],
                   onChanged: (value) => setState(() => scope = value!),
                 ),
@@ -659,6 +701,23 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
                         equipmentIds.add(item['id'] as String);
                       } else {
                         equipmentIds.remove(item['id']);
+                      }
+                    }),
+                  ),
+              ],
+              if (scope == 'SELECTED_ORGANIZATIONS' && role != 'DRIVER') ...[
+                const SizedBox(height: 12),
+                Text(l10n(context).m6ScopeOrganizationsHint),
+                for (final org in organizations)
+                  CheckboxListTile(
+                    key: Key('memberOrganization-${org['id']}'),
+                    title: Text('${org['name']}'),
+                    value: organizationIds.contains(org['id']),
+                    onChanged: (checked) => setState(() {
+                      if (checked == true) {
+                        organizationIds.add('${org['id']}');
+                      } else {
+                        organizationIds.remove('${org['id']}');
                       }
                     }),
                   ),
@@ -2066,6 +2125,8 @@ class _ApprovalPageState extends State<ApprovalPage> {
       date = todayRiyadh(),
       paidOn = todayRiyadh();
   String? dueDate, error;
+  String? projectId;
+  List<Map<String, dynamic>> projects = [];
   bool busy = false;
   @override
   void initState() {
@@ -2073,6 +2134,19 @@ class _ApprovalPageState extends State<ApprovalPage> {
     amount.text = '${widget.submission['amount'] ?? ''}';
     note.text = '${widget.submission['note'] ?? ''}';
     date = widget.submission['transactionDate'] as String? ?? todayRiyadh();
+    loadProjects();
+  }
+
+  Future<void> loadProjects() async {
+    try {
+      final result = await widget.api.json(
+        'GET',
+        widget.api.scoped('/projects'),
+      );
+      if (mounted) setState(() => projects = records(result));
+    } catch (_) {
+      /* Project classification is optional. */
+    }
   }
 
   @override
@@ -2159,6 +2233,7 @@ class _ApprovalPageState extends State<ApprovalPage> {
           'partyName': status == 'FULL' ? null : party.text.trim(),
           'dueDate': status == 'FULL' ? null : dueDate,
           'note': note.text.trim().isEmpty ? null : note.text.trim(),
+          if (projectId != null) 'projectId': projectId,
         },
       );
       if (mounted) Navigator.pop(context, true);
@@ -2210,6 +2285,31 @@ class _ApprovalPageState extends State<ApprovalPage> {
           ],
           onChanged: (value) => setState(() => category = value!),
         ),
+        if (projects.isNotEmpty)
+          ExpansionTile(
+            title: Text(l10n(context).m6AdditionalDetails),
+            children: [
+              DropdownButtonFormField<String?>(
+                key: const Key('approvalProject'),
+                initialValue: projectId,
+                decoration: InputDecoration(
+                  labelText: l10n(context).m6ProjectClassification,
+                ),
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text(l10n(context).m6NoProjects),
+                  ),
+                  for (final project in projects)
+                    DropdownMenuItem<String?>(
+                      value: '${project['id']}',
+                      child: Text('${project['name']}'),
+                    ),
+                ],
+                onChanged: (v) => setState(() => projectId = v),
+              ),
+            ],
+          ),
         ListTile(
           title: Text(l10n(context).m5TransactionDate),
           subtitle: Text(localizedDate(context, date)),

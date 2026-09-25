@@ -1947,4 +1947,187 @@ class AppLocalizationsAr extends AppLocalizations {
   String m5ConfirmMoveDriver(String driverName, String sourceEquipment) {
     return 'سينتهي تعيين $driverName الحالي على $sourceEquipment.';
   }
+
+  @override
+  String get m6Organizations => 'المؤسسات';
+
+  @override
+  String get m6OrganizationsOptional =>
+      'المؤسسات اختيارية. يمكنك استخدام التطبيق كاملًا دون إنشاء مؤسسة.';
+
+  @override
+  String get m6SearchOrganizations => 'ابحث عن مؤسسة';
+
+  @override
+  String get m6NoOrganizations =>
+      'لا توجد مؤسسات بعد. يمكنك البدء بالمعدات مباشرة.';
+
+  @override
+  String get m6AddOrganization => 'إضافة مؤسسة';
+
+  @override
+  String get m6OrganizationName => 'اسم المؤسسة';
+
+  @override
+  String get m6IdentifierOptional => 'رقم التعريف (اختياري)';
+
+  @override
+  String get m6NameRequired => 'أدخل الاسم للمتابعة';
+
+  @override
+  String get m6ProjectsContracts => 'المشاريع والعقود';
+
+  @override
+  String get m6ManageEquipment => 'إدارة المعدات المرتبطة';
+
+  @override
+  String get m6AddProject => 'إضافة مشروع أو عقد';
+
+  @override
+  String get m6ArchiveOrganizationConfirm =>
+      'أرشفة المؤسسة تحفظ تاريخها. يجب أولًا إزالة تعيين المعدات وأرشفة المشاريع والعقود غير المؤرشفة.';
+
+  @override
+  String get m6NoOrganization => 'بدون مؤسسة';
+
+  @override
+  String get m6AssignEquipment => 'تعيين مؤسسة للمعدة';
+
+  @override
+  String get m6ConfirmAction => 'تأكيد الإجراء';
+
+  @override
+  String get m6ProjectsOptional =>
+      'اربط المشاريع والعقود عند الحاجة؛ يمكنك إدارة المعدات والمال دونها.';
+
+  @override
+  String get m6SearchProjects => 'ابحث بالاسم أو العميل أو رقم العقد';
+
+  @override
+  String get m6All => 'الكل';
+
+  @override
+  String get m6Completed => 'مكتمل';
+
+  @override
+  String get m6NoProjects => 'لا توجد مشاريع أو عقود تطابق العرض';
+
+  @override
+  String get m6Project => 'مشروع';
+
+  @override
+  String get m6Contract => 'عقد';
+
+  @override
+  String get m6RecordKind => 'نوع السجل';
+
+  @override
+  String get m6OrganizationOptional => 'المؤسسة (اختياري)';
+
+  @override
+  String get m6ClientOptional => 'العميل (اختياري)';
+
+  @override
+  String get m6ContractNumberOptional => 'رقم العقد (اختياري)';
+
+  @override
+  String get m6StartDateOptional => 'تاريخ البداية (اختياري)';
+
+  @override
+  String get m6EndDateOptional => 'تاريخ النهاية (اختياري)';
+
+  @override
+  String get m6DateOrder => 'يجب أن يسبق تاريخ البداية تاريخ النهاية أو يساويه';
+
+  @override
+  String get m6CompleteConfirm =>
+      'سيكتمل المشروع وتنتهي روابط المعدات النشطة. تبقى العمليات المالية والمرفقات والتاريخ محفوظة.';
+
+  @override
+  String get m6ArchiveProjectConfirm =>
+      'الأرشفة تخفي السجل من القوائم العادية وتحفظ المال والمرفقات والتاريخ.';
+
+  @override
+  String get m6FinancialSummary => 'ملخص مالي مشتق';
+
+  @override
+  String get m6RecordedIncome => 'الإيرادات المسجلة';
+
+  @override
+  String get m6RecordedExpenses => 'المصروفات المسجلة';
+
+  @override
+  String get m6RecordedDifference => 'الفرق بين الإيرادات والمصروفات المسجلة';
+
+  @override
+  String get m6Collected => 'المحصّل';
+
+  @override
+  String get m6Paid => 'المدفوع';
+
+  @override
+  String get m6ReceivablesRemaining => 'المتبقي للتحصيل';
+
+  @override
+  String get m6PayablesRemaining => 'المتبقي للدفع';
+
+  @override
+  String get m6LinkEquipmentFirst => 'اربط معدة بالمشروع أولًا لإضافة إيراد';
+
+  @override
+  String get m6Complete => 'إكمال المشروع';
+
+  @override
+  String get m6Reopen => 'إعادة فتح المشروع';
+
+  @override
+  String get m6WorkspaceProjectEquipment =>
+      'يمكن ربط معدات من مؤسسات مختلفة أو بدون مؤسسة.';
+
+  @override
+  String get m6OrganizationProjectEquipment =>
+      'تظهر المعدات التابعة حاليًا لمؤسسة المشروع فقط.';
+
+  @override
+  String get m6ProjectClassification => 'المشروع أو العقد (اختياري)';
+
+  @override
+  String get m6AdditionalDetails => 'تفاصيل إضافية';
+
+  @override
+  String get m6ScopeOrganizations => 'مؤسسات محددة';
+
+  @override
+  String get m6ScopeOrganizationsHint =>
+      'يشمل معدات هذه المؤسسات الآن وكل معدة تنضم إليها مستقبلًا. لا يشمل المعدات غير التابعة لمؤسسة.';
+
+  @override
+  String get m6ChooseOrganizations => 'اختر مؤسسة واحدة على الأقل';
+
+  @override
+  String get m6OrganizationProjectBlocked =>
+      'افصل المعدة من المشروع النشط قبل نقلها إلى مؤسسة أخرى';
+
+  @override
+  String get m6OrganizationInUse =>
+      'تعذر أرشفة المؤسسة لوجود معدات معيّنة أو مشاريع وعقود غير مؤرشفة';
+
+  @override
+  String get m6ProjectInactive => 'المشروع غير نشط لهذا الإجراء';
+
+  @override
+  String get m6ProjectMismatch => 'المعدة لا تتبع مؤسسة المشروع الحالية';
+
+  @override
+  String get m6ActiveProjects => 'المشاريع والعقود النشطة';
+
+  @override
+  String get m6NoActiveProjects => 'لا توجد روابط مشاريع نشطة';
+
+  @override
+  String get m6RetrySameFile => 'اختر الملف نفسه لإعادة الرفع';
+
+  @override
+  String get m6MoveEquipmentConfirm =>
+      'سيُنهي هذا الإجراء تعيين المعدة الحالي وينقلها أو يتركها دون مؤسسة. سيبقى تاريخ التعيين محفوظًا.';
 }

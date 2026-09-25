@@ -14,22 +14,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class EquipmentService {
     private final JdbcTemplate db; private final Access access; private final Idempotency retries; private final Audit audit; private final NotificationService notifications;
     public EquipmentService(JdbcTemplate db,Access access,Idempotency retries,Audit audit,NotificationService notifications) { this.db=db; this.access=access; this.retries=retries; this.audit=audit; this.notifications=notifications; }
-    public record Equipment(UUID id,String reference,String name,String model,String createdAt,String archivedAt) {}
+    public record Equipment(UUID id,String reference,String name,String model,String createdAt,String archivedAt,UUID organizationId,String organizationName) {}
     public record Create(String name,String model) {}
     public Equipment get(Actor actor,UUID workspace,UUID id) { access.equipment(actor,workspace,id,"EQUIPMENT_VIEW"); return require(workspace,id); }
     public Equipment require(UUID workspace,UUID id) {
-        var rows=db.query("select * from equipment where workspace_id=? and id=?",(rs,n)->new Equipment(rs.getObject("id",UUID.class),"EQ-"+String.format("%06d",rs.getLong("reference")),rs.getString("name"),rs.getString("model"),rs.getTimestamp("created_at").toInstant().toString(),rs.getTimestamp("archived_at")==null?null:rs.getTimestamp("archived_at").toInstant().toString()),workspace,id);
+        var rows=db.query("select equipment.*, (select a.organization_id from equipment_organization_assignment a where a.workspace_id=equipment.workspace_id and a.equipment_id=equipment.id and a.ended_at is null) organization_id, (select o.name from equipment_organization_assignment a join organization o on o.workspace_id=a.workspace_id and o.id=a.organization_id where a.workspace_id=equipment.workspace_id and a.equipment_id=equipment.id and a.ended_at is null) organization_name from equipment where workspace_id=? and id=?",(rs,n)->new Equipment(rs.getObject("id",UUID.class),"EQ-"+String.format("%06d",rs.getLong("reference")),rs.getString("name"),rs.getString("model"),rs.getTimestamp("created_at").toInstant().toString(),rs.getTimestamp("archived_at")==null?null:rs.getTimestamp("archived_at").toInstant().toString(),rs.getObject("organization_id",UUID.class),rs.getString("organization_name")),workspace,id);
         if(rows.isEmpty()) throw ApiException.missing(); return rows.getFirst();
     }
-    public Map<String,Object> list(Actor actor,UUID workspace,int page,String search) {
+    public Map<String,Object> list(Actor actor,UUID workspace,int page,String search){return list(actor,workspace,page,search,null);}
+    public Map<String,Object> list(Actor actor,UUID workspace,int page,String search,UUID organizationId) {
         Access.Member member=access.require(actor,workspace,"EQUIPMENT_VIEW"); if(page<0 || page>100000) throw ApiException.invalid("رقم الصفحة غير صالح");
         String term=search==null?"":search.trim(); if(term.length()>100) throw ApiException.invalid("اختصر نص البحث");
-        String like="%"+term.replace("\\","\\\\").replace("%","\\%").replace("_","\\_")+"%";
-        String scope=member.scope().equals("ALL_EQUIPMENT")?"":member.scope().equals("ASSIGNED_EQUIPMENT")?" and exists(select 1 from driver_assignment da where da.workspace_id=equipment.workspace_id and da.equipment_id=equipment.id and da.driver_user_id=? and da.ended_at is null)":" and exists(select 1 from membership_equipment me where me.workspace_id=equipment.workspace_id and me.equipment_id=equipment.id and me.user_id=?)";
-        Object[] args=scope.isEmpty()?new Object[]{workspace,like,like,page*30}:new Object[]{workspace,like,like,member.userId(),page*30};
-        var rows=db.query("select * from equipment where workspace_id=? and (name ilike ? or ('EQ-'||lpad(reference::text,6,'0')) ilike ?)"+scope+" order by created_at desc,id desc limit 30 offset ?",(rs,n)->new Equipment(rs.getObject("id",UUID.class),"EQ-"+String.format("%06d",rs.getLong("reference")),rs.getString("name"),rs.getString("model"),rs.getTimestamp("created_at").toInstant().toString(),rs.getTimestamp("archived_at")==null?null:rs.getTimestamp("archived_at").toInstant().toString()),args);
-        Object[] countArgs=scope.isEmpty()?new Object[]{workspace,like,like}:new Object[]{workspace,like,like,member.userId()};
-        Long count=db.queryForObject("select count(*) from equipment where workspace_id=? and (name ilike ? or ('EQ-'||lpad(reference::text,6,'0')) ilike ?)"+scope,Long.class,countArgs);
+        if(organizationId!=null&&!Boolean.TRUE.equals(db.queryForObject("select exists(select 1 from organization where workspace_id=? and id=?)",Boolean.class,workspace,organizationId)))throw ApiException.missing();
+        String like="%"+term+"%";
+        String scope=member.scope().equals("ALL_EQUIPMENT")?"":" and "+access.equipmentPredicate(member,"equipment");
+        String organization=organizationId==null?"":" and exists(select 1 from equipment_organization_assignment a where a.workspace_id=equipment.workspace_id and a.equipment_id=equipment.id and a.organization_id=? and a.ended_at is null)";
+        List<Object> args=new ArrayList<>(List.of(workspace,like,like));if(!scope.isEmpty())args.add(member.userId());if(organizationId!=null)args.add(organizationId);
+        String base=" from equipment where workspace_id=? and (name ilike ? or ('EQ-'||lpad(reference::text,6,'0')) ilike ?)"+scope+organization;
+        Long count=db.queryForObject("select count(*)"+base,Long.class,args.toArray());
+        args.add(page*30);
+        var rows=db.query("select equipment.*, (select a.organization_id from equipment_organization_assignment a where a.workspace_id=equipment.workspace_id and a.equipment_id=equipment.id and a.ended_at is null) organization_id, (select o.name from equipment_organization_assignment a join organization o on o.workspace_id=a.workspace_id and o.id=a.organization_id where a.workspace_id=equipment.workspace_id and a.equipment_id=equipment.id and a.ended_at is null) organization_name"+base+" order by created_at desc,id desc limit 30 offset ?",(rs,n)->new Equipment(rs.getObject("id",UUID.class),"EQ-"+String.format("%06d",rs.getLong("reference")),rs.getString("name"),rs.getString("model"),rs.getTimestamp("created_at").toInstant().toString(),rs.getTimestamp("archived_at")==null?null:rs.getTimestamp("archived_at").toInstant().toString(),rs.getObject("organization_id",UUID.class),rs.getString("organization_name")),args.toArray());
         return Map.of("items",rows,"page",page,"pageSize",30,"total",count);
     }
     @Transactional
