@@ -902,6 +902,7 @@
   "m5Approve": "اعتماد",
   "m5Reject": "رفض",
   "m5RejectSubmission": "رفض الطلب",
+  "m5Resubmit": "إعادة الإرسال",
   "m5ReasonRequired": "اكتب سبب الرفض",
   "m5ApproveExpense": "اعتماد المصروف",
   "m5ApprovalHint": "راجع بيانات المصروف قبل اعتماده. سيظهر في السجل مرة واحدة.",

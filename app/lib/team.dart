@@ -1935,6 +1935,19 @@ class _SubmissionDetailPageState extends State<SubmissionDetailPage> {
     }
   }
 
+  Future<void> resubmit() async {
+    try {
+      await widget.api.json(
+        'POST',
+        widget.api.scoped('/financial-submissions/${widget.id}/resubmit'),
+        key: requestKey(),
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) setState(() => error = localizedError(context, e));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(l10n(context).m5SubmissionDetails)),
@@ -1978,6 +1991,12 @@ class _SubmissionDetailPageState extends State<SubmissionDetailPage> {
                 ),
               if (item!['approvedFinancialEntryId'] != null)
                 Text(l10n(context).m5ApprovedEntryCreated),
+              if (!widget.reviewer && item!['status'] == 'REJECTED')
+                FilledButton(
+                  key: const Key('resubmitSubmission'),
+                  onPressed: resubmit,
+                  child: Text(l10n(context).m5Resubmit),
+                ),
               Text(
                 l10n(context).attachments,
                 style: Theme.of(context).textTheme.titleMedium,

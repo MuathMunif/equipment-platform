@@ -3423,6 +3423,12 @@ abstract class AppLocalizations {
   /// **'رفض الطلب'**
   String get m5RejectSubmission;
 
+  /// No description provided for @m5Resubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الإرسال'**
+  String get m5Resubmit;
+
   /// No description provided for @m5ReasonRequired.
   ///
   /// In ar, this message translates to:

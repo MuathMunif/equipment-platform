@@ -1817,6 +1817,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get m5RejectSubmission => 'رفض الطلب';
 
   @override
+  String get m5Resubmit => 'إعادة الإرسال';
+
+  @override
   String get m5ReasonRequired => 'اكتب سبب الرفض';
 
   @override

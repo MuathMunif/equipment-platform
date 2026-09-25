@@ -1826,6 +1826,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get m5RejectSubmission => 'Reject request';
 
   @override
+  String get m5Resubmit => 'Resubmit';
+
+  @override
   String get m5ReasonRequired => 'Enter a rejection reason';
 
   @override

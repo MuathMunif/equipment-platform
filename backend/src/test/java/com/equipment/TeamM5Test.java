@@ -295,4 +295,41 @@ class TeamM5Test {
   JsonNode own=ok("GET",w+"/financial-submissions/"+id,null,driver.token,null).json;assertEquals("REJECTED",own.get("status").asString());assertEquals("الصورة غير واضحة",own.get("rejectionReason").asString());
   assertEquals(0,db.queryForObject("select count(*) from financial_entry where submission_id=?",Integer.class,UUID.fromString(id)));
  }
+ @Test void rejectedResubmissionPreservesHistoryAndApprovedEntryOwnsLaterMoney()throws Exception{
+  User owner=login("0500000001"),driver=login("0500000018");String eq=equipment(owner,"شاحنة الإعادة"),w="/workspaces/"+owner.workspace;
+  accept(driver,invite(owner,"0500000018","DRIVER",null,null));ok("POST",w+"/drivers/assignments",Map.of("driverUserId",driver.id,"equipmentId",eq),owner.token,null);
+  ByteArrayOutputStream image=new ByteArrayOutputStream();assertTrue(ImageIO.write(new BufferedImage(12,12,BufferedImage.TYPE_INT_RGB),"png",image));
+  String first=ok("POST",w+"/financial-submissions",Map.of("equipmentId",eq,"amount","100.00","transactionDate","2026-09-25","note","إيصال أول","receipt",Map.of("filename","receipt.png","mediaType","image/png","base64",Base64.getEncoder().encodeToString(image.toByteArray()))),driver.token,null).json.get("id").asString();
+  assertEquals(405,call("PUT",w+"/financial-submissions/"+first,Map.of("note","تعديل"),driver.token,null).status);
+  assertEquals(409,call("POST",w+"/financial-submissions/"+first+"/resubmit",null,driver.token,null).status);
+  ok("POST",w+"/financial-submissions/"+first+"/reject",Map.of("reason","الإيصال غير واضح"),owner.token,null);
+  JsonNode before=ok("GET",w+"/financial-submissions/"+first,null,driver.token,null).json;
+  JsonNode second=ok("POST",w+"/financial-submissions/"+first+"/resubmit",null,driver.token,null).json;String next=second.get("id").asString();
+  assertNotEquals(first,next);assertEquals(first,second.get("resubmittedFromSubmissionId").asString());assertEquals("PENDING_REVIEW",second.get("status").asString());
+  assertEquals("100.00",second.get("amount").asString());assertEquals("2026-09-25",second.get("transactionDate").asString());assertEquals("إيصال أول",second.get("note").asString());
+  assertEquals(1,second.get("attachments").size());
+  assertNotEquals(before.get("attachments").get(0).get("id"),second.get("attachments").get(0).get("id"));
+  assertEquals(db.queryForObject("select object_key from attachment where submission_id=?",String.class,UUID.fromString(first)),db.queryForObject("select object_key from attachment where submission_id=?",String.class,UUID.fromString(next)));
+  assertEquals(next,ok("POST",w+"/financial-submissions/"+first+"/resubmit",null,driver.token,null).json.get("id").asString());
+  assertEquals("0.00",ok("GET",w+"/entries/totals",null,owner.token,null).json.get("expenseTotal").asString());
+  JsonNode after=ok("GET",w+"/financial-submissions/"+first,null,driver.token,null).json;
+  assertEquals(before.get("status"),after.get("status"));assertEquals(before.get("rejectionReason"),after.get("rejectionReason"));assertEquals(before.get("reviewedBy"),after.get("reviewedBy"));assertEquals(before.get("reviewedAt"),after.get("reviewedAt"));
+  assertEquals(405,call("PUT",w+"/financial-submissions/"+first,Map.of("note","تعديل"),driver.token,null).status);
+  Map<String,Object> expense=Map.of("equipmentId",eq,"amount","100.00","category","FUEL","operationDate","2026-09-25","paidOn","2026-09-25","note","اعتماد الإعادة");
+  JsonNode approved=ok("POST",w+"/financial-submissions/"+next+"/approve",expense,owner.token,null).json;
+  String entry=approved.get("approvedFinancialEntryId").asString();assertEquals("APPROVED",approved.get("status").asString());
+  assertEquals(409,call("POST",w+"/financial-submissions/"+next+"/approve",expense,owner.token,null).status);
+  assertEquals(405,call("PUT",w+"/financial-submissions/"+next,Map.of("note","تعديل"),driver.token,null).status);
+  assertEquals(1,db.queryForObject("select count(*) from financial_entry where submission_id=?",Integer.class,UUID.fromString(next)));
+  assertEquals("100.00",ok("GET",w+"/entries/totals",null,owner.token,null).json.get("expenseTotal").asString());
+  assertEquals(driver.id,ok("GET",w+"/entries/"+entry,null,owner.token,null).json.get("submittedBy").asString());
+  assertEquals(owner.id,ok("GET",w+"/entries/"+entry,null,owner.token,null).json.get("createdBy").asString());
+  ok("PUT",w+"/entries/"+entry,Map.of("amount","100.00","category","FUEL","operationDate","2026-09-25","note","تعديل M2"),owner.token,null);
+  ok("POST",w+"/entries/"+entry+"/refunds",Map.of("amount","20.00","refundedOn","2026-09-26","reason","إعادة نقد","partyName","مورد"),owner.token,UUID.randomUUID().toString());
+  ok("POST",w+"/entries/"+entry+"/cancellation",Map.of("reason","قيد خطأ"),owner.token,null);
+  JsonNode historical=ok("GET",w+"/financial-submissions/"+next,null,driver.token,null).json;
+  assertEquals("APPROVED",historical.get("status").asString());assertEquals(entry,historical.get("approvedFinancialEntryId").asString());
+  assertEquals("100.00",historical.get("amount").asString());assertEquals("إيصال أول",historical.get("note").asString());
+  assertEquals("CANCELLED",ok("GET",w+"/entries/"+entry,null,owner.token,null).json.get("lifecycle").asString());
+ }
 }

@@ -1827,6 +1827,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get m5RejectSubmission => 'درخواست مسترد کریں';
 
   @override
+  String get m5Resubmit => 'دوبارہ جمع کریں';
+
+  @override
   String get m5ReasonRequired => 'مسترد کرنے کی وجہ درج کریں';
 
   @override

@@ -913,6 +913,11 @@ paths:
       summary: Lock submission and create exactly one M2 expense for original equipment
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/EntryCreate'}}}}
       responses: {'200': {description: Approved submission}, '409': {description: Already reviewed}}
+  /workspaces/{workspace}/financial-submissions/{id}/resubmit:
+    parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
+    post:
+      summary: Create one new pending request from own rejected submission while preserving its review history and reusing immutable receipt objects
+      responses: {'200': {description: New pending submission}, '409': {description: Original is not rejected}}
   /workspaces/{workspace}/financial-submissions/{id}/reject:
     parameters: [{$ref: '#/components/parameters/Workspace'}, {$ref: '#/components/parameters/Id'}]
     post:

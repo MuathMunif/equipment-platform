@@ -902,6 +902,7 @@
   "m5Approve": "Approve",
   "m5Reject": "Reject",
   "m5RejectSubmission": "Reject request",
+  "m5Resubmit": "Resubmit",
   "m5ReasonRequired": "Enter a rejection reason",
   "m5ApproveExpense": "Approve expense",
   "m5ApprovalHint": "Check the expense details before approval. It will appear once in the ledger.",

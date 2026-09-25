@@ -221,6 +221,41 @@ void main() {
     expect(find.byType(ReviewQueuePage), findsOneWidget);
   });
 
+  testWidgets('rejected submission exposes resubmit and posts a new request', (
+    tester,
+  ) async {
+    var resubmits = 0;
+    final api = Api(
+      client: MockClient((request) async {
+        if (request.method == 'POST' &&
+            request.url.path.endsWith('/financial-submissions/old/resubmit')) {
+          resubmits++;
+          return reply({'id': 'new', 'status': 'PENDING_REVIEW'});
+        }
+        return reply({
+          'id': 'old',
+          'status': 'REJECTED',
+          'equipmentName': 'قلاب',
+          'submitterName': 'سائق',
+          'transactionDate': '2026-09-25',
+          'rejectionReason': 'الصورة غير واضحة',
+          'attachments': <Object>[],
+        });
+      }),
+      base: 'http://localhost/api/v1',
+      persistNative: false,
+    )..workspace = 'workspace';
+    await tester.pumpWidget(
+      host(SubmissionDetailPage(api: api, id: 'old', reviewer: false)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('الصورة غير واضحة'), findsOneWidget);
+    expect(find.byKey(const Key('approveSubmission')), findsNothing);
+    await tester.tap(find.byKey(const Key('resubmitSubmission')));
+    await tester.pumpAndSettle();
+    expect(resubmits, 1);
+  });
+
   testWidgets('review rejection requires a reason and sends it once', (
     tester,
   ) async {
