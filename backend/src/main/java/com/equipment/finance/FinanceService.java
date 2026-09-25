@@ -412,6 +412,9 @@ public class FinanceService {
             else if(scope.equals("SHARED") && amount.compareTo((BigDecimal)previous.get("amount"))!=0)
                 throw ApiException.invalid("حدّث مبالغ المعدات مع إجمالي المصروف");
         } else if(request.expenseScope()!=null || request.allocations()!=null || request.equipmentId()!=null) throw ApiException.invalid("لا يمكن تغيير ربط الإيراد بالمعدة");
+        Boolean maintenanceLinked=db.queryForObject("select exists(select 1 from maintenance_expense_link where workspace_id=? and entry_id=?)",Boolean.class,workspace,entryId);
+        if(Boolean.TRUE.equals(maintenanceLinked) && (!"SINGLE".equals(scope) || !Objects.equals(selectedEquipment,previous.get("equipment_id"))))
+            throw new ApiException(409,"MAINTENANCE_EXPENSE_LINKED","افصل المصروف عن سجل الصيانة قبل تغيير ربطه بالمعدة");
         String category=type.equals("INCOME")?"OTHER":Values.text(request.category(),30,"نوع المصروف");
         if(type.equals("INCOME") && request.category()!=null && !request.category().equals("OTHER")) throw ApiException.invalid("نوع الإيراد غير صالح");
         if(type.equals("EXPENSE") && !Set.of("FUEL","MAINTENANCE","OTHER").contains(category)) throw ApiException.invalid("اختر نوع المصروف");
