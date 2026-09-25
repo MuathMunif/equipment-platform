@@ -5,6 +5,7 @@ import 'package:file_selector/file_selector.dart';
 
 import 'api.dart';
 import 'file_export.dart';
+import 'documents.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -409,6 +410,10 @@ class _WorkspacePageState extends State<WorkspacePage> {
       appBar: AppBar(
         title: const Text('إدارة المعدات'),
         actions: [
+          NotificationButton(
+            key: ValueKey('notifications-$revision'),
+            api: widget.api,
+          ),
           IconButton(
             tooltip: 'تحديث البيانات',
             onPressed: () => setState(() => revision++),
@@ -563,6 +568,10 @@ class _EquipmentListState extends State<EquipmentList> {
         const SizedBox(height: 8),
         const Text('كل معدة وسجلها، من أول عملية'),
         const SizedBox(height: 24),
+        if (widget.home) ...[
+          HomeDocumentAttention(api: widget.api),
+          const SizedBox(height: 20),
+        ],
         Row(
           children: [
             Expanded(
@@ -875,7 +884,7 @@ class _EquipmentFormState extends State<EquipmentForm> {
   );
 }
 
-class EquipmentDetail extends StatelessWidget {
+class EquipmentDetail extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> equipment;
   const EquipmentDetail({
@@ -884,9 +893,77 @@ class EquipmentDetail extends StatelessWidget {
     required this.equipment,
   });
   @override
+  State<EquipmentDetail> createState() => _EquipmentDetailState();
+}
+
+class _EquipmentDetailState extends State<EquipmentDetail> {
+  late Map<String, dynamic> equipment;
+  bool busy = false;
+  @override
+  void initState() {
+    super.initState();
+    equipment = Map<String, dynamic>.from(widget.equipment);
+  }
+
+  Future<void> toggleArchive() async {
+    final archived = equipment['archivedAt'] != null;
+    if (!archived) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('أرشفة المعدة؟'),
+          content: const Text(
+            'سيبقى سجل المعدة ومستنداتها محفوظًا، وتتوقف تنبيهات انتهاء مستنداتها حتى استعادتها.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('رجوع'),
+            ),
+            FilledButton(
+              key: const Key('confirmEquipmentArchive'),
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('أرشفة المعدة'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    setState(() => busy = true);
+    try {
+      final result = await widget.api.json(
+        'POST',
+        widget.api.scoped(
+          '/equipment/${equipment['id']}/${archived ? 'restore' : 'archive'}',
+        ),
+      ) as Map<String, dynamic>;
+      if (mounted) setState(() => equipment = result);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(equipment['name'])),
-    body: LedgerPage(api: api, equipment: equipment),
+    appBar: AppBar(
+      title: Text(equipment['name']),
+      actions: [
+        TextButton(
+          key: const Key('toggleEquipmentArchive'),
+          onPressed: busy ? null : toggleArchive,
+          child: Text(
+            equipment['archivedAt'] == null ? 'أرشفة المعدة' : 'استعادة المعدة',
+          ),
+        ),
+      ],
+    ),
+    body: LedgerPage(api: widget.api, equipment: equipment),
   );
 }
 
@@ -1317,6 +1394,10 @@ class _LedgerPageState extends State<LedgerPage> {
               ),
             ),
           ),
+        if (widget.equipment != null) ...[
+          const SizedBox(height: 16),
+          EquipmentDocumentsCard(api: widget.api, equipment: widget.equipment!),
+        ],
         const SizedBox(height: 20),
         Row(
           children: [
