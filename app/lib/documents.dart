@@ -31,6 +31,16 @@ String documentStatus(Map<String, dynamic> doc) => switch (doc['status']) {
 bool documentNeedsAttention(Map<String, dynamic> doc) =>
     {'EXPIRED', 'EXPIRES_TODAY', 'EXPIRING_SOON'}.contains(doc['status']);
 
+Widget documentLoadFailure(VoidCallback retry) => Center(
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Text('تعذر تحميل البيانات. حاول مرة أخرى.'),
+      TextButton(onPressed: retry, child: const Text('إعادة المحاولة')),
+    ],
+  ),
+);
+
 Future<void> openDocumentAttachment(
   BuildContext context,
   Api api,
@@ -240,7 +250,7 @@ class _EquipmentDocumentsCardState extends State<EquipmentDocumentsCard> {
             Text('المستندات', style: Theme.of(context).textTheme.titleLarge),
             if (loading) const LinearProgressIndicator(),
             if (error != null) ...[
-              Text(error!),
+              const Text('تعذر تحميل المستندات. حاول مرة أخرى.'),
               TextButton(onPressed: load, child: const Text('إعادة المحاولة')),
             ],
             if (!loading && error == null) ...[
@@ -651,7 +661,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
             ? '/documents/$id'
             : '/equipment/${widget.equipment['id']}/documents';
         final body = payload();
-        if (widget.renewal) {
+        if (widget.renewal || id != null) {
           body['expectedVersionId'] = widget.document!['currentVersionId'];
         }
         saved = await widget.api.json(
@@ -1240,7 +1250,7 @@ class _DocumentHistoryPageState extends State<DocumentHistoryPage> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? Center(child: Text(error!))
+        ? documentLoadFailure(load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -1336,7 +1346,7 @@ class _DocumentVersionPageState extends State<DocumentVersionPage> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? Center(child: Text(error!))
+        ? documentLoadFailure(load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -1558,7 +1568,7 @@ class _AttentionPageState extends State<AttentionPage> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? Center(child: Text(error!))
+        ? documentLoadFailure(load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -1673,7 +1683,7 @@ class _IncompleteDocumentsPageState extends State<IncompleteDocumentsPage> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : error != null
-        ? Center(child: Text(error!))
+        ? documentLoadFailure(load)
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [

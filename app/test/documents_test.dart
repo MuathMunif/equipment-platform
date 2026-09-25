@@ -186,6 +186,25 @@ void main() {
     expect(find.text('أضف تاريخ الانتهاء'), findsOneWidget);
     expect(find.textContaining('سيُحفظ المستند السابق'), findsOneWidget);
   });
+  testWidgets('document edit sends the version shown to the user', (tester) async {
+    Map<String, dynamic>? sent;
+    final api = apiWith((request) async {
+      if (request.method == 'PUT' && request.url.path.endsWith('/documents/d')) {
+        sent = jsonDecode(request.body) as Map<String, dynamic>;
+        return reply(doc(version: 2));
+      }
+      return reply([]);
+    });
+    await tester.pumpWidget(launcher((_) => DocumentFormPage(
+      api: api,
+      equipment: equipment,
+      document: doc(version: 2),
+    )));
+    await tester.tap(find.text('فتح'));
+    await tester.pumpAndSettle();
+    await tapVisible(tester, find.byKey(const Key('saveDocument')));
+    expect(sent?['expectedVersionId'], 'v2');
+  });
   testWidgets(
     'expired detail prioritizes renewal, archive confirms, history is read only',
     (tester) async {

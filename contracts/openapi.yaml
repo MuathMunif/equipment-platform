@@ -463,8 +463,8 @@ paths:
         '200': {description: Current document with derived status}
         '404': {$ref: '#/components/responses/Error'}
     put:
-      description: Edit current version and type only before first renewal.
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentInput'}}}}
+      description: Edit only the expected current version; type can change only before first renewal.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DocumentEdit'}}}}
       responses:
         '200': {description: Updated current document}
         '409': {$ref: '#/components/responses/Error'}
@@ -706,6 +706,18 @@ components:
       additionalProperties: false
       required: [type]
       properties:
+        type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
+        customTypeName: {type: [string, 'null'], maxLength: 100}
+        documentNumber: {type: [string, 'null'], maxLength: 100}
+        issueDate: {type: [string, 'null'], format: date}
+        expiryDate: {type: [string, 'null'], format: date}
+        notes: {type: [string, 'null'], maxLength: 1000}
+    DocumentEdit:
+      type: object
+      additionalProperties: false
+      required: [expectedVersionId, type]
+      properties:
+        expectedVersionId: {type: string, format: uuid}
         type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
         customTypeName: {type: [string, 'null'], maxLength: 100}
         documentNumber: {type: [string, 'null'], maxLength: 100}

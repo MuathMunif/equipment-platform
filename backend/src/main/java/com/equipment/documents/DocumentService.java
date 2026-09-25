@@ -25,7 +25,7 @@ public class DocumentService {
     private static final Set<String> TYPES=Set.of("REGISTRATION","INSURANCE","PERIODIC_INSPECTION","LICENSE_PERMIT","OTHER");
     public DocumentService(JdbcTemplate db,Access access,Audit audit,Idempotency retries,NotificationService notifications,Clock clock) {this.db=db;this.access=access;this.audit=audit;this.retries=retries;this.notifications=notifications;this.clock=clock;}
     public record Input(String type,String customTypeName,String documentNumber,String issueDate,String expiryDate,String notes) {}
-    public record Edit(String type,String customTypeName,String documentNumber,String issueDate,String expiryDate,String notes) {}
+    public record Edit(UUID expectedVersionId,String type,String customTypeName,String documentNumber,String issueDate,String expiryDate,String notes) {}
     public record Renew(UUID expectedVersionId,String documentNumber,String issueDate,String expiryDate,String notes) {}
     private record Fields(String number,LocalDate issue,LocalDate expiry,String notes) {}
     private LocalDate today() {return LocalDate.now(clock.withZone(WORKSPACE_ZONE));}
@@ -95,6 +95,7 @@ public class DocumentService {
     public Map<String,Object> edit(Actor actor,UUID w,UUID id,Edit input) {
         access.owner(actor,w);var d=doc(w,id,true);if(d.get("archived_at")!=null)throw new ApiException(409,"DOCUMENT_ARCHIVED","استعد المستند قبل تعديله");
         if(d.get("equipment_archived_at")!=null)throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل تعديل المستند");
+        if(input.expectedVersionId()==null || !input.expectedVersionId().equals(d.get("current_version_id")))throw new ApiException(409,"DOCUMENT_VERSION_CHANGED","تغيرت النسخة الحالية. حدّث الصفحة قبل التعديل");
         String t=type(input.type()),c=custom(t,input.customTypeName());
         Integer count=db.queryForObject("select count(*) from document_version where workspace_id=? and document_id=?",Integer.class,w,id);
         if(count!=null && count>1 && (!t.equals(d.get("type")) || !Objects.equals(c,d.get("custom_type_name"))))throw new ApiException(409,"TYPE_LOCKED","لا يمكن تغيير نوع المستند بعد تجديده");
