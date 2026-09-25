@@ -3,6 +3,7 @@ package com.equipment.documents;
 import com.equipment.audit.Audit;
 import com.equipment.common.*;
 import com.equipment.identity.Actor;
+import com.equipment.notifications.NotificationService;
 import com.equipment.workspaces.Access;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -18,10 +19,11 @@ public class DocumentService {
     private final Access access;
     private final Audit audit;
     private final Idempotency retries;
+    private final NotificationService notifications;
     private final Clock clock;
     private static final ZoneId WORKSPACE_ZONE=ZoneId.of("Asia/Riyadh");
     private static final Set<String> TYPES=Set.of("REGISTRATION","INSURANCE","PERIODIC_INSPECTION","LICENSE_PERMIT","OTHER");
-    public DocumentService(JdbcTemplate db,Access access,Audit audit,Idempotency retries,Clock clock) {this.db=db;this.access=access;this.audit=audit;this.retries=retries;this.clock=clock;}
+    public DocumentService(JdbcTemplate db,Access access,Audit audit,Idempotency retries,NotificationService notifications,Clock clock) {this.db=db;this.access=access;this.audit=audit;this.retries=retries;this.notifications=notifications;this.clock=clock;}
     public record Input(String type,String customTypeName,String documentNumber,String issueDate,String expiryDate,String notes) {}
     public record Edit(String type,String customTypeName,String documentNumber,String issueDate,String expiryDate,String notes) {}
     public record Renew(UUID expectedVersionId,String documentNumber,String issueDate,String expiryDate,String notes) {}
@@ -86,7 +88,7 @@ public class DocumentService {
             UUID created=UUID.randomUUID(),v=UUID.randomUUID();
             db.update("insert into equipment_document(id,workspace_id,equipment_id,type,custom_type_name,current_version_id,created_by) values(?,?,?,?,?,?,?)",created,w,equipment,t,c,v,actor.userId());
             db.update("insert into document_version(id,workspace_id,document_id,version_number,document_number,issue_date,expiry_date,notes,created_by) values(?,?,?,?,?,?,?,?,?)",v,w,created,1,f.number(),f.issue(),f.expiry(),f.notes(),actor.userId());
-            audit.record(w,actor.userId(),"DOCUMENT_CREATED",created);return created;
+            audit.record(w,actor.userId(),"DOCUMENT_CREATED",created);notifications.currentState(w,created);return created;
         });return current(w,id);
     }
     @Transactional
@@ -100,7 +102,8 @@ public class DocumentService {
         var before=version(w,id,(UUID)d.get("current_version_id"));
         db.update("update equipment_document set type=?,custom_type_name=? where workspace_id=? and id=?",t,c,w,id);
         db.update("update document_version set document_number=?,issue_date=?,expiry_date=?,notes=? where workspace_id=? and document_id=? and id=?",f.number(),f.issue(),f.expiry(),f.notes(),w,id,d.get("current_version_id"));
-        audit.record(w,actor.userId(),"DOCUMENT_UPDATED",id,"{\"beforeExpiry\":"+jsonDate(before.get("expiry_date"))+",\"afterExpiry\":"+jsonDate(f.expiry())+"}");return current(w,id);
+        audit.record(w,actor.userId(),"DOCUMENT_UPDATED",id,"{\"beforeExpiry\":"+jsonDate(before.get("expiry_date"))+",\"afterExpiry\":"+jsonDate(f.expiry())+"}");
+        if(!Objects.equals(before.get("expiry_date"),f.expiry()==null?null:Date.valueOf(f.expiry())))notifications.currentState(w,id);return current(w,id);
     }
     private String jsonDate(Object value) {return value==null?"null":"\""+value+"\"";}
     @Transactional
@@ -111,7 +114,7 @@ public class DocumentService {
         Fields f=fields(input.documentNumber(),input.issueDate(),input.expiryDate(),input.notes(),true);
         Integer old=db.queryForObject("select version_number from document_version where workspace_id=? and document_id=? and id=?",Integer.class,w,id,input.expectedVersionId());
         UUID next=UUID.randomUUID();db.update("insert into document_version(id,workspace_id,document_id,version_number,document_number,issue_date,expiry_date,notes,created_by) values(?,?,?,?,?,?,?,?,?)",next,w,id,old+1,f.number(),f.issue(),f.expiry(),f.notes(),actor.userId());
-        db.update("update equipment_document set current_version_id=? where workspace_id=? and id=?",next,w,id);audit.record(w,actor.userId(),"DOCUMENT_RENEWED",id);return current(w,id);
+        db.update("update equipment_document set current_version_id=? where workspace_id=? and id=?",next,w,id);audit.record(w,actor.userId(),"DOCUMENT_RENEWED",id);notifications.currentState(w,id);return current(w,id);
     }
     @Transactional
     public Map<String,Object> archive(Actor actor,UUID w,UUID id,String reason) {
@@ -124,7 +127,7 @@ public class DocumentService {
         access.owner(actor,w);var d=doc(w,id,true);if(d.get("equipment_archived_at")!=null)throw new ApiException(409,"EQUIPMENT_ARCHIVED","استعد المعدة قبل المستند");
         if(d.get("archived_at")==null)return current(w,id);
         db.update("update equipment_document set archived_at=null,archived_by=null,archive_reason=null where workspace_id=? and id=?",w,id);
-        audit.record(w,actor.userId(),"DOCUMENT_RESTORED",id);return current(w,id);
+        audit.record(w,actor.userId(),"DOCUMENT_RESTORED",id);notifications.currentState(w,id);return current(w,id);
     }
     public void requireVersion(UUID w,UUID id,UUID v) {doc(w,id,false);version(w,id,v);}
 }

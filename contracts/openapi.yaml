@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Equipment Platform — isolated development M1
-  version: 0.1.0
+  title: Equipment Platform — isolated development M3
+  version: 0.3.0
   description: |
     Owner-only local slice. Production startup is intentionally rejected.
     Every protected resource checks active OWNER membership before lookup and replay.
@@ -540,6 +540,44 @@ paths:
       responses:
         '200': {description: Pending attachment metadata}
         '409': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/attention/documents:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Current active document attention ordered by urgency, excluding missing expiry; reading a notification never changes this list.
+      parameters:
+        - {in: query, name: equipmentId, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Document attention items, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/DocumentAttention'}}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/notifications:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      description: Persistent notification history newest first; 30 per page. DOCUMENT items link via entityId to current document detail.
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses:
+        '200': {description: Notification page, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationPage'}}}}
+  /workspaces/{workspace}/notifications/unread-count:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    get:
+      responses:
+        '200': {description: Unread count, content: {application/json: {schema: {type: object, required: [unreadCount], properties: {unreadCount: {type: integer}}}}}}
+  /workspaces/{workspace}/notifications/{id}/read:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      description: Idempotently mark this recipient's notification read; document attention is unchanged.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      responses:
+        '200': {description: Updated notification, content: {application/json: {schema: {$ref: '#/components/schemas/Notification'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /workspaces/{workspace}/notifications/read-all:
+    parameters: [{$ref: '#/components/parameters/Workspace'}]
+    post:
+      description: Mark all current recipient notifications read; attention is unchanged.
+      parameters: [{$ref: '#/components/parameters/Csrf'}]
+      responses:
+        '200': {description: Number newly marked read, content: {application/json: {schema: {type: object, required: [markedRead], properties: {markedRead: {type: integer}}}}}}
   /workspaces/{workspace}/entries/{entry}/attachments:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -627,6 +665,39 @@ components:
       type: object
       required: [items, page, pageSize, total]
       properties:
+        page: {type: integer}
+        pageSize: {type: integer, const: 30}
+        total: {type: integer}
+    DocumentAttention:
+      type: object
+      required: [documentId, equipmentId, equipmentName, type, expiryDate, daysRemaining, status, body]
+      properties:
+        documentId: {type: string, format: uuid}
+        equipmentId: {type: string, format: uuid}
+        equipmentName: {type: string}
+        type: {type: string, enum: [REGISTRATION, INSURANCE, PERIODIC_INSPECTION, LICENSE_PERMIT, OTHER]}
+        customTypeName: {type: [string, 'null']}
+        expiryDate: {type: string, format: date}
+        daysRemaining: {type: integer, description: Negative after expiry}
+        status: {type: string, enum: [EXPIRED, EXPIRES_TODAY, EXPIRING_SOON]}
+        body: {type: string}
+    Notification:
+      type: object
+      required: [id, type, entityType, entityId, title, body, createdAt, readAt]
+      properties:
+        id: {type: string, format: uuid}
+        type: {type: string, enum: [DOCUMENT_CURRENT_STATE, DOCUMENT_30D, DOCUMENT_7D, DOCUMENT_1D, DOCUMENT_TODAY, DOCUMENT_EXPIRED_WEEKLY]}
+        entityType: {type: string, enum: [DOCUMENT, DOCUMENT_SUMMARY]}
+        entityId: {type: [string, 'null'], format: uuid, description: Current document ID for individual alerts}
+        title: {type: string}
+        body: {type: string}
+        createdAt: {type: string, format: date-time}
+        readAt: {type: [string, 'null'], format: date-time}
+    NotificationPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Notification'}}
         page: {type: integer}
         pageSize: {type: integer, const: 30}
         total: {type: integer}

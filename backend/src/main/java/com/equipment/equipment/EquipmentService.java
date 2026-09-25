@@ -3,6 +3,7 @@ package com.equipment.equipment;
 import com.equipment.audit.Audit;
 import com.equipment.common.*;
 import com.equipment.identity.Actor;
+import com.equipment.notifications.NotificationService;
 import com.equipment.workspaces.Access;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EquipmentService {
-    private final JdbcTemplate db; private final Access access; private final Idempotency retries; private final Audit audit;
-    public EquipmentService(JdbcTemplate db,Access access,Idempotency retries,Audit audit) { this.db=db; this.access=access; this.retries=retries; this.audit=audit; }
+    private final JdbcTemplate db; private final Access access; private final Idempotency retries; private final Audit audit; private final NotificationService notifications;
+    public EquipmentService(JdbcTemplate db,Access access,Idempotency retries,Audit audit,NotificationService notifications) { this.db=db; this.access=access; this.retries=retries; this.audit=audit; this.notifications=notifications; }
     public record Equipment(UUID id,String reference,String name,String model,String createdAt,String archivedAt) {}
     public record Create(String name,String model) {}
     public Equipment get(Actor actor,UUID workspace,UUID id) { access.owner(actor,workspace); return require(workspace,id); }
@@ -37,7 +38,7 @@ public class EquipmentService {
     @Transactional
     public Equipment restore(Actor actor,UUID workspace,UUID id) {
         access.owner(actor,workspace);require(workspace,id);
-        if(db.update("update equipment set archived_at=null,archived_by=null where workspace_id=? and id=? and archived_at is not null",workspace,id)==1) audit.record(workspace,actor.userId(),"EQUIPMENT_RESTORED",id);
+        if(db.update("update equipment set archived_at=null,archived_by=null where workspace_id=? and id=? and archived_at is not null",workspace,id)==1) { audit.record(workspace,actor.userId(),"EQUIPMENT_RESTORED",id); notifications.equipmentRestored(workspace,id); }
         return require(workspace,id);
     }
     @Transactional
