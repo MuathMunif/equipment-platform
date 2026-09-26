@@ -26,13 +26,13 @@ import tools.jackson.databind.json.JsonMapper;
  "spring.datasource.username=equipment_test","spring.datasource.password=isolated-test-only"})
 @ActiveProfiles({"dev","test"})
 class TeamM5Test {
- @DynamicPropertySource static void properties(DynamicPropertyRegistry r){r.add("app.storage-root",()->"../.local/test-objects/"+UUID.randomUUID());}
+ @DynamicPropertySource static void properties(DynamicPropertyRegistry r){r.add("app.storage-root",()->"../.local/test-objects/"+UUID.randomUUID());r.add("spring.datasource.url",TestDatabase::url);}
  @LocalServerPort int port;@Autowired JdbcTemplate db;@Autowired DataSource dataSource;
  final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
  static final JsonMapper JSON=JsonMapper.builder().build();
  record Reply(int status,JsonNode json){}
  record User(String token,String workspace,String id){}
- @BeforeEach void clean(){db.execute("truncate audit_event,idempotency_record,attachment,settlement,financial_entry,equipment,app_session,otp_challenge,membership,workspace,app_user restart identity cascade");}
+ @BeforeEach void clean()throws Exception{TestDatabase.requireIsolated(db);db.execute("truncate audit_event,idempotency_record,attachment,settlement,financial_entry,equipment,app_session,otp_challenge,membership,workspace,app_user restart identity cascade");}
  Reply call(String method,String path,Object body,String token,String key)throws Exception{
   var b=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/v1"+path)).timeout(Duration.ofSeconds(20)).header("Content-Type","application/json");
   if(token!=null)b.header("Authorization","Bearer "+token);if(key!=null)b.header("Idempotency-Key",key);

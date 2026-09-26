@@ -64,7 +64,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: Builder(
             builder: (context) {
-              displayed[language] = localizedDate(context, '2026-09-25');
+              displayed[language] = localizedDate(context, '2026-10-01');
               return const SizedBox.shrink();
             },
           ),
@@ -73,7 +73,7 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(displayed.values.toSet().length, 3);
-    expect(displayed['en'], contains('2026'));
+    expect(displayed['en'], 'Oct 1, 2026');
   });
 
   for (final (code, direction) in [
