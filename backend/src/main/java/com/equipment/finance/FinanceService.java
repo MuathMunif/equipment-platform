@@ -19,7 +19,9 @@ public class FinanceService {
     private final JdbcTemplate db; private final Access access; private final EquipmentService equipment; private final Idempotency retries; private final Audit audit;
     public FinanceService(JdbcTemplate db,Access access,EquipmentService equipment,Idempotency retries,Audit audit) { this.db=db; this.access=access; this.equipment=equipment; this.retries=retries; this.audit=audit; }
     public record AllocationInput(UUID equipmentId,tools.jackson.databind.JsonNode amount) {}
-    public record Create(UUID equipmentId,tools.jackson.databind.JsonNode amount,String category,String operationDate,String paidOn,String note,String paymentStatus,tools.jackson.databind.JsonNode initialPaid,String partyName,String dueDate,String entryType,String expenseScope,List<AllocationInput> allocations) {}
+    public record Create(UUID equipmentId,tools.jackson.databind.JsonNode amount,String category,String operationDate,String paidOn,String note,String paymentStatus,tools.jackson.databind.JsonNode initialPaid,String partyName,String dueDate,String entryType,String expenseScope,List<AllocationInput> allocations,UUID projectId) {
+        public Create(UUID equipmentId,tools.jackson.databind.JsonNode amount,String category,String operationDate,String paidOn,String note,String paymentStatus,tools.jackson.databind.JsonNode initialPaid,String partyName,String dueDate,String entryType,String expenseScope,List<AllocationInput> allocations){this(equipmentId,amount,category,operationDate,paidOn,note,paymentStatus,initialPaid,partyName,dueDate,entryType,expenseScope,allocations,null);}
+    }
     public record AddSettlement(tools.jackson.databind.JsonNode amount,String paidOn) {}
     public record Edit(tools.jackson.databind.JsonNode amount,String category,String operationDate,String note,String partyName,String dueDate,UUID equipmentId,String expenseScope,List<AllocationInput> allocations) {}
     public record Cancel(String reason) {}
@@ -31,7 +33,7 @@ public class FinanceService {
     public record CreateDraft(UUID equipmentId,String note) {}
     public record HistoryFilter(String search,String fromDate,String toDate,String entryType,UUID equipmentId,Boolean generalExpense,String lifecycle,String settlementStatus) {}
     private record AllocationAmount(UUID equipmentId,String equipmentName,BigDecimal amount) {}
-    public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds,String expenseScope,List<Allocation> allocations,UUID createdBy,UUID completedBy,String completedAt,UUID submittedBy,UUID submissionId) {}
+    public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds,String expenseScope,List<Allocation> allocations,UUID createdBy,UUID completedBy,String completedAt,UUID submittedBy,UUID submissionId,UUID projectId) {}
     private static final JsonMapper JSON=JsonMapper.builder().build();
     public Entry get(Actor actor,UUID workspace,UUID id) { access.financial(actor,workspace,id,"FINANCE_VIEW"); return require(workspace,id); }
     public void requireAttachable(UUID workspace,UUID id) {
@@ -57,7 +59,7 @@ public class FinanceService {
                 return new Allocation(part.equipmentId(),part.equipmentName(),part.amount().toPlainString(),partPaid.toPlainString(),partRefund.toPlainString(),partNet.toPlainString(),part.amount().subtract(partNet).toPlainString());
             }).toList();
         }
-        return new Entry(id,(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("entry_type"),amount.toPlainString(),"SAR",(String)row.get("category"),row.get("operation_date").toString(),(String)row.get("note"),(String)row.get("lifecycle"),paid.toPlainString(),refunded.toPlainString(),netPaid.toPlainString(),netPaid.toPlainString(),remaining.toPlainString(),remaining.signum()==0?"PAID":netPaid.signum()==0?"UNPAID":"PARTIAL",(String)row.get("party_name"),row.get("due_date")==null?null:row.get("due_date").toString(),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(String)row.get("cancellation_reason"),row.get("cancelled_at")==null?null:((java.sql.Timestamp)row.get("cancelled_at")).toInstant().toString(),(UUID)row.get("cancelled_by"),settlements,refunds,(String)row.get("expense_scope"),allocations,(UUID)row.get("created_by"),(UUID)row.get("completed_by"),row.get("completed_at")==null?null:((java.sql.Timestamp)row.get("completed_at")).toInstant().toString(),(UUID)row.get("submitted_by"),(UUID)row.get("submission_id"));
+        return new Entry(id,(UUID)row.get("equipment_id"),(String)row.get("equipment_name"),(String)row.get("entry_type"),amount.toPlainString(),"SAR",(String)row.get("category"),row.get("operation_date").toString(),(String)row.get("note"),(String)row.get("lifecycle"),paid.toPlainString(),refunded.toPlainString(),netPaid.toPlainString(),netPaid.toPlainString(),remaining.toPlainString(),remaining.signum()==0?"PAID":netPaid.signum()==0?"UNPAID":"PARTIAL",(String)row.get("party_name"),row.get("due_date")==null?null:row.get("due_date").toString(),((java.sql.Timestamp)row.get("created_at")).toInstant().toString(),(String)row.get("cancellation_reason"),row.get("cancelled_at")==null?null:((java.sql.Timestamp)row.get("cancelled_at")).toInstant().toString(),(UUID)row.get("cancelled_by"),settlements,refunds,(String)row.get("expense_scope"),allocations,(UUID)row.get("created_by"),(UUID)row.get("completed_by"),row.get("completed_at")==null?null:((java.sql.Timestamp)row.get("completed_at")).toInstant().toString(),(UUID)row.get("submitted_by"),(UUID)row.get("submission_id"),(UUID)row.get("project_id"));
     }
     private List<AllocationAmount> allocationAmounts(UUID workspace,UUID entryId) {
         return db.query("select a.equipment_id,e.name,a.amount from expense_allocation a join equipment e on e.workspace_id=a.workspace_id and e.id=a.equipment_id where a.workspace_id=? and a.entry_id=? order by a.equipment_id",(rs,n)->new AllocationAmount(rs.getObject("equipment_id",UUID.class),rs.getString("name"),rs.getBigDecimal("amount")),workspace,entryId);
@@ -146,12 +148,30 @@ public class FinanceService {
         db.update("delete from expense_allocation where workspace_id=? and entry_id=?",workspace,entryId);
         parts.forEach((equipmentId,amount)->db.update("insert into expense_allocation(workspace_id,entry_id,equipment_id,amount) values(?,?,?,?)",workspace,entryId,equipmentId,amount));
     }
+    private void validateProject(Actor actor,UUID workspace,UUID projectId,String scope,UUID equipmentId,Collection<UUID> allocated) {
+        if(projectId==null)return;
+        access.project(actor,workspace,projectId,"PROJECT_VIEW");
+        var rows=db.queryForList("select organization_id,archived_at from project_or_contract where workspace_id=? and id=? for share",workspace,projectId);
+        if(rows.isEmpty()||rows.getFirst().get("archived_at")!=null)throw ApiException.missing();
+        UUID organization=(UUID)rows.getFirst().get("organization_id");
+        if(organization==null||"GENERAL".equals(scope))return;
+        Collection<UUID> equipment="SHARED".equals(scope)?allocated:List.of(equipmentId);
+        for(UUID id:equipment)if(!Boolean.TRUE.equals(db.queryForObject("select exists(select 1 from equipment_organization_assignment where workspace_id=? and equipment_id=? and organization_id=? and ended_at is null)",Boolean.class,workspace,id,organization)))throw new ApiException(409,"PROJECT_ORGANIZATION_MISMATCH","المعدة لا تتبع مؤسسة المشروع الحالية");
+    }
+    @Transactional public Entry classifyProject(Actor actor,UUID workspace,UUID entryId,UUID projectId) {
+        Access.Member member=access.require(actor,workspace,"FINANCE_MANAGE");if(!"DIRECT".equals(member.financialMode())||!access.financial(member,workspace,entryId))throw ApiException.missing();
+        var rows=db.queryForList("select * from financial_entry where workspace_id=? and id=? for update",workspace,entryId);if(rows.isEmpty())throw ApiException.missing();var row=rows.getFirst();if(!"POSTED".equals(row.get("lifecycle")))throw new ApiException(409,"FINANCIAL_CLASSIFICATION_LOCKED","لا يمكن تصنيف العملية الملغاة أو المسودة");
+        List<UUID> allocations=db.queryForList("select equipment_id from expense_allocation where workspace_id=? and entry_id=?",workspace,entryId).stream().map(r->(UUID)r.get("equipment_id")).toList();
+        validateProject(actor,workspace,projectId,(String)row.get("expense_scope"),(UUID)row.get("equipment_id"),allocations);
+        UUID old=(UUID)row.get("project_id");if(!Objects.equals(old,projectId)){db.update("update financial_entry set project_id=? where workspace_id=? and id=?",projectId,workspace,entryId);Map<String,Object> detail=new HashMap<>();detail.put("previousProjectId",old);detail.put("projectId",projectId);audit.record(workspace,actor.userId(),"FINANCIAL_PROJECT_LINK_CHANGED",entryId,JSON.writeValueAsString(detail));}
+        return require(workspace,entryId);
+    }
     public Map<String,Object> list(Actor actor,UUID workspace,HistoryFilter selected,int page) {
         Access.Member member=access.require(actor,workspace,"FINANCE_VIEW"); if(page<0 || page>100000) throw ApiException.invalid("رقم الصفحة غير صالح");
         HistoryFilter query=selected==null?new HistoryFilter(null,null,null,null,null,null,null,null):selected;
         var conditions=new StringBuilder(" f.workspace_id=? and f.lifecycle in ('POSTED','CANCELLED')");
         var params=new ArrayList<Object>(); params.add(workspace);
-        if(!member.scope().equals("ALL_EQUIPMENT")){conditions.append(" and ").append(access.financialPredicate(member));params.add(member.userId());params.add(member.userId());}
+        if(!member.scope().equals("ALL_EQUIPMENT")){conditions.append(" and ").append(access.financialPredicate(member));Collections.addAll(params,access.financialScopeArgs(member));}
         if(query.search()!=null && !query.search().isBlank()) {
             String term=query.search().trim();
             if(term.length()>100) throw ApiException.invalid("البحث لا يتجاوز 100 حرف");
@@ -197,8 +217,9 @@ public class FinanceService {
         if(!member.scope().equals("ALL_EQUIPMENT") && equipmentId==null)throw ApiException.missing();
         if(!member.scope().equals("ALL_EQUIPMENT")) {
             String allowed=access.financialPredicate(member);
-            BigDecimal e=db.queryForObject("select coalesce(sum(a.amount),0) from expense_allocation a join financial_entry f on f.workspace_id=a.workspace_id and f.id=a.entry_id where a.workspace_id=? and a.equipment_id=? and f.lifecycle='POSTED' and "+allowed,BigDecimal.class,workspace,equipmentId,member.userId(),member.userId());
-            BigDecimal i=db.queryForObject("select coalesce(sum(f.amount),0) from financial_entry f where f.workspace_id=? and f.equipment_id=? and f.entry_type='INCOME' and f.lifecycle='POSTED' and "+allowed,BigDecimal.class,workspace,equipmentId,member.userId(),member.userId());
+            Object[] scoped=access.financialScopeArgs(member);Object[] args=new Object[2+scoped.length];args[0]=workspace;args[1]=equipmentId;System.arraycopy(scoped,0,args,2,scoped.length);
+            BigDecimal e=db.queryForObject("select coalesce(sum(a.amount),0) from expense_allocation a join financial_entry f on f.workspace_id=a.workspace_id and f.id=a.entry_id where a.workspace_id=? and a.equipment_id=? and f.lifecycle='POSTED' and "+allowed,BigDecimal.class,args);
+            BigDecimal i=db.queryForObject("select coalesce(sum(f.amount),0) from financial_entry f where f.workspace_id=? and f.equipment_id=? and f.entry_type='INCOME' and f.lifecycle='POSTED' and "+allowed,BigDecimal.class,args);
             return Map.of("expenseTotal",e.setScale(2).toPlainString(),"incomeTotal",i.setScale(2).toPlainString(),"generalExpenseTotal","0.00");
         }
         BigDecimal expense=equipmentId==null
@@ -227,7 +248,7 @@ public class FinanceService {
         if(equipmentId!=null){access.equipment(actor,workspace,equipmentId,"EQUIPMENT_VIEW");equipment.require(workspace,equipmentId);}
         String filter=equipmentId==null?"":" and f.equipment_id=?";
         List<Object> params=new ArrayList<>();params.add(workspace);if(equipmentId!=null)params.add(equipmentId);
-        if(!member.scope().equals("ALL_EQUIPMENT")){filter+=" and "+access.financialPredicate(member);params.add(member.userId());params.add(member.userId());}
+        if(!member.scope().equals("ALL_EQUIPMENT")){filter+=" and "+access.financialPredicate(member);Collections.addAll(params,access.financialScopeArgs(member));}
         Long count=db.queryForObject("select count(*) from financial_entry f where f.workspace_id=? and f.lifecycle='DRAFT'"+filter,Long.class,params.toArray());
         params.add(page*30);
         var rows=db.queryForList("select f.*,e.name as equipment_name from financial_entry f join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where f.workspace_id=? and f.lifecycle='DRAFT'"+filter+" order by f.created_at desc,f.id desc limit 30 offset ?",params.toArray());
@@ -273,7 +294,7 @@ public class FinanceService {
     }
     private Entry post(Actor actor,UUID workspace,String key,Create request,UUID draftId,boolean review) {
         if(request==null) throw ApiException.invalid("أكمل بيانات العملية");
-        if(review){access.equipment(actor,workspace,request.equipmentId(),"FINANCE_REVIEW");}else access.directFinance(actor,workspace,request.equipmentId(),request.entryType()==null?"EXPENSE":request.entryType(),request.expenseScope()==null?"SINGLE":request.expenseScope());
+        if(review){access.equipment(actor,workspace,request.equipmentId(),"FINANCE_REVIEW");}else access.directFinance(actor,workspace,request.equipmentId(),request.entryType()==null?"EXPENSE":request.entryType(),request.expenseScope()==null?"SINGLE":request.expenseScope(),request.projectId());
         if(request.allocations()!=null){Access.Member member=access.member(actor,workspace);for(AllocationInput allocation:request.allocations())if(!access.contains(member,workspace,allocation.equipmentId()))throw ApiException.missing();}
         Map<String,Object> draftRow=null;
         if(draftId!=null) {
@@ -318,15 +339,17 @@ public class FinanceService {
                 : Values.payload(request.equipmentId(),amount,category,date,paidOn,note,status,initial,party,due)
             : Values.payload(request.equipmentId(),amount,category,date,paidOn,note,status,initial,party,due,type);
         if(request.expenseScope()!=null || request.allocations()!=null) payload=Values.payload(payload,scope,allocations);
+        if(request.projectId()!=null)payload=Values.payload(payload,request.projectId());
         if(draftId!=null) payload=Values.payload(draftId,payload);
         UUID id=retries.execute(workspace,actor.userId(),draftId==null?(type.equals("INCOME")?"income.create":"expense.create"):"finance.draft.complete:"+draftId,key,payload,()->{
+            validateProject(actor,workspace,request.projectId(),scope,request.equipmentId(),allocations.keySet());
             UUID created=draftId==null?UUID.randomUUID():draftId;
             if(draftId==null)
-                db.update("insert into financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,note,lifecycle,created_by,party_name,due_date,entry_type,expense_scope) values(?,?,?,?,'SAR',?,?,?,'POSTED',?,?,?,?,?)",created,workspace,request.equipmentId(),amount,category,java.sql.Date.valueOf(date),note,actor.userId(),party,due==null?null:java.sql.Date.valueOf(due),type,scope);
+                db.update("insert into financial_entry(id,workspace_id,equipment_id,amount,currency,category,operation_date,note,lifecycle,created_by,party_name,due_date,entry_type,expense_scope,project_id) values(?,?,?,?,'SAR',?,?,?,'POSTED',?,?,?,?,?,?)",created,workspace,request.equipmentId(),amount,category,java.sql.Date.valueOf(date),note,actor.userId(),party,due==null?null:java.sql.Date.valueOf(due),type,scope,request.projectId());
             else {
                 var current=db.queryForList("select lifecycle,created_by,note from financial_entry where workspace_id=? and id=? for update",workspace,draftId);
                 if(current.isEmpty() || !"DRAFT".equals(current.getFirst().get("lifecycle"))) throw ApiException.invalid("المسودة استُكملت أو استُبعدت مسبقًا");
-                db.update("update financial_entry set amount=?,category=?,operation_date=?,note=?,lifecycle='POSTED',party_name=?,due_date=?,entry_type=?,completed_by=?,completed_at=now() where workspace_id=? and id=?",amount,category,java.sql.Date.valueOf(date),note,party,due==null?null:java.sql.Date.valueOf(due),type,actor.userId(),workspace,draftId);
+                db.update("update financial_entry set amount=?,category=?,operation_date=?,note=?,lifecycle='POSTED',party_name=?,due_date=?,entry_type=?,completed_by=?,completed_at=now(),project_id=? where workspace_id=? and id=?",amount,category,java.sql.Date.valueOf(date),note,party,due==null?null:java.sql.Date.valueOf(due),type,actor.userId(),request.projectId(),workspace,draftId);
             }
             if(type.equals("EXPENSE")) saveAllocations(workspace,created,allocations);
             if(initial.signum()>0) db.update("insert into settlement(id,workspace_id,entry_id,amount,paid_on,created_by) values(?,?,?,?,?,?)",UUID.randomUUID(),workspace,created,initial,java.sql.Date.valueOf(paidOn),actor.userId());

@@ -1965,4 +1965,190 @@ class AppLocalizationsEn extends AppLocalizations {
   String m5ConfirmMoveDriver(String driverName, String sourceEquipment) {
     return '$driverName will no longer be assigned to $sourceEquipment.';
   }
+
+  @override
+  String get m6Organizations => 'Organizations';
+
+  @override
+  String get m6OrganizationsOptional =>
+      'Organizations are optional. You can use the whole app without one.';
+
+  @override
+  String get m6SearchOrganizations => 'Search organizations';
+
+  @override
+  String get m6NoOrganizations =>
+      'No organizations yet. You can start with equipment.';
+
+  @override
+  String get m6AddOrganization => 'Add organization';
+
+  @override
+  String get m6OrganizationName => 'Organization name';
+
+  @override
+  String get m6IdentifierOptional => 'Identifier (optional)';
+
+  @override
+  String get m6NameRequired => 'Enter a name to continue';
+
+  @override
+  String get m6ProjectsContracts => 'Projects & Contracts';
+
+  @override
+  String get m6ManageEquipment => 'Manage linked equipment';
+
+  @override
+  String get m6AddProject => 'Add project or contract';
+
+  @override
+  String get m6ArchiveOrganizationConfirm =>
+      'Archiving keeps history. First unassign equipment and archive active projects or contracts.';
+
+  @override
+  String get m6NoOrganization => 'No organization';
+
+  @override
+  String get m6AssignEquipment => 'Assign equipment organization';
+
+  @override
+  String get m6ConfirmAction => 'Confirm action';
+
+  @override
+  String get m6ProjectsOptional =>
+      'Link projects or contracts when useful. Equipment and finance work without them.';
+
+  @override
+  String get m6SearchProjects => 'Search name, client or contract number';
+
+  @override
+  String get m6All => 'All';
+
+  @override
+  String get m6Completed => 'Completed';
+
+  @override
+  String get m6NoProjects => 'No matching projects or contracts';
+
+  @override
+  String get m6Project => 'Project';
+
+  @override
+  String get m6Contract => 'Contract';
+
+  @override
+  String get m6RecordKind => 'Record type';
+
+  @override
+  String get m6OrganizationOptional => 'Organization (optional)';
+
+  @override
+  String get m6ClientOptional => 'Client (optional)';
+
+  @override
+  String get m6ContractNumberOptional => 'Contract number (optional)';
+
+  @override
+  String get m6StartDateOptional => 'Start date (optional)';
+
+  @override
+  String get m6EndDateOptional => 'End date (optional)';
+
+  @override
+  String get m6DateOrder => 'Start date must be on or before end date';
+
+  @override
+  String get m6CompleteConfirm =>
+      'Completing ends active equipment links. Finance, attachments and history remain.';
+
+  @override
+  String get m6ArchiveProjectConfirm =>
+      'Archiving hides this record from normal lists and keeps finance, attachments and history.';
+
+  @override
+  String get m6FinancialSummary => 'Derived financial summary';
+
+  @override
+  String get m6RecordedIncome => 'Recorded income';
+
+  @override
+  String get m6RecordedExpenses => 'Recorded expenses';
+
+  @override
+  String get m6RecordedDifference =>
+      'Difference between recorded income and expenses';
+
+  @override
+  String get m6Collected => 'Collected';
+
+  @override
+  String get m6Paid => 'Paid';
+
+  @override
+  String get m6ReceivablesRemaining => 'Remaining receivable';
+
+  @override
+  String get m6PayablesRemaining => 'Remaining payable';
+
+  @override
+  String get m6LinkEquipmentFirst =>
+      'Link equipment to this project before adding income';
+
+  @override
+  String get m6Complete => 'Complete project';
+
+  @override
+  String get m6Reopen => 'Reopen project';
+
+  @override
+  String get m6WorkspaceProjectEquipment =>
+      'Equipment from any organization or no organization can be linked.';
+
+  @override
+  String get m6OrganizationProjectEquipment =>
+      'Only equipment currently in the project organization is eligible.';
+
+  @override
+  String get m6ProjectClassification => 'Project or contract (optional)';
+
+  @override
+  String get m6AdditionalDetails => 'Additional details';
+
+  @override
+  String get m6ScopeOrganizations => 'Selected organizations';
+
+  @override
+  String get m6ScopeOrganizationsHint =>
+      'Includes current and future equipment in these organizations. Unassigned equipment is excluded.';
+
+  @override
+  String get m6ChooseOrganizations => 'Choose at least one organization';
+
+  @override
+  String get m6OrganizationProjectBlocked =>
+      'Unlink the equipment from its active project before moving it';
+
+  @override
+  String get m6OrganizationInUse =>
+      'Cannot archive while equipment is assigned or projects and contracts remain';
+
+  @override
+  String get m6ProjectInactive => 'Project is not active for this action';
+
+  @override
+  String get m6ProjectMismatch =>
+      'Equipment does not belong to this project’s current organization';
+
+  @override
+  String get m6ActiveProjects => 'Active projects & contracts';
+
+  @override
+  String get m6NoActiveProjects => 'No active project links';
+
+  @override
+  String get m6RetrySameFile => 'Choose the same file to retry the upload';
+
+  @override
+  String get m6MoveEquipmentConfirm =>
+      'This ends the current organization assignment and moves or unassigns the equipment. Assignment history is kept.';
 }

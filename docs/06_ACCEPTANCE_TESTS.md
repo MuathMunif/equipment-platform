@@ -1,6 +1,17 @@
 # Acceptance and regression test catalog
 Status: broader acceptance catalog; a tested local M2 subset is documented below.
 
+## M6 local acceptance — 2026-09-26
+
+- ORG-01: Owner can use equipment, finance, documents, issues, maintenance and team with no organization or project; equipment still requires only name/model.
+- ORG-02: Create/edit/archive/restore organization; one active equipment assignment, move/unassign history and concurrent uniqueness. Active same-organization project blocks move; active assignments or non-archived projects block organization archive.
+- SCOPE-01: SELECTED_ORGANIZATIONS grants current and future equipment in selected organizations and removes access on the next request when equipment leaves; unassigned equipment stays excluded. Existing M0–M5 resources, attachments, search, totals and notifications use the same backend scope.
+- PROJ-01: PROJECT and CONTRACT share one module; optional organization and metadata. ACTIVE/COMPLETED plus separate archive; completion/archive ends active equipment links and reopen/restore does not restore them.
+- PROJ-02: Equipment may join multiple projects. Organization-scoped project accepts only currently same-organization equipment; workspace project accepts accessible equipment from multiple organizations or no organization. Duplicate active link is rejected; history remains.
+- PROJ-03: Active M2 expense/income can classify to one project or none, including general/shared expenses; classification after settlement/refund leaves monetary history intact. Cancelled entries cannot reclassify. Project summary is exact and derived from posted M2, excluding cancelled entries.
+- PROJ-04: Full project and attachments require project capability plus scope; SELECTED_EQUIPMENT does not reveal full project; project financial summary also needs FINANCE_VIEW. Reviewer may classify approved driver submission while driver submission UI stays project-free.
+- UI-06: Organization and project/contract screens and optional finance/team controls work in ar/en/ur; archived, empty, loading and error states are clear. Wireframe is visual guidance only.
+
 ## M4 local acceptance — 2026-09-25
 
 - ISSUE-01: A description-only issue saves with a unique generated reference, optional type and default `equipmentStopped=false`; a stopped OPEN issue appears first in Attention, while IN_PROGRESS/CLOSED issues do not.

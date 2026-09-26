@@ -1,5 +1,5 @@
 # Delivery backlog
-Status 2026-09-25: M0–M4 are merged in `main` for local V1 development. M5 team, drivers and scoped permissions are implemented on `feat/m5-team-drivers-permissions`, pending PR/CI review; see `HANDOFF.md`. Private production object storage, malware scanning, live Push and production OTP remain deferred. This is not production readiness.
+Status 2026-09-26: M0–M5 are merged in `main` for local V1 development. M6 optional organizations and unified projects/contracts are implemented on `feat/m6-organizations-projects`, pending final verification and PR/CI; see `HANDOFF.md`. Private production object storage, malware scanning, live Push and production OTP remain deferred. This is not production readiness.
 
 Localization foundation before M4 is merged into main: `ar`, `en`, `ur` resources, user-level saved preference, localized app UI and semantic notification templates. Arabic remains fallback. Urdu copy requires native-speaker review before public release.
 
@@ -57,17 +57,13 @@ Merged into `main`: optional issue type/stopped flag; OPEN → IN_PROGRESS/CLOSE
 Gate: three owner journeys (linked repair, direct maintenance, simple issue), workspace isolation, and no duplicated financial value. Work orders, preventive schedules, readings, issue priorities and independently stored maintenance costs are outside M4.
 
 ## M5 — Team, drivers and permissions (owner's 2026-09-25 scope)
-Implemented on `feat/m5-team-drivers-permissions`: seven-day invitations and acceptance/decline, owner/manager/accountant/driver presets, capability overrides, equipment scope, direct/review financial modes, revocation, workspace switching, single active driver assignment with history, expense-only driver submissions and review, semantic notifications, and ar/en/ur UI. Rejected submissions can create a new linked request without rewriting review history; approved submissions leave later money changes to M2. Flyway V14–V17 and negative authorization tests cover existing M0–M4 routes. Gate: local tests and connected acceptance, then PR/CI review; production identity and storage are still deferred.
+Merged into `main`: seven-day invitations and acceptance/decline, owner/manager/accountant/driver presets, capability overrides, equipment scope, direct/review financial modes, revocation, workspace switching, single active driver assignment with history, expense-only driver submissions and review, semantic notifications, and ar/en/ur UI. Rejected submissions can create a new linked request without rewriting review history; approved submissions leave later money changes to M2. Flyway V14–V17 and negative authorization tests cover existing M0–M4 routes. Gate: local tests and connected acceptance, then PR/CI review; production identity and storage are still deferred.
 
-## Later scope — not started here
-Older backlog wording placed corrections/refunds in M4 and issues/maintenance in M5, and team in M6. The owner's subsequent explicit assignments supersede that ordering. Corrections/refunds are M2; issues/maintenance are M4; team/driver work is M5. No M6 implementation is authorized by this branch.
+## M6 — Optional organizations, projects and contracts (owner's explicit scope)
+Implemented and locally verified on `feat/m6-organizations-projects`, pushed to origin at `63b3bb1`; PR/CI are pending because the current `gh` account lacks collaborator permission to create a PR. Organizations group equipment and project records inside the workspace and are never required for existing workflows. Equipment has zero or one current organization with assignment history. PROJECT and CONTRACT are one typed module with optional organization, ACTIVE/COMPLETED plus archive, multiple historical equipment links, private attachments and optional M2 classification. Financial summaries derive from M2 only. M5 non-driver access adds live SELECTED_ORGANIZATIONS and protects M0–M5 resources on each request. Flyway V18–V21 and ar/en/ur UI are included. Full suites, fresh and upgraded databases, connected API journeys, representative web smoke, and independent UX/security reviews passed; see HANDOFF. Gate remaining: create PR from the compare URL in HANDOFF, review CI, and decide merge. Production providers remain separate.
 
-## M7 — Optional organization/project features and launch blockers
-Basic organizations/associations; project/contract details after Q-04/Q-05 approval.
-Choose live providers/region, implement account/phone/recovery/deletion policies, push platform integrations,
-production configuration, monitoring, backup/restore drill, native device tests, staging and owner UAT.
-Pricing/commercial scope and publishing are separate explicit owner decisions.
-Gate: release checklist complete; do not call V1 production-ready merely because web builds.
+## M7 — Broader reports and launch blockers, not started
+After M6 is merged, plan broader cross-classification reports only with an approved scope. Choose live providers/region, implement account/phone/recovery/deletion policies, push platform integrations, production configuration, monitoring, backup/restore drill, native device tests, staging and owner UAT. Pricing/commercial scope and publishing are separate explicit owner decisions. Do not call V1 production-ready merely because local tests and web builds pass.
 
 ## Suggested task format
 Task ID + source requirements + dependencies + affected folders + acceptance IDs + out-of-scope + evidence + status.

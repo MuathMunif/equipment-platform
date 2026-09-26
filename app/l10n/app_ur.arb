@@ -922,7 +922,13 @@
   "m5NotificationSubmissionRejected": "آپ کی مالی درخواست مسترد ہوئی",
   "m5AttentionReview": "مالی درخواستوں کا جائزہ درکار",
   "m5PendingReviewsCount": "{count} مالی درخواستیں جائزے کی منتظر ہیں",
-  "@m5PendingReviewsCount": {"placeholders": {"count": {"type": "String"}}},
+  "@m5PendingReviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "m5RoleChangeResetsPermissions": "کردار بدلنے سے اجازتیں نئے کردار کی طے شدہ حالت پر واپس آ جائیں گی اور پچھلی تخصیصات ختم ہو جائیں گی۔ جاری رکھیں؟",
   "m5DirectExpenseHint": "اخراجات کی تفصیلات مکمل کریں اور براہ راست درج کریں۔",
   "m5DirectExpenseConfirm": "یہ اخراجات درج کریں؟",
@@ -938,11 +944,104 @@
   "m5ChooseDriver": "ڈرائیور منتخب کریں",
   "m5NoEligibleDrivers": "اس آلے کے لیے کوئی ڈرائیور دستیاب نہیں",
   "m5DriverCurrentlyOnEquipment": "فی الحال {equipmentName} پر تعینات ہے",
-  "@m5DriverCurrentlyOnEquipment": {"placeholders": {"equipmentName": {"type": "String"}}},
+  "@m5DriverCurrentlyOnEquipment": {
+    "placeholders": {
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmAssignDriver": "{driverName} کو {equipmentName} پر تعینات کریں؟",
-  "@m5ConfirmAssignDriver": {"placeholders": {"driverName": {"type": "String"}, "equipmentName": {"type": "String"}}},
+  "@m5ConfirmAssignDriver": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmReplaceDriver": "{equipmentName} پر {currentDriver} کی جگہ {newDriver} کو تعینات کریں؟",
-  "@m5ConfirmReplaceDriver": {"placeholders": {"currentDriver": {"type": "String"}, "newDriver": {"type": "String"}, "equipmentName": {"type": "String"}}},
+  "@m5ConfirmReplaceDriver": {
+    "placeholders": {
+      "currentDriver": {
+        "type": "String"
+      },
+      "newDriver": {
+        "type": "String"
+      },
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmMoveDriver": "{driverName} کی {sourceEquipment} پر موجودہ تعیناتی ختم ہو جائے گی۔",
-  "@m5ConfirmMoveDriver": {"placeholders": {"driverName": {"type": "String"}, "sourceEquipment": {"type": "String"}}}
+  "@m5ConfirmMoveDriver": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "sourceEquipment": {
+        "type": "String"
+      }
+    }
+  },
+  "m6Organizations": "ادارے",
+  "m6OrganizationsOptional": "ادارے اختیاری ہیں۔ آپ ان کے بغیر بھی پوری ایپ استعمال کر سکتے ہیں۔",
+  "m6SearchOrganizations": "ادارے تلاش کریں",
+  "m6NoOrganizations": "ابھی کوئی ادارہ نہیں۔ آپ براہ راست آلات سے شروع کر سکتے ہیں۔",
+  "m6AddOrganization": "ادارہ شامل کریں",
+  "m6OrganizationName": "ادارے کا نام",
+  "m6IdentifierOptional": "شناختی نمبر (اختیاری)",
+  "m6NameRequired": "جاری رکھنے کے لیے نام درج کریں",
+  "m6ProjectsContracts": "منصوبے اور معاہدے",
+  "m6ManageEquipment": "منسلک آلات کا انتظام",
+  "m6AddProject": "منصوبہ یا معاہدہ شامل کریں",
+  "m6ArchiveOrganizationConfirm": "آرکائیو کرنے سے تاریخ محفوظ رہے گی۔ پہلے آلات کی تفویض ختم کریں اور منصوبے یا معاہدے آرکائیو کریں۔",
+  "m6NoOrganization": "بغیر ادارے کے",
+  "m6AssignEquipment": "آلے کو ادارے سے منسلک کریں",
+  "m6ConfirmAction": "عمل کی تصدیق",
+  "m6ProjectsOptional": "ضرورت کے وقت منصوبے یا معاہدے منسلک کریں۔ آلات اور مالیات ان کے بغیر بھی کام کرتے ہیں۔",
+  "m6SearchProjects": "نام، گاہک یا معاہدہ نمبر تلاش کریں",
+  "m6All": "سب",
+  "m6Completed": "مکمل",
+  "m6NoProjects": "کوئی مماثل منصوبہ یا معاہدہ نہیں",
+  "m6Project": "منصوبہ",
+  "m6Contract": "معاہدہ",
+  "m6RecordKind": "ریکارڈ کی قسم",
+  "m6OrganizationOptional": "ادارہ (اختیاری)",
+  "m6ClientOptional": "گاہک (اختیاری)",
+  "m6ContractNumberOptional": "معاہدہ نمبر (اختیاری)",
+  "m6StartDateOptional": "آغاز کی تاریخ (اختیاری)",
+  "m6EndDateOptional": "اختتام کی تاریخ (اختیاری)",
+  "m6DateOrder": "آغاز کی تاریخ اختتام کی تاریخ سے پہلے یا برابر ہونی چاہیے",
+  "m6CompleteConfirm": "مکمل کرنے سے آلات کے فعال روابط ختم ہوں گے۔ مالیات، منسلکات اور تاریخ محفوظ رہیں گے۔",
+  "m6ArchiveProjectConfirm": "آرکائیو سے یہ ریکارڈ عام فہرست سے چھپ جائے گا جبکہ مالیات، منسلکات اور تاریخ محفوظ رہیں گے۔",
+  "m6FinancialSummary": "مالی خلاصہ",
+  "m6RecordedIncome": "درج شدہ آمدنی",
+  "m6RecordedExpenses": "درج شدہ اخراجات",
+  "m6RecordedDifference": "درج شدہ آمدنی اور اخراجات کا فرق",
+  "m6Collected": "وصول شدہ",
+  "m6Paid": "ادا شدہ",
+  "m6ReceivablesRemaining": "وصولی کے لیے باقی",
+  "m6PayablesRemaining": "ادائیگی کے لیے باقی",
+  "m6LinkEquipmentFirst": "آمدنی شامل کرنے سے پہلے آلہ منصوبے سے منسلک کریں",
+  "m6Complete": "منصوبہ مکمل کریں",
+  "m6Reopen": "منصوبہ دوبارہ کھولیں",
+  "m6WorkspaceProjectEquipment": "کسی بھی ادارے یا بغیر ادارے کے آلات منسلک کیے جا سکتے ہیں۔",
+  "m6OrganizationProjectEquipment": "صرف اس منصوبے کے ادارے سے وابستہ موجودہ آلات اہل ہیں۔",
+  "m6ProjectClassification": "منصوبہ یا معاہدہ (اختیاری)",
+  "m6AdditionalDetails": "اضافی تفصیلات",
+  "m6ScopeOrganizations": "منتخب ادارے",
+  "m6ScopeOrganizationsHint": "ان اداروں کے موجودہ اور آئندہ آلات شامل ہیں۔ غیر منسلک آلات شامل نہیں۔",
+  "m6ChooseOrganizations": "کم از کم ایک ادارہ منتخب کریں",
+  "m6OrganizationProjectBlocked": "آلہ منتقل کرنے سے پہلے اسے فعال منصوبے سے الگ کریں",
+  "m6OrganizationInUse": "منسلک آلات یا غیر آرکائیو منصوبوں کی موجودگی میں ادارہ آرکائیو نہیں ہو سکتا",
+  "m6ProjectInactive": "یہ منصوبہ اس عمل کے لیے فعال نہیں",
+  "m6ProjectMismatch": "آلہ اس منصوبے کے موجودہ ادارے سے وابستہ نہیں",
+  "m6ActiveProjects": "فعال منصوبے اور معاہدے",
+  "m6NoActiveProjects": "کوئی فعال منصوبہ منسلک نہیں",
+  "m6RetrySameFile": "دوبارہ اپ لوڈ کے لیے وہی فائل منتخب کریں",
+  "m6MoveEquipmentConfirm": "یہ موجودہ ادارے کی تفویض ختم کر کے آلہ منتقل یا غیر منسلک کرے گا۔ تفویض کی تاریخ محفوظ رہے گی۔"
 }

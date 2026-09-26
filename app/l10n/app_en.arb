@@ -922,7 +922,13 @@
   "m5NotificationSubmissionRejected": "Your financial request was rejected",
   "m5AttentionReview": "Financial requests need review",
   "m5PendingReviewsCount": "{count} financial requests awaiting review",
-  "@m5PendingReviewsCount": {"placeholders": {"count": {"type": "String"}}},
+  "@m5PendingReviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "m5RoleChangeResetsPermissions": "Changing the role resets permissions to the new role defaults and removes previous customizations. Continue?",
   "m5DirectExpenseHint": "Complete the expense details and post it directly.",
   "m5DirectExpenseConfirm": "Post this expense?",
@@ -938,11 +944,104 @@
   "m5ChooseDriver": "Choose driver",
   "m5NoEligibleDrivers": "No drivers are available for this equipment",
   "m5DriverCurrentlyOnEquipment": "Currently assigned to {equipmentName}",
-  "@m5DriverCurrentlyOnEquipment": {"placeholders": {"equipmentName": {"type": "String"}}},
+  "@m5DriverCurrentlyOnEquipment": {
+    "placeholders": {
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmAssignDriver": "Assign {driverName} to {equipmentName}?",
-  "@m5ConfirmAssignDriver": {"placeholders": {"driverName": {"type": "String"}, "equipmentName": {"type": "String"}}},
+  "@m5ConfirmAssignDriver": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmReplaceDriver": "Replace {currentDriver} with {newDriver} on {equipmentName}?",
-  "@m5ConfirmReplaceDriver": {"placeholders": {"currentDriver": {"type": "String"}, "newDriver": {"type": "String"}, "equipmentName": {"type": "String"}}},
+  "@m5ConfirmReplaceDriver": {
+    "placeholders": {
+      "currentDriver": {
+        "type": "String"
+      },
+      "newDriver": {
+        "type": "String"
+      },
+      "equipmentName": {
+        "type": "String"
+      }
+    }
+  },
   "m5ConfirmMoveDriver": "{driverName} will no longer be assigned to {sourceEquipment}.",
-  "@m5ConfirmMoveDriver": {"placeholders": {"driverName": {"type": "String"}, "sourceEquipment": {"type": "String"}}}
+  "@m5ConfirmMoveDriver": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "sourceEquipment": {
+        "type": "String"
+      }
+    }
+  },
+  "m6Organizations": "Organizations",
+  "m6OrganizationsOptional": "Organizations are optional. You can use the whole app without one.",
+  "m6SearchOrganizations": "Search organizations",
+  "m6NoOrganizations": "No organizations yet. You can start with equipment.",
+  "m6AddOrganization": "Add organization",
+  "m6OrganizationName": "Organization name",
+  "m6IdentifierOptional": "Identifier (optional)",
+  "m6NameRequired": "Enter a name to continue",
+  "m6ProjectsContracts": "Projects & Contracts",
+  "m6ManageEquipment": "Manage linked equipment",
+  "m6AddProject": "Add project or contract",
+  "m6ArchiveOrganizationConfirm": "Archiving keeps history. First unassign equipment and archive active projects or contracts.",
+  "m6NoOrganization": "No organization",
+  "m6AssignEquipment": "Assign equipment organization",
+  "m6ConfirmAction": "Confirm action",
+  "m6ProjectsOptional": "Link projects or contracts when useful. Equipment and finance work without them.",
+  "m6SearchProjects": "Search name, client or contract number",
+  "m6All": "All",
+  "m6Completed": "Completed",
+  "m6NoProjects": "No matching projects or contracts",
+  "m6Project": "Project",
+  "m6Contract": "Contract",
+  "m6RecordKind": "Record type",
+  "m6OrganizationOptional": "Organization (optional)",
+  "m6ClientOptional": "Client (optional)",
+  "m6ContractNumberOptional": "Contract number (optional)",
+  "m6StartDateOptional": "Start date (optional)",
+  "m6EndDateOptional": "End date (optional)",
+  "m6DateOrder": "Start date must be on or before end date",
+  "m6CompleteConfirm": "Completing ends active equipment links. Finance, attachments and history remain.",
+  "m6ArchiveProjectConfirm": "Archiving hides this record from normal lists and keeps finance, attachments and history.",
+  "m6FinancialSummary": "Derived financial summary",
+  "m6RecordedIncome": "Recorded income",
+  "m6RecordedExpenses": "Recorded expenses",
+  "m6RecordedDifference": "Difference between recorded income and expenses",
+  "m6Collected": "Collected",
+  "m6Paid": "Paid",
+  "m6ReceivablesRemaining": "Remaining receivable",
+  "m6PayablesRemaining": "Remaining payable",
+  "m6LinkEquipmentFirst": "Link equipment to this project before adding income",
+  "m6Complete": "Complete project",
+  "m6Reopen": "Reopen project",
+  "m6WorkspaceProjectEquipment": "Equipment from any organization or no organization can be linked.",
+  "m6OrganizationProjectEquipment": "Only equipment currently in the project organization is eligible.",
+  "m6ProjectClassification": "Project or contract (optional)",
+  "m6AdditionalDetails": "Additional details",
+  "m6ScopeOrganizations": "Selected organizations",
+  "m6ScopeOrganizationsHint": "Includes current and future equipment in these organizations. Unassigned equipment is excluded.",
+  "m6ChooseOrganizations": "Choose at least one organization",
+  "m6OrganizationProjectBlocked": "Unlink the equipment from its active project before moving it",
+  "m6OrganizationInUse": "Cannot archive while equipment is assigned or projects and contracts remain",
+  "m6ProjectInactive": "Project is not active for this action",
+  "m6ProjectMismatch": "Equipment does not belong to this project’s current organization",
+  "m6ActiveProjects": "Active projects & contracts",
+  "m6NoActiveProjects": "No active project links",
+  "m6RetrySameFile": "Choose the same file to retry the upload",
+  "m6MoveEquipmentConfirm": "This ends the current organization assignment and moves or unassigns the equipment. Assignment history is kept."
 }

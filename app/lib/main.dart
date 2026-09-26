@@ -7,6 +7,7 @@ import 'file_export.dart';
 import 'documents.dart';
 import 'maintenance.dart';
 import 'team.dart';
+import 'projects.dart';
 import 'localization.dart';
 import 'l10n/app_localizations.dart';
 
@@ -502,6 +503,14 @@ class _WorkspacePageState extends State<WorkspacePage> {
         role == 'OWNER' ||
         capabilities.contains('ISSUE_VIEW') ||
         capabilities.contains('MAINTENANCE_VIEW');
+    final canOrganizations =
+        role == 'OWNER' || capabilities.contains('ORGANIZATION_VIEW');
+    final canProjects =
+        role == 'OWNER' || capabilities.contains('PROJECT_VIEW');
+    final canManageOrganizations =
+        role == 'OWNER' || capabilities.contains('ORGANIZATION_MANAGE');
+    final canManageProjects =
+        role == 'OWNER' || capabilities.contains('PROJECT_MANAGE');
     final destinations = <(IconData, String, Widget)>[
       (
         Icons.home_outlined,
@@ -567,6 +576,27 @@ class _WorkspacePageState extends State<WorkspacePage> {
             api: widget.api,
             canManage: canDirectFinance,
             canSubmitReview: canSubmitReview,
+          ),
+        ),
+      if (canOrganizations)
+        (
+          Icons.business_outlined,
+          l10n(context).m6Organizations,
+          OrganizationsPage(
+            key: ValueKey('organizations-$revision'),
+            api: widget.api,
+            canManage: canManageOrganizations,
+          ),
+        ),
+      if (canProjects)
+        (
+          Icons.folder_copy_outlined,
+          l10n(context).m6ProjectsContracts,
+          ProjectsPage(
+            key: ValueKey('projects-$revision'),
+            api: widget.api,
+            canManage: canManageProjects,
+            canFinance: canFinance,
           ),
         ),
     ];
@@ -1344,6 +1374,14 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
               ),
               Text(l10n(context).modelValue('${equipment['model']}')),
               Text('${equipment['reference']}'),
+              EquipmentM6Context(
+                api: widget.api,
+                equipment: equipment,
+                canManage: widget.canManage,
+                canProjects:
+                    widget.api.capabilities?.contains('PROJECT_VIEW') ?? false,
+                canFinance: widget.canFinance,
+              ),
               if (widget.canSubmitReview)
                 FilledButton(
                   onPressed: () => Navigator.push(
@@ -1787,6 +1825,19 @@ class _LedgerPageState extends State<LedgerPage> {
                   Text(
                     widget.equipment!['reference'],
                     textDirection: TextDirection.ltr,
+                  ),
+                  EquipmentM6Context(
+                    api: widget.api,
+                    equipment: widget.equipment!,
+                    canManage:
+                        widget.api.capabilities?.contains('EQUIPMENT_MANAGE') ??
+                        false,
+                    canProjects:
+                        widget.api.capabilities?.contains('PROJECT_VIEW') ??
+                        false,
+                    canFinance:
+                        widget.api.capabilities?.contains('FINANCE_VIEW') ??
+                        false,
                   ),
                   const SizedBox(height: 24),
                   if (widget.canManage)
@@ -2675,6 +2726,7 @@ class ExpenseForm extends StatefulWidget {
   final String? draftId;
   final String? draftNote;
   final String? maintenanceId;
+  final String? initialProjectId;
   const ExpenseForm({
     super.key,
     required this.api,
@@ -2684,6 +2736,7 @@ class ExpenseForm extends StatefulWidget {
     this.draftId,
     this.draftNote,
     this.maintenanceId,
+    this.initialProjectId,
   });
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
@@ -2713,6 +2766,8 @@ class _ExpenseFormState extends State<ExpenseForm> {
   String expenseScope = 'SINGLE';
   final parts = <_ExpensePart>[];
   List<Map<String, dynamic>> equipmentChoices = [];
+  List<Map<String, dynamic>> projectChoices = [];
+  String? projectId;
   bool loadingEquipment = false;
   @override
   void initState() {
@@ -2720,6 +2775,20 @@ class _ExpenseFormState extends State<ExpenseForm> {
     expenseScope = widget.initialScope;
     if (widget.maintenanceId != null) category = 'MAINTENANCE';
     if (widget.draftNote != null) note.text = widget.draftNote!;
+    projectId = widget.initialProjectId;
+    if (projectId != null) loadProjectChoices();
+  }
+
+  Future<void> loadProjectChoices() async {
+    try {
+      final response = await widget.api.json(
+        'GET',
+        widget.api.scoped('/projects'),
+      );
+      if (mounted) setState(() => projectChoices = m6Rows(response));
+    } catch (_) {
+      /* Optional classification remains usable without PROJECT_VIEW. */
+    }
   }
 
   Future<void> loadEquipmentChoices() async {
@@ -2872,6 +2941,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
           if (paymentStatus != 'FULL') 'partyName': party.text.trim(),
           if (paymentStatus != 'FULL' && dueDate != null) 'dueDate': dueDate,
           'note': note.text.trim(),
+          if (projectId != null) 'projectId': projectId,
         },
       );
       if (mounted) {
@@ -3230,6 +3300,42 @@ class _ExpenseFormState extends State<ExpenseForm> {
               ),
               onChanged: (_) => setState(() {}),
             ),
+            if (widget.maintenanceId == null)
+              ExpansionTile(
+                title: Text(l10n(context).m6AdditionalDetails),
+                onExpansionChanged: (expanded) {
+                  if (expanded) loadProjectChoices();
+                },
+                children: [
+                  DropdownButtonFormField<String?>(
+                    key: const Key('financeProject'),
+                    initialValue: projectId,
+                    decoration: InputDecoration(
+                      labelText: l10n(context).m6ProjectClassification,
+                    ),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text(l10n(context).m6NoProjects),
+                      ),
+                      if (projectId != null &&
+                          !projectChoices.any((p) => p['id'] == projectId))
+                        DropdownMenuItem<String?>(
+                          value: projectId,
+                          child: Text(l10n(context).m6ProjectsContracts),
+                        ),
+                      for (final project in projectChoices)
+                        DropdownMenuItem<String?>(
+                          value: '${project['id']}',
+                          child: Text('${project['name']}'),
+                        ),
+                    ],
+                    onChanged: busy
+                        ? null
+                        : (v) => setState(() => projectId = v),
+                  ),
+                ],
+              ),
             const SizedBox(height: 8),
             Text(
               l10n(context).attachmentAfterSave(
@@ -3723,6 +3829,7 @@ class EntryDetail extends StatefulWidget {
 
 class _EntryDetailState extends State<EntryDetail> {
   Map<String, dynamic>? entry;
+  List<Map<String, dynamic>> projectChoices = [];
   bool get income => entry?['entryType'] == 'INCOME';
   bool get cancelled => entry?['lifecycle'] == 'CANCELLED';
   bool get canRefund =>
@@ -4141,6 +4248,15 @@ class _EntryDetailState extends State<EntryDetail> {
         'GET',
         widget.api.scoped('/entries/${widget.id}/attachments'),
       );
+      if (widget.api.canPostFinance && data['projectId'] != null) {
+        try {
+          projectChoices = m6Rows(
+            await widget.api.json('GET', widget.api.scoped('/projects')),
+          );
+        } catch (_) {
+          projectChoices = [];
+        }
+      }
       if (mounted) {
         setState(() {
           entry = data;
@@ -4475,6 +4591,88 @@ class _EntryDetailState extends State<EntryDetail> {
                   ),
                 )),
                 const SizedBox(height: 16),
+              ],
+              if (entry!['projectId'] != null ||
+                  (!cancelled && widget.api.canPostFinance)) ...[
+                const SizedBox(height: 12),
+                ListTile(
+                  title: Text(l10n(context).m6ProjectClassification),
+                  subtitle: Text(
+                    projectChoices
+                            .where((p) => p['id'] == entry!['projectId'])
+                            .firstOrNull?['name']
+                            ?.toString() ??
+                        (entry!['projectId'] == null
+                            ? l10n(context).m6NoProjects
+                            : '${entry!['projectId']}'),
+                  ),
+                  trailing: cancelled || !widget.api.canPostFinance
+                      ? null
+                      : const Icon(Icons.edit_outlined),
+                  onTap: cancelled || !widget.api.canPostFinance
+                      ? null
+                      : () async {
+                          try {
+                            projectChoices = m6Rows(
+                              await widget.api.json(
+                                'GET',
+                                widget.api.scoped('/projects'),
+                              ),
+                            );
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(localizedError(context, e)),
+                                ),
+                              );
+                            }
+                            return;
+                          }
+                          if (!context.mounted) return;
+                          final selected = await showDialog<String?>(
+                            context: context,
+                            builder: (dialog) => SimpleDialog(
+                              title: Text(l10n(dialog).m6ProjectClassification),
+                              children: [
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(dialog, ''),
+                                  child: Text(l10n(dialog).m6NoProjects),
+                                ),
+                                for (final project in projectChoices)
+                                  SimpleDialogOption(
+                                    onPressed: () => Navigator.pop(
+                                      dialog,
+                                      '${project['id']}',
+                                    ),
+                                    child: Text('${project['name']}'),
+                                  ),
+                              ],
+                            ),
+                          );
+                          if (selected == null || !mounted) return;
+                          try {
+                            await widget.api.json(
+                              'PUT',
+                              widget.api.scoped(
+                                '/entries/${widget.id}/project',
+                              ),
+                              body: {
+                                'projectId': selected.isEmpty ? null : selected,
+                              },
+                            );
+                            await load();
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(localizedError(context, e)),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                ),
               ],
               if (entry!['partyName'] != null)
                 Text(l10n(context).partyValue('${entry!['partyName']}')),
