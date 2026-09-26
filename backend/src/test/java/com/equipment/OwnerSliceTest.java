@@ -695,7 +695,8 @@ class OwnerSliceTest {
   assertEquals(1,request("GET",base+"/duplicates?type=INSURANCE",null,owner.token,null).json.size());
   assertEquals(1,request("GET",path(owner,"/documents/incomplete"),null,owner.token,null).json.size());
   assertEquals(404,request("GET",path(other,"/documents/"+id),null,other.token,null).status);
-  var edited=request("PUT",detail,Map.of("expectedVersionId",first,"type","INSURANCE","documentNumber","EDIT","expiryDate","2026-10-20"),owner.token,null);assertEquals(200,edited.status);assertEquals("EDIT",edited.json.get("documentNumber").asString());assertEquals("EXPIRING_SOON",edited.json.get("status").asString());
+  var edited=request("PUT",detail,Map.of("expectedVersionId",first,"type","INSURANCE","documentNumber","EDIT","issueDate","2026-10-01","expiryDate","2026-10-20"),owner.token,null);assertEquals(200,edited.status);assertEquals("EDIT",edited.json.get("documentNumber").asString());assertEquals("EXPIRING_SOON",edited.json.get("status").asString());
+  assertEquals("2026-10-01",edited.json.get("issueDate").asString());assertEquals("2026-10-20",edited.json.get("expiryDate").asString());
   var second=request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"expiryDate","2027-01-01","documentNumber","NEW"),owner.token,null);assertEquals(200,second.status);
   String next=second.json.get("versionId").asString();assertNotEquals(first,next);assertEquals(2,request("GET",detail+"/versions",null,owner.token,null).json.size());
   assertEquals("PREVIOUS_VERSION",request("GET",detail+"/versions/"+first,null,owner.token,null).json.get("status").asString());

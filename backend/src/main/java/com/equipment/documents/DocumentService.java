@@ -58,7 +58,7 @@ public class DocumentService {
         result.put("id",d.get("id"));result.put("equipmentId",d.get("equipment_id"));result.put("type",d.get("type"));result.put("customTypeName",d.get("custom_type_name"));
         result.put("currentVersionId",d.get("current_version_id"));result.put("archivedAt",d.get("archived_at"));result.put("equipmentArchived",d.get("equipment_archived_at")!=null);
         result.put("versionId",v.get("id"));result.put("versionNumber",v.get("version_number"));result.put("documentNumber",v.get("document_number"));
-        result.put("issueDate",v.get("issue_date"));result.put("expiryDate",v.get("expiry_date"));result.put("notes",v.get("notes"));result.put("createdAt",v.get("created_at"));
+        result.put("issueDate",v.get("issue_date")==null?null:v.get("issue_date").toString());result.put("expiryDate",v.get("expiry_date")==null?null:v.get("expiry_date").toString());result.put("notes",v.get("notes"));result.put("createdAt",v.get("created_at"));
         result.put("status",status(v.get("expiry_date")==null?null:((Date)v.get("expiry_date")).toLocalDate(),today(),d.get("archived_at")!=null,!v.get("id").equals(d.get("current_version_id"))));
         return result;
     }
