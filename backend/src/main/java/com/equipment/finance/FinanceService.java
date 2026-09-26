@@ -85,6 +85,34 @@ public class FinanceService {
         shares.forEach((id,value)->result.put(id,new BigDecimal(value,2)));
         return result;
     }
+    /** Movement components follow M2's cumulative gross and refund shares. */
+    public BigDecimal movementShareDelta(UUID workspace,UUID entryId,UUID equipmentId,BigDecimal entryTotal,BigDecimal priorPaid,BigDecimal priorRefunded,BigDecimal finalPaid,BigDecimal movement,boolean refund) {
+        var parts=allocationAmounts(workspace,entryId);
+        if(!refund){
+            var before=proportionalShares(parts,entryTotal,priorPaid);
+            var after=proportionalShares(parts,entryTotal,priorPaid.add(movement));
+            return after.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)).subtract(before.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)));
+        }
+        // M2 can redistribute a refund's cents after a later settlement. Use the
+        // current lifetime gross shares for every dated refund so movement sums
+        // reconcile to the current M2 paidShare/refundedShare pair.
+        var paid=proportionalShares(parts,entryTotal,finalPaid);
+        var beforeNet=boundedNetShares(parts,entryTotal,paid,finalPaid.subtract(priorRefunded));
+        var afterNet=boundedNetShares(parts,entryTotal,paid,finalPaid.subtract(priorRefunded).subtract(movement));
+        BigDecimal gross=paid.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2));
+        BigDecimal refundBefore=gross.subtract(beforeNet.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)));
+        BigDecimal refundAfter=gross.subtract(afterNet.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)));
+        return refundAfter.subtract(refundBefore);
+    }
+    /** Calculate one equipment's current obligation from totals already read by a report. */
+    public BigDecimal remainingShare(UUID workspace,UUID entryId,UUID equipmentId,BigDecimal entryTotal,BigDecimal paid,BigDecimal refunded) {
+        var parts=allocationAmounts(workspace,entryId);
+        var paidShares=proportionalShares(parts,entryTotal,paid);
+        var netShares=boundedNetShares(parts,entryTotal,paidShares,paid.subtract(refunded));
+        return parts.stream().filter(part->part.equipmentId().equals(equipmentId))
+            .map(part->part.amount().subtract(netShares.get(part.equipmentId())))
+            .findFirst().orElse(BigDecimal.ZERO.setScale(2));
+    }
     // Hamilton apportionment can lose a cent as its total grows (the Alabama paradox).
     // Bound net shares by each equipment's historical gross share so no calculated refund
     // is negative. Move any excess to the most under-quota eligible equipment, UUID tie break.
