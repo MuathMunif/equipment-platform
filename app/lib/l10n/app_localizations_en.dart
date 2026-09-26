@@ -2151,4 +2151,149 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get m6MoveEquipmentConfirm =>
       'This ends the current organization assignment and moves or unassigns the equipment. Assignment history is kept.';
+
+  @override
+  String get m7Reports => 'Reports';
+
+  @override
+  String get m7More => 'More';
+
+  @override
+  String get m7Recorded => 'Recorded entries';
+
+  @override
+  String get m7Movements => 'Payments and collections';
+
+  @override
+  String get m7Outstanding => 'Current amounts receivable/payable';
+
+  @override
+  String get m7RecordedExpensesMonth => 'Recorded expenses this month';
+
+  @override
+  String get m7RecordedIncomeMonth => 'Recorded income this month';
+
+  @override
+  String get m7EntryDateBasis =>
+      'By entry date, not payment or collection date.';
+
+  @override
+  String get m7MovementDateBasis => 'By each payment or refund date.';
+
+  @override
+  String get m7CurrentBasis => 'Current outstanding across all periods.';
+
+  @override
+  String get m7RecordedDifference =>
+      'Difference between recorded income and expenses';
+
+  @override
+  String get m7Collected => 'Collected';
+
+  @override
+  String get m7IncomeRefunds => 'المعاد للطرف الآخر';
+
+  @override
+  String get m7NetCollected => 'Net collected';
+
+  @override
+  String get m7Paid => 'Paid';
+
+  @override
+  String get m7ExpenseRefunds => 'Recovered from expenses';
+
+  @override
+  String get m7NetPaid => 'Net paid';
+
+  @override
+  String get m7Receivable => 'Receivable';
+
+  @override
+  String get m7Payable => 'Payable';
+
+  @override
+  String get m7RecentEntries => 'Recent financial entries';
+
+  @override
+  String get m7ActiveEquipment => 'Active equipment';
+
+  @override
+  String get m7NoPeriodRecords => 'No records in this period.';
+
+  @override
+  String get m7NoCurrentOutstanding => 'No current outstanding amounts.';
+
+  @override
+  String get m7NoMatches => 'No records match these filters.';
+
+  @override
+  String get m7ClearFilters => 'Clear filters';
+
+  @override
+  String get m7LoadFailed => 'Could not load the summary.';
+
+  @override
+  String get m7WithinScope => 'Figures shown are within your access scope.';
+
+  @override
+  String get m7CurrentClassification =>
+      'Records use their current classification.';
+
+  @override
+  String get m7NoDueDate => 'No due date set';
+
+  @override
+  String get m7GeneralExpenses => 'General expenses';
+
+  @override
+  String get m7EquipmentShare => 'Equipment share';
+
+  @override
+  String get m7OriginalTotal => 'Original entry total';
+
+  @override
+  String get m7ChoosePeriod => 'Choose period';
+
+  @override
+  String get m7ChooseMonth => 'Choose month';
+
+  @override
+  String get m7FilterEquipment => 'Filter by equipment';
+
+  @override
+  String get m7FilterProject => 'Filter by project';
+
+  @override
+  String get m7AllEquipment => 'All equipment';
+
+  @override
+  String get m7AllProjects => 'All projects';
+
+  @override
+  String get m7FromDate => 'From';
+
+  @override
+  String get m7ToDate => 'To';
+
+  @override
+  String get m7Movement => 'Movement';
+
+  @override
+  String get m7Refund => 'Refund';
+
+  @override
+  String get m7Settlement => 'Settlement';
+
+  @override
+  String get m7NoReportsPermission =>
+      'You do not have permission to view reports.';
+
+  @override
+  String get m7OriginalMovement => 'Original movement total';
+
+  @override
+  String get m7AccountInfo => 'Account information';
+
+  @override
+  String get m7NoRecentEntries => 'No recent financial entries yet.';
 }

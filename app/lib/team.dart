@@ -1439,11 +1439,17 @@ class DriverHomePage extends StatefulWidget {
   final Api api;
   final String financialMode;
   final String? userId;
+  final int section;
+  final VoidCallback? onSettings;
+  final Future<void> Function()? reloadUser;
   const DriverHomePage({
     super.key,
     required this.api,
     required this.financialMode,
     this.userId,
+    this.section = 0,
+    this.onSettings,
+    this.reloadUser,
   });
   @override
   State<DriverHomePage> createState() => _DriverHomePageState();
@@ -1524,18 +1530,23 @@ class _DriverHomePageState extends State<DriverHomePage> {
             padding: const EdgeInsets.all(20),
             children: [
               Text(
-                l10n(context).m5DriverHome,
+                switch (widget.section) {
+                  1 => l10n(context).m5MyIssues,
+                  2 => l10n(context).m5MySubmissions,
+                  3 => l10n(context).m7More,
+                  _ => l10n(context).m5DriverHome,
+                },
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 16),
-              if (equipment == null)
+              if (widget.section == 0 && equipment == null)
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(l10n(context).m5NoAssignmentDriver),
                   ),
-                )
-              else ...[
+                ),
+              if (widget.section == 0 && equipment != null) ...[
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.local_shipping_outlined),
@@ -1577,6 +1588,8 @@ class _DriverHomePageState extends State<DriverHomePage> {
                         : l10n(context).m5SubmitExpense,
                   ),
                 ),
+              ],
+              if (widget.section == 1) ...[
                 const SizedBox(height: 20),
                 Text(
                   l10n(context).m5MyIssues,
@@ -1599,6 +1612,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     ),
                   ),
               ],
+              if (widget.section == 2) ...[
               const SizedBox(height: 20),
               Text(
                 l10n(context).m5MySubmissions,
@@ -1625,6 +1639,14 @@ class _DriverHomePageState extends State<DriverHomePage> {
                     ),
                   ),
                 ),
+              ],
+              if (widget.section == 3) ...[
+                ListTile(leading: const Icon(Icons.mail_outline),
+                  title: Text(l10n(context).m5MyInvitations),
+                  onTap: () => open(AccountInvitationsPage(api: widget.api, changed: widget.reloadUser ?? () async {}))),
+                ListTile(leading: const Icon(Icons.settings_outlined),
+                  title: Text(l10n(context).settings), onTap: widget.onSettings),
+              ],
             ],
           ),
         );

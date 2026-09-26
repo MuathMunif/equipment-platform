@@ -2130,4 +2130,146 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get m6MoveEquipmentConfirm =>
       'سيُنهي هذا الإجراء تعيين المعدة الحالي وينقلها أو يتركها دون مؤسسة. سيبقى تاريخ التعيين محفوظًا.';
+
+  @override
+  String get m7Reports => 'التقارير';
+
+  @override
+  String get m7More => 'المزيد';
+
+  @override
+  String get m7Recorded => 'العمليات المسجلة';
+
+  @override
+  String get m7Movements => 'الدفع والاستلام';
+
+  @override
+  String get m7Outstanding => 'المتبقي لك وعليك';
+
+  @override
+  String get m7RecordedExpensesMonth => 'المصروفات المسجلة هذا الشهر';
+
+  @override
+  String get m7RecordedIncomeMonth => 'الإيرادات المسجلة هذا الشهر';
+
+  @override
+  String get m7EntryDateBasis =>
+      'بحسب تاريخ العملية، وليس تاريخ الدفع أو الاستلام.';
+
+  @override
+  String get m7MovementDateBasis => 'بحسب تاريخ كل دفعة أو استرداد.';
+
+  @override
+  String get m7CurrentBasis => 'المتبقي الحالي من جميع الفترات.';
+
+  @override
+  String get m7RecordedDifference => 'الفرق بين الإيرادات والمصروفات المسجلة';
+
+  @override
+  String get m7Collected => 'المستلم';
+
+  @override
+  String get m7IncomeRefunds => 'المعاد للطرف الآخر';
+
+  @override
+  String get m7NetCollected => 'صافي المستلم';
+
+  @override
+  String get m7Paid => 'المدفوع';
+
+  @override
+  String get m7ExpenseRefunds => 'المسترد من المصروفات';
+
+  @override
+  String get m7NetPaid => 'صافي المدفوع';
+
+  @override
+  String get m7Receivable => 'المتبقي لك';
+
+  @override
+  String get m7Payable => 'المتبقي عليك';
+
+  @override
+  String get m7RecentEntries => 'أحدث العمليات المالية';
+
+  @override
+  String get m7ActiveEquipment => 'المعدات النشطة';
+
+  @override
+  String get m7NoPeriodRecords => 'لا توجد عمليات في هذه الفترة.';
+
+  @override
+  String get m7NoCurrentOutstanding => 'لا توجد مبالغ متبقية حاليًا.';
+
+  @override
+  String get m7NoMatches => 'لا توجد نتائج لهذه الفلاتر.';
+
+  @override
+  String get m7ClearFilters => 'مسح الفلاتر';
+
+  @override
+  String get m7LoadFailed => 'تعذر تحميل الملخص.';
+
+  @override
+  String get m7WithinScope => 'الأرقام المعروضة ضمن نطاق صلاحياتك.';
+
+  @override
+  String get m7CurrentClassification => 'تعرض السجلات بحسب تصنيفها الحالي.';
+
+  @override
+  String get m7NoDueDate => 'موعد السداد غير محدد';
+
+  @override
+  String get m7GeneralExpenses => 'مصروفات عامة';
+
+  @override
+  String get m7EquipmentShare => 'حصة المعدة';
+
+  @override
+  String get m7OriginalTotal => 'إجمالي العملية الأصلية';
+
+  @override
+  String get m7ChoosePeriod => 'اختر الفترة';
+
+  @override
+  String get m7ChooseMonth => 'اختر الشهر';
+
+  @override
+  String get m7FilterEquipment => 'فلترة بالمعدة';
+
+  @override
+  String get m7FilterProject => 'فلترة بالمشروع';
+
+  @override
+  String get m7AllEquipment => 'كل المعدات';
+
+  @override
+  String get m7AllProjects => 'كل المشاريع';
+
+  @override
+  String get m7FromDate => 'من';
+
+  @override
+  String get m7ToDate => 'إلى';
+
+  @override
+  String get m7Movement => 'حركة مالية';
+
+  @override
+  String get m7Refund => 'استرداد';
+
+  @override
+  String get m7Settlement => 'تسوية';
+
+  @override
+  String get m7NoReportsPermission => 'لا تملك صلاحية عرض التقارير.';
+
+  @override
+  String get m7OriginalMovement => 'إجمالي الحركة الأصلية';
+
+  @override
+  String get m7AccountInfo => 'معلومات الحساب';
+
+  @override
+  String get m7NoRecentEntries => 'لا توجد عمليات مالية حديثة بعد.';
 }

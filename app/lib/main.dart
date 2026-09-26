@@ -8,6 +8,7 @@ import 'documents.dart';
 import 'maintenance.dart';
 import 'team.dart';
 import 'projects.dart';
+import 'reports.dart';
 import 'localization.dart';
 import 'l10n/app_localizations.dart';
 
@@ -468,7 +469,11 @@ class WorkspacePage extends StatefulWidget {
 
 class _WorkspacePageState extends State<WorkspacePage> {
   int selected = 0;
+  int driverSelected = 0;
   int revision = 0;
+  void openSettings() => Navigator.push(context, MaterialPageRoute(builder: (_) =>
+    _SettingsPage(user: widget.user, api: widget.api,
+      changeLocale: widget.changeLocale, selectWorkspace: widget.selectWorkspace)));
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 850;
@@ -480,6 +485,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
     final capabilities = (active?['capabilities'] as List<dynamic>? ?? [])
         .toSet();
     final isDriver = role == 'DRIVER';
+    final canEquipment = role == null || role == 'OWNER' || capabilities.contains('EQUIPMENT_VIEW');
     final canTeam = role == 'OWNER' || capabilities.contains('TEAM_MANAGE');
     final canAssignDrivers =
         role == 'OWNER' || capabilities.contains('DRIVER_ASSIGNMENT_MANAGE');
@@ -525,6 +531,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
               role == 'OWNER' ||
               capabilities.contains('EQUIPMENT_MANAGE'),
           canFinance: canFinance,
+          canEquipment: canEquipment,
           canFinanceManage: canDirectFinance,
           canSubmitReview: canSubmitReview,
           canDocuments:
@@ -535,7 +542,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
           canAssignDrivers: canAssignDrivers,
         ),
       ),
-      (
+      if (canEquipment) (
         Icons.local_shipping_outlined,
         l10n(context).equipment,
         EquipmentList(
@@ -548,6 +555,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
               role == 'OWNER' ||
               capabilities.contains('EQUIPMENT_MANAGE'),
           canFinance: canFinance,
+          canEquipment: canEquipment,
           canFinanceManage: canDirectFinance,
           canSubmitReview: canSubmitReview,
           canDocuments:
@@ -558,15 +566,6 @@ class _WorkspacePageState extends State<WorkspacePage> {
           canAssignDrivers: canAssignDrivers,
         ),
       ),
-      if (canMaintain)
-        (
-          Icons.build_outlined,
-          l10n(context).m4Hub,
-          MaintenanceHub(
-            key: ValueKey('maintenance-$revision'),
-            api: widget.api,
-          ),
-        ),
       if (canFinance)
         (
           Icons.receipt_long_outlined,
@@ -578,27 +577,15 @@ class _WorkspacePageState extends State<WorkspacePage> {
             canSubmitReview: canSubmitReview,
           ),
         ),
-      if (canOrganizations)
-        (
-          Icons.business_outlined,
-          l10n(context).m6Organizations,
-          OrganizationsPage(
-            key: ValueKey('organizations-$revision'),
-            api: widget.api,
-            canManage: canManageOrganizations,
-          ),
-        ),
-      if (canProjects)
-        (
-          Icons.folder_copy_outlined,
-          l10n(context).m6ProjectsContracts,
-          ProjectsPage(
-            key: ValueKey('projects-$revision'),
-            api: widget.api,
-            canManage: canManageProjects,
-            canFinance: canFinance,
-          ),
-        ),
+      (
+        Icons.more_horiz,
+        l10n(context).m7More,
+        _MoreMenu(api: widget.api, canReports: canFinance && (role == 'OWNER' || capabilities.contains('REPORT_VIEW')),
+          canMaintain: canMaintain, canOrganizations: canOrganizations, canProjects: canProjects,
+          canManageOrganizations: canManageOrganizations, canManageProjects: canManageProjects,
+          canFinance: canFinance, canTeam: canTeam, canReview: canReview,
+          owner: role == 'OWNER', canAssignDrivers: canAssignDrivers, onSettings: openSettings),
+      ),
     ];
     final current = selected.clamp(0, destinations.length - 1);
     final content = isDriver
@@ -607,6 +594,9 @@ class _WorkspacePageState extends State<WorkspacePage> {
             api: widget.api,
             financialMode: active?['financialMode'] as String? ?? 'REVIEW',
             userId: widget.user['userId'] as String?,
+            section: driverSelected,
+            onSettings: openSettings,
+            reloadUser: widget.reloadUser,
           )
         : destinations[current].$3;
     return Scaffold(
@@ -794,9 +784,16 @@ class _WorkspacePageState extends State<WorkspacePage> {
           ),
         ],
       ),
-      bottomNavigationBar: wide || isDriver
-          ? null
-          : NavigationBar(
+      bottomNavigationBar: isDriver
+          ? NavigationBar(selectedIndex: driverSelected,
+              onDestinationSelected: (i) => setState(() => driverSelected = i),
+              destinations: [
+                NavigationDestination(icon: const Icon(Icons.local_shipping_outlined), label: l10n(context).equipment),
+                NavigationDestination(icon: const Icon(Icons.report_outlined), label: l10n(context).m5MyIssues),
+                NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), label: l10n(context).m5MySubmissions),
+                NavigationDestination(icon: const Icon(Icons.more_horiz), label: l10n(context).m7More),
+              ])
+          : wide ? null : NavigationBar(
               selectedIndex: current,
               onDestinationSelected: (i) => setState(() => selected = i),
               destinations: [
@@ -813,6 +810,7 @@ class EquipmentList extends StatefulWidget {
   final bool home;
   final String name;
   final bool canManage,
+      canEquipment,
       canFinance,
       canFinanceManage,
       canSubmitReview,
@@ -825,6 +823,7 @@ class EquipmentList extends StatefulWidget {
     required this.home,
     required this.name,
     this.canManage = true,
+    this.canEquipment = true,
     this.canFinance = true,
     this.canFinanceManage = true,
     this.canSubmitReview = false,
@@ -845,7 +844,7 @@ class _EquipmentListState extends State<EquipmentList> {
   @override
   void initState() {
     super.initState();
-    load();
+    if (widget.canEquipment) { load(); } else { loading = false; }
   }
 
   @override
@@ -855,6 +854,7 @@ class _EquipmentListState extends State<EquipmentList> {
   }
 
   Future<void> load() async {
+    if (!widget.canEquipment) return;
     setState(() {
       loading = true;
       error = null;
@@ -903,55 +903,7 @@ class _EquipmentListState extends State<EquipmentList> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (loading) return const Center(child: CircularProgressIndicator());
-    if (error != null) return ErrorPanel(message: error!, retry: load);
-    return ListView(
-      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width > 850 ? 32 : 20),
-      children: [
-        Text(
-          widget.home
-              ? '${l10n(context).home} • ${widget.name}'
-              : l10n(context).equipment,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(l10n(context).equipmentSubtitle),
-        const SizedBox(height: 24),
-        if (widget.home && widget.canDocuments) ...[
-          HomeDocumentAttention(api: widget.api),
-          const SizedBox(height: 20),
-        ],
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: search,
-                decoration: InputDecoration(
-                  labelText: l10n(context).searchEquipment,
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onSubmitted: (_) {
-                  page = 0;
-                  load();
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            IconButton.filledTonal(
-              tooltip: l10n(context).uiSearch,
-              onPressed: () {
-                page = 0;
-                load();
-              },
-              icon: const Icon(Icons.search),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        if (items.isEmpty && search.text.isEmpty && widget.canManage)
-          Card(
+  Widget firstUseCard() => Card(
             child: Padding(
               padding: const EdgeInsets.all(28),
               child: Column(
@@ -978,8 +930,66 @@ class _EquipmentListState extends State<EquipmentList> {
                 ],
               ),
             ),
-          )
-        else ...[
+          );
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && !widget.home) return const Center(child: CircularProgressIndicator());
+    if (error != null && !widget.home) return ErrorPanel(message: error!, retry: load);
+    return ListView(
+      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width > 850 ? 32 : 20),
+      children: [
+        Text(
+          widget.home
+              ? '${l10n(context).home} • ${widget.name}'
+              : l10n(context).equipment,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 8),
+        if (widget.canEquipment) Text(l10n(context).equipmentSubtitle),
+        const SizedBox(height: 24),
+        if (widget.home && widget.canEquipment && !loading && error == null && items.isEmpty && search.text.isEmpty && widget.canManage) ...[
+          firstUseCard(),
+          const SizedBox(height: 12),
+        ],
+        if (widget.home) ...[
+          HomeDocumentAttention(api: widget.api, showIncomplete: widget.canDocuments),
+          DashboardSection(api: widget.api, canFinance: widget.canFinance,
+            canEquipment: widget.canEquipment, canManage: widget.canFinanceManage, canSubmitReview: widget.canSubmitReview),
+          const SizedBox(height: 20),
+        ],
+        if (widget.canEquipment && loading) const Center(child: CircularProgressIndicator()),
+        if (widget.canEquipment && error != null) ErrorPanel(message: error!, retry: load),
+        if (widget.canEquipment && !loading && error == null) Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: search,
+                decoration: InputDecoration(
+                  labelText: l10n(context).searchEquipment,
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onSubmitted: (_) {
+                  page = 0;
+                  load();
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton.filledTonal(
+              tooltip: l10n(context).uiSearch,
+              onPressed: () {
+                page = 0;
+                load();
+              },
+              icon: const Icon(Icons.search),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        if (!widget.home && !loading && error == null && items.isEmpty && search.text.isEmpty && widget.canManage)
+          firstUseCard()
+        else if (widget.canEquipment && !loading && error == null && !(widget.home && items.isEmpty && search.text.isEmpty && widget.canManage)) ...[
           if (widget.canManage)
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -1406,6 +1416,7 @@ class LedgerPage extends StatefulWidget {
   final bool canManage;
   final bool canSubmitReview;
   final bool canDocuments, canMaintenance;
+  final String? initialEntryType, initialFromDate, initialToDate;
   const LedgerPage({
     super.key,
     required this.api,
@@ -1414,6 +1425,7 @@ class LedgerPage extends StatefulWidget {
     this.canSubmitReview = false,
     this.canDocuments = true,
     this.canMaintenance = true,
+    this.initialEntryType, this.initialFromDate, this.initialToDate,
   });
   @override
   State<LedgerPage> createState() => _LedgerPageState();
@@ -1491,6 +1503,9 @@ class _LedgerPageState extends State<LedgerPage> {
   @override
   void initState() {
     super.initState();
+    entryType = widget.initialEntryType;
+    fromDate = widget.initialFromDate == null ? null : DateTime.parse(widget.initialFromDate!);
+    toDate = widget.initialToDate == null ? null : DateTime.parse(widget.initialToDate!);
     load();
   }
 
@@ -2048,6 +2063,7 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
   final controller = TextEditingController();
   List<dynamic> items = [];
   bool loading = true;
+  int page = 0, total = 0;
   String? error;
   @override
   void initState() {
@@ -2067,13 +2083,13 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
       error = null;
     });
     try {
-      final query = Uri(queryParameters: {'search': controller.text.trim()})
+      final query = Uri(queryParameters: {'search': controller.text.trim(), 'page': '$page'})
           .query;
       final result = await widget.api.json(
         'GET',
         widget.api.scoped('/equipment?$query'),
       );
-      if (mounted) setState(() => items = result['items']);
+      if (mounted) setState(() { items = result['items']; total = result['total'] as int; });
     } catch (e) {
       if (mounted) setState(() => error = localizedError(context, e));
     } finally {
@@ -2097,7 +2113,7 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
               labelText: l10n(context).uiSearchByEquipmentNameOrReference,
               prefixIcon: Icon(Icons.search),
             ),
-            onSubmitted: (_) => load(),
+            onSubmitted: (_) { page = 0; load(); },
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -2119,6 +2135,10 @@ class _HistoryEquipmentPickerState extends State<HistoryEquipmentPicker> {
                     },
                   ),
           ),
+          if (total > 30) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            TextButton(onPressed: page > 0 ? () { page--; load(); } : null, child: Text(l10n(context).previous)),
+            TextButton(onPressed: (page + 1) * 30 < total ? () { page++; load(); } : null, child: Text(l10n(context).next)),
+          ]),
         ],
       ),
     ),
@@ -4867,4 +4887,85 @@ class _EntryDetailState extends State<EntryDetail> {
       ),
     ],
   );
+}
+
+class _MoreMenu extends StatelessWidget {
+  final Api api;
+  final VoidCallback onSettings;
+  final bool canReports, canMaintain, canOrganizations, canProjects,
+      canManageOrganizations, canManageProjects, canFinance, canTeam,
+      canReview, owner, canAssignDrivers;
+  const _MoreMenu({required this.api, required this.canReports,
+    required this.canMaintain, required this.canOrganizations,
+    required this.canProjects, required this.canManageOrganizations,
+    required this.canManageProjects, required this.canFinance,
+    required this.canTeam, required this.canReview, required this.owner,
+    required this.canAssignDrivers, required this.onSettings});
+  @override Widget build(BuildContext context) {
+    void open(Widget page) => Navigator.push(context,MaterialPageRoute(builder:(_)=>page));
+    return ListView(padding:const EdgeInsets.all(20),children:[
+      Text(l10n(context).m7More,style:Theme.of(context).textTheme.headlineSmall),
+      if(canReports) ListTile(leading:const Icon(Icons.analytics_outlined),
+        title:Text(l10n(context).m7Reports),onTap:()=>open(ReportsPage(api:api,canProjects:canProjects))),
+      if(canMaintain) ListTile(leading:const Icon(Icons.build_outlined),
+        title:Text(l10n(context).m4Hub),onTap:()=>open(MaintenanceHub(api:api))),
+      if(canOrganizations) ListTile(leading:const Icon(Icons.business_outlined),
+        title:Text(l10n(context).m6Organizations),onTap:()=>open(OrganizationsPage(api:api,canManage:canManageOrganizations))),
+      if(canProjects) ListTile(leading:const Icon(Icons.folder_copy_outlined),
+        title:Text(l10n(context).m6ProjectsContracts),onTap:()=>open(ProjectsPage(api:api,canManage:canManageProjects,canFinance:canFinance))),
+      if(canTeam) ListTile(leading:const Icon(Icons.group_outlined),
+        title:Text(l10n(context).m5Team),onTap:()=>open(TeamPage(api:api,owner:owner,canAssign:canAssignDrivers))),
+      if(canReview) ListTile(leading:const Icon(Icons.fact_check_outlined),
+        title:Text(l10n(context).m5ReviewQueue),onTap:()=>open(ReviewQueuePage(api:api))),
+      ListTile(leading:const Icon(Icons.settings_outlined),
+        title:Text(l10n(context).settings),onTap:onSettings),
+    ]);
+  }
+}
+
+class _SettingsPage extends StatefulWidget {
+  final Map<String,dynamic> user;
+  final Api api;
+  final Future<void> Function(String)? changeLocale, selectWorkspace;
+  const _SettingsPage({required this.user,required this.api,this.changeLocale,this.selectWorkspace});
+  @override State<_SettingsPage> createState()=>_SettingsPageState();
+}
+class _SettingsPageState extends State<_SettingsPage> {
+  bool busy=false;
+  String? error;
+  @override Widget build(BuildContext context) {
+    final spaces=widget.user['workspaces'] as List<dynamic>? ?? [];
+    return Scaffold(appBar:AppBar(title:Text(l10n(context).settings)),body:ListView(padding:const EdgeInsets.all(20),children:[
+      Text(l10n(context).m7AccountInfo,style:Theme.of(context).textTheme.titleMedium),
+      ListTile(title:Text('${widget.user['name'] ?? ''}'),
+        subtitle:widget.user['phone']==null?null:Text('${widget.user['phone']}')),
+      ListTile(leading:const Icon(Icons.language),title:Text(l10n(context).language),
+        onTap:busy?null:()async{
+          final selected=await showDialog<String>(context:context,builder:(dialog)=>SimpleDialog(
+            title:Text(l10n(dialog).language),children:[
+              for(final (code,name) in [('ar',l10n(context).uiText102),('en','English'),('ur',l10n(context).uiText054)])
+                SimpleDialogOption(onPressed:()=>Navigator.pop(dialog,code),child:Text(name)),
+            ]));
+          if(selected==null||!mounted)return;
+          setState(() {busy=true;error=null;});
+          try{await widget.changeLocale?.call(selected);}catch(e){if(mounted)setState(()=>error=localizedError(context,e));}
+          finally{if(mounted)setState(()=>busy=false);}
+        }),
+      if(spaces.length>1) ListTile(leading:const Icon(Icons.swap_horiz),
+        title:Text(l10n(context).m5SwitchWorkspace),onTap:busy?null:()async{
+          final selected=await showDialog<String>(context:context,builder:(dialog)=>SimpleDialog(
+            title:Text(l10n(dialog).m5SwitchWorkspace),children:[
+              for(final space in spaces) SimpleDialogOption(onPressed:()=>Navigator.pop(dialog,space['id'] as String),
+                child:Text('${space['name']}')),
+            ]));
+          if(selected==null||selected==widget.api.workspace||!mounted)return;
+          setState(() {busy=true;error=null;});
+          try{await widget.selectWorkspace?.call(selected);if(context.mounted)Navigator.pop(context);}
+          catch(e){if(mounted)setState(()=>error=localizedError(context,e));}
+          finally{if(mounted)setState(()=>busy=false);}
+        }),
+      if(busy)const LinearProgressIndicator(),
+      if(error!=null)Text(error!),
+    ]));
+  }
 }
