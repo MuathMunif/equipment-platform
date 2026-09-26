@@ -2150,4 +2150,147 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get m6MoveEquipmentConfirm =>
       'یہ موجودہ ادارے کی تفویض ختم کر کے آلہ منتقل یا غیر منسلک کرے گا۔ تفویض کی تاریخ محفوظ رہے گی۔';
+
+  @override
+  String get m7Reports => 'رپورٹس';
+
+  @override
+  String get m7More => 'مزید';
+
+  @override
+  String get m7Recorded => 'درج شدہ اندراجات';
+
+  @override
+  String get m7Movements => 'ادائیگیاں اور وصولیاں';
+
+  @override
+  String get m7Outstanding => 'قابل وصول اور قابل ادائیگی رقم';
+
+  @override
+  String get m7RecordedExpensesMonth => 'اس ماہ کے درج شدہ اخراجات';
+
+  @override
+  String get m7RecordedIncomeMonth => 'اس ماہ کی درج شدہ آمدنی';
+
+  @override
+  String get m7EntryDateBasis =>
+      'اندراج کی تاریخ کے مطابق، ادائیگی یا وصولی کی تاریخ کے مطابق نہیں۔';
+
+  @override
+  String get m7MovementDateBasis => 'ہر ادائیگی یا واپسی کی تاریخ کے مطابق۔';
+
+  @override
+  String get m7CurrentBasis => 'تمام ادوار کی موجودہ بقایا رقم۔';
+
+  @override
+  String get m7RecordedDifference => 'درج شدہ آمدنی اور اخراجات کا فرق';
+
+  @override
+  String get m7Collected => 'وصول شدہ';
+
+  @override
+  String get m7IncomeRefunds => 'دوسرے فریق کو واپس کردہ';
+
+  @override
+  String get m7NetCollected => 'خالص وصولی';
+
+  @override
+  String get m7Paid => 'ادا شدہ';
+
+  @override
+  String get m7ExpenseRefunds => 'اخراجات سے واپس وصول شدہ';
+
+  @override
+  String get m7NetPaid => 'خالص ادائیگی';
+
+  @override
+  String get m7Receivable => 'قابل وصول';
+
+  @override
+  String get m7Payable => 'قابل ادائیگی';
+
+  @override
+  String get m7RecentEntries => 'حالیہ مالی اندراجات';
+
+  @override
+  String get m7ActiveEquipment => 'فعال آلات';
+
+  @override
+  String get m7NoPeriodRecords => 'اس مدت میں کوئی اندراج نہیں۔';
+
+  @override
+  String get m7NoCurrentOutstanding => 'فی الحال کوئی بقایا رقم نہیں۔';
+
+  @override
+  String get m7NoMatches => 'ان فلٹرز سے کوئی اندراج نہیں ملا۔';
+
+  @override
+  String get m7ClearFilters => 'فلٹرز صاف کریں';
+
+  @override
+  String get m7LoadFailed => 'خلاصہ لوڈ نہیں ہو سکا۔';
+
+  @override
+  String get m7WithinScope => 'دکھائے گئے اعداد آپ کی رسائی کے دائرے میں ہیں۔';
+
+  @override
+  String get m7CurrentClassification =>
+      'اندراجات ان کی موجودہ درجہ بندی کے مطابق ہیں۔';
+
+  @override
+  String get m7NoDueDate => 'ادائیگی کی تاریخ مقرر نہیں';
+
+  @override
+  String get m7GeneralExpenses => 'عمومی اخراجات';
+
+  @override
+  String get m7EquipmentShare => 'آلے کا حصہ';
+
+  @override
+  String get m7OriginalTotal => 'اصل اندراج کی کل رقم';
+
+  @override
+  String get m7ChoosePeriod => 'مدت منتخب کریں';
+
+  @override
+  String get m7ChooseMonth => 'مہینہ منتخب کریں';
+
+  @override
+  String get m7FilterEquipment => 'آلے کے لحاظ سے فلٹر';
+
+  @override
+  String get m7FilterProject => 'منصوبے کے لحاظ سے فلٹر';
+
+  @override
+  String get m7AllEquipment => 'تمام آلات';
+
+  @override
+  String get m7AllProjects => 'تمام منصوبے';
+
+  @override
+  String get m7FromDate => 'سے';
+
+  @override
+  String get m7ToDate => 'تک';
+
+  @override
+  String get m7Movement => 'مالی حرکت';
+
+  @override
+  String get m7Refund => 'واپسی';
+
+  @override
+  String get m7Settlement => 'تصفیہ';
+
+  @override
+  String get m7NoReportsPermission => 'آپ کو رپورٹس دیکھنے کی اجازت نہیں۔';
+
+  @override
+  String get m7OriginalMovement => 'اصل حرکت کی کل رقم';
+
+  @override
+  String get m7AccountInfo => 'اکاؤنٹ کی معلومات';
+
+  @override
+  String get m7NoRecentEntries => 'ابھی کوئی حالیہ مالی اندراج نہیں۔';
 }

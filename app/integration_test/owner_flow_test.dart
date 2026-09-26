@@ -47,7 +47,7 @@ void main() {
       final challenge = await api.json(
         'POST',
         '/auth/challenges',
-        body: {'phone': '0500000002'},
+        body: {'phone': '0500000802'},
       );
       final login = await api.json(
         'POST',
@@ -61,7 +61,13 @@ void main() {
       );
       await api.setToken(login['accessToken']);
       await api.me();
+      await api.updatePreferredLocale('ar');
       await tester.pumpWidget(EquipmentApp(api: api));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byIcon(Icons.local_shipping_outlined),
+      ));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('addEquipment')));
       await tester.pumpAndSettle();
@@ -87,7 +93,8 @@ void main() {
       await tester.tap(find.byKey(const Key('saveExpense')));
       await tester.pumpAndSettle();
       expect(find.text('تفاصيل المصروف'), findsOneWidget);
-      expect(find.text('350.00 ريال'), findsNWidgets(2));
+      final detailContext = tester.element(find.text('تفاصيل المصروف'));
+      expect(find.text(localizedMoney(detailContext, '350.00')), findsWidgets);
       final equipmentPage = await api.json(
         'GET',
         api.scoped('/equipment?search=${Uri.encodeQueryComponent(name)}'),
@@ -153,6 +160,11 @@ void main() {
         EquipmentApp(key: const ValueKey('restored-app'), api: restored),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byIcon(Icons.local_shipping_outlined),
+      ));
+      await tester.pumpAndSettle();
       expect(find.text(name), findsOneWidget);
       await tester.tap(find.text(name));
       await tester.pumpAndSettle();
@@ -196,7 +208,7 @@ void main() {
       await tester.tap(find.text('إضافة دفعة'));
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(TextField, 'مبلغ الدفعة'),
+        find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)),
         '250',
       );
       await tester.tap(find.text('حفظ الدفعة'));
@@ -250,7 +262,7 @@ void main() {
       await tester.tap(find.text('إضافة تحصيل'));
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(TextField, 'مبلغ التحصيل'),
+        find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)),
         '2000',
       );
       await tester.tap(find.text('حفظ التحصيل'));
@@ -273,9 +285,9 @@ void main() {
       await owner.me();
     } catch (_) {
       // The journey also works when run alone, without the preceding keychain test.
-      owner = await loginOwner('0500000002');
+      owner = await loginOwner('0500000803');
     }
-    final other = await loginOwner('0500000001');
+    final other = await loginOwner('0500000804');
     final day = todayRiyadh();
     final marker = 'قبول مالي ${DateTime.now().microsecondsSinceEpoch}';
     final equipmentA = await owner.json(
@@ -360,14 +372,14 @@ void main() {
       'PUT',
       owner.scoped('/entries/$editId'),
       body: {
-        'amount': '2500.00',
+        'amount': '3000.00',
         'category': 'MAINTENANCE',
         'operationDate': day,
         'partyName': 'ورشة اختبار القبول',
         'note': '$marker بعد التعديل',
       },
     );
-    expect(changed['remaining'], '1500.00');
+    expect(changed['remaining'], '2000.00');
     expect(changed['settlements'][0]['id'], editSettlement);
     await rejects(
       400,
@@ -401,7 +413,7 @@ void main() {
         int.parse((amount as String).replaceAll('.', ''));
     expect(
       cents(beforeCancel['expenseTotal']) - cents(afterCancel['expenseTotal']),
-      250000,
+      300000,
     );
     await rejects(
       400,
@@ -652,8 +664,8 @@ void main() {
   testWidgets(
     'connected M3 document attention, notification, renewal and isolation',
     (tester) async {
-      final owner = await loginOwner('0500000002');
-      final other = await loginOwner('0500000001');
+      final owner = await loginOwner('0500000805');
+      final other = await loginOwner('0500000806');
       String date(int days) {
         final now = DateTime.parse(todayRiyadh());
         final day = DateTime.utc(

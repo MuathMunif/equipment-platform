@@ -32,7 +32,7 @@ public class FinanceService {
     public record Draft(UUID id,UUID equipmentId,String equipmentName,String note,String lifecycle,UUID createdBy,String createdAt,UUID discardedBy,String discardedAt) {}
     public record CreateDraft(UUID equipmentId,String note) {}
     public record HistoryFilter(String search,String fromDate,String toDate,String entryType,UUID equipmentId,Boolean generalExpense,String lifecycle,String settlementStatus) {}
-    private record AllocationAmount(UUID equipmentId,String equipmentName,BigDecimal amount) {}
+    public record AllocationAmount(UUID equipmentId,String equipmentName,BigDecimal amount) {}
     public record Entry(UUID id,UUID equipmentId,String equipmentName,String entryType,String amount,String currency,String category,String operationDate,String note,String lifecycle,String paid,String refunded,String netPaid,String refundable,String remaining,String settlementStatus,String partyName,String dueDate,String createdAt,String cancellationReason,String cancelledAt,UUID cancelledBy,List<Settlement> settlements,List<Refund> refunds,String expenseScope,List<Allocation> allocations,UUID createdBy,UUID completedBy,String completedAt,UUID submittedBy,UUID submissionId,UUID projectId) {}
     private static final JsonMapper JSON=JsonMapper.builder().build();
     public Entry get(Actor actor,UUID workspace,UUID id) { access.financial(actor,workspace,id,"FINANCE_VIEW"); return require(workspace,id); }
@@ -64,6 +64,18 @@ public class FinanceService {
     private List<AllocationAmount> allocationAmounts(UUID workspace,UUID entryId) {
         return db.query("select a.equipment_id,e.name,a.amount from expense_allocation a join equipment e on e.workspace_id=a.workspace_id and e.id=a.equipment_id where a.workspace_id=? and a.entry_id=? order by a.equipment_id",(rs,n)->new AllocationAmount(rs.getObject("equipment_id",UUID.class),rs.getString("name"),rs.getBigDecimal("amount")),workspace,entryId);
     }
+    /** Load only the current report batch, avoiding one allocation query per movement. */
+    public Map<UUID,List<AllocationAmount>> allocationAmounts(UUID workspace,Collection<UUID> entryIds) {
+        if(entryIds.isEmpty())return Map.of();
+        String placeholders=String.join(",",Collections.nCopies(entryIds.size(),"?"));
+        List<Object> args=new ArrayList<>();args.add(workspace);args.addAll(entryIds);
+        Map<UUID,List<AllocationAmount>> result=new HashMap<>();
+        db.query("select a.entry_id,a.equipment_id,e.name,a.amount from expense_allocation a join equipment e on e.workspace_id=a.workspace_id and e.id=a.equipment_id where a.workspace_id=? and a.entry_id in ("+placeholders+") order by a.entry_id,a.equipment_id",rs->{
+            UUID id=rs.getObject("entry_id",UUID.class);
+            result.computeIfAbsent(id,ignored->new ArrayList<>()).add(new AllocationAmount(rs.getObject("equipment_id",UUID.class),rs.getString("name"),rs.getBigDecimal("amount")));
+        },args.toArray());
+        return result;
+    }
     // Hamilton's largest-remainder method in minor units; ties use equipment UUID order.
     // Calculated shares reconcile to the entry-level cash movement, never create cash records.
     private Map<UUID,BigDecimal> proportionalShares(List<AllocationAmount> parts,BigDecimal total,BigDecimal movement) {
@@ -84,6 +96,38 @@ public class FinanceService {
         var result=new HashMap<UUID,BigDecimal>();
         shares.forEach((id,value)->result.put(id,new BigDecimal(value,2)));
         return result;
+    }
+    /** Movement components follow M2's cumulative gross and refund shares. */
+    public BigDecimal movementShareDelta(UUID workspace,UUID entryId,UUID equipmentId,BigDecimal entryTotal,BigDecimal priorPaid,BigDecimal priorRefunded,BigDecimal finalPaid,BigDecimal movement,boolean refund) {
+        return movementShareDelta(allocationAmounts(workspace,entryId),equipmentId,entryTotal,priorPaid,priorRefunded,finalPaid,movement,refund);
+    }
+    public BigDecimal movementShareDelta(List<AllocationAmount> parts,UUID equipmentId,BigDecimal entryTotal,BigDecimal priorPaid,BigDecimal priorRefunded,BigDecimal finalPaid,BigDecimal movement,boolean refund) {
+        if(!refund){
+            var before=proportionalShares(parts,entryTotal,priorPaid);
+            var after=proportionalShares(parts,entryTotal,priorPaid.add(movement));
+            return after.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)).subtract(before.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)));
+        }
+        // M2 can redistribute a refund's cents after a later settlement. Use the
+        // current lifetime gross shares for every dated refund so movement sums
+        // reconcile to the current M2 paidShare/refundedShare pair.
+        var paid=proportionalShares(parts,entryTotal,finalPaid);
+        var beforeNet=boundedNetShares(parts,entryTotal,paid,finalPaid.subtract(priorRefunded));
+        var afterNet=boundedNetShares(parts,entryTotal,paid,finalPaid.subtract(priorRefunded).subtract(movement));
+        BigDecimal gross=paid.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2));
+        BigDecimal refundBefore=gross.subtract(beforeNet.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)));
+        BigDecimal refundAfter=gross.subtract(afterNet.getOrDefault(equipmentId,BigDecimal.ZERO.setScale(2)));
+        return refundAfter.subtract(refundBefore);
+    }
+    /** Calculate one equipment's current obligation from totals already read by a report. */
+    public BigDecimal remainingShare(UUID workspace,UUID entryId,UUID equipmentId,BigDecimal entryTotal,BigDecimal paid,BigDecimal refunded) {
+        return remainingShare(allocationAmounts(workspace,entryId),equipmentId,entryTotal,paid,refunded);
+    }
+    public BigDecimal remainingShare(List<AllocationAmount> parts,UUID equipmentId,BigDecimal entryTotal,BigDecimal paid,BigDecimal refunded) {
+        var paidShares=proportionalShares(parts,entryTotal,paid);
+        var netShares=boundedNetShares(parts,entryTotal,paidShares,paid.subtract(refunded));
+        return parts.stream().filter(part->part.equipmentId().equals(equipmentId))
+            .map(part->part.amount().subtract(netShares.get(part.equipmentId())))
+            .findFirst().orElse(BigDecimal.ZERO.setScale(2));
     }
     // Hamilton apportionment can lose a cent as its total grows (the Alabama paradox).
     // Bound net shares by each equipment's historical gross share so no calculated refund

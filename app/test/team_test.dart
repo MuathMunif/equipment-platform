@@ -183,7 +183,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('لا توجد معدة معيّنة لك حاليًا.'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('التقارير'), findsNothing);
     expect(find.byKey(const Key('openTeam')), findsNothing);
     expect(tester.takeException(), isNull);
     expect(

@@ -3996,6 +3996,288 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'سيُنهي هذا الإجراء تعيين المعدة الحالي وينقلها أو يتركها دون مؤسسة. سيبقى تاريخ التعيين محفوظًا.'**
   String get m6MoveEquipmentConfirm;
+
+  /// No description provided for @m7Reports.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقارير'**
+  String get m7Reports;
+
+  /// No description provided for @m7More.
+  ///
+  /// In ar, this message translates to:
+  /// **'المزيد'**
+  String get m7More;
+
+  /// No description provided for @m7Recorded.
+  ///
+  /// In ar, this message translates to:
+  /// **'العمليات المسجلة'**
+  String get m7Recorded;
+
+  /// No description provided for @m7Movements.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفع والاستلام'**
+  String get m7Movements;
+
+  /// No description provided for @m7Outstanding.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي لك وعليك'**
+  String get m7Outstanding;
+
+  /// No description provided for @m7RecordedExpensesMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات المسجلة هذا الشهر'**
+  String get m7RecordedExpensesMonth;
+
+  /// No description provided for @m7RecordedIncomeMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيرادات المسجلة هذا الشهر'**
+  String get m7RecordedIncomeMonth;
+
+  /// No description provided for @m7EntryDateBasis.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحسب تاريخ العملية، وليس تاريخ الدفع أو الاستلام.'**
+  String get m7EntryDateBasis;
+
+  /// No description provided for @m7MovementDateBasis.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحسب تاريخ كل دفعة أو استرداد.'**
+  String get m7MovementDateBasis;
+
+  /// No description provided for @m7CurrentBasis.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي الحالي من جميع الفترات.'**
+  String get m7CurrentBasis;
+
+  /// No description provided for @m7RecordedDifference.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفرق بين الإيرادات والمصروفات المسجلة'**
+  String get m7RecordedDifference;
+
+  /// No description provided for @m7Collected.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستلم'**
+  String get m7Collected;
+
+  /// No description provided for @m7IncomeRefunds.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعاد للطرف الآخر'**
+  String get m7IncomeRefunds;
+
+  /// No description provided for @m7NetCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي المستلم'**
+  String get m7NetCollected;
+
+  /// No description provided for @m7Paid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع'**
+  String get m7Paid;
+
+  /// No description provided for @m7ExpenseRefunds.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسترد من المصروفات'**
+  String get m7ExpenseRefunds;
+
+  /// No description provided for @m7NetPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي المدفوع'**
+  String get m7NetPaid;
+
+  /// No description provided for @m7Receivable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي لك'**
+  String get m7Receivable;
+
+  /// No description provided for @m7Payable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي عليك'**
+  String get m7Payable;
+
+  /// No description provided for @m7RecentEntries.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحدث العمليات المالية'**
+  String get m7RecentEntries;
+
+  /// No description provided for @m7ActiveEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعدات النشطة'**
+  String get m7ActiveEquipment;
+
+  /// No description provided for @m7NoPeriodRecords.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عمليات في هذه الفترة.'**
+  String get m7NoPeriodRecords;
+
+  /// No description provided for @m7NoCurrentOutstanding.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مبالغ متبقية حاليًا.'**
+  String get m7NoCurrentOutstanding;
+
+  /// No description provided for @m7NoMatches.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج لهذه الفلاتر.'**
+  String get m7NoMatches;
+
+  /// No description provided for @m7ClearFilters.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الفلاتر'**
+  String get m7ClearFilters;
+
+  /// No description provided for @m7LoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحميل الملخص.'**
+  String get m7LoadFailed;
+
+  /// No description provided for @m7WithinScope.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام المعروضة ضمن نطاق صلاحياتك.'**
+  String get m7WithinScope;
+
+  /// No description provided for @m7CurrentClassification.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعرض السجلات بحسب تصنيفها الحالي.'**
+  String get m7CurrentClassification;
+
+  /// No description provided for @m7NoDueDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'موعد السداد غير محدد'**
+  String get m7NoDueDate;
+
+  /// No description provided for @m7GeneralExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروفات عامة'**
+  String get m7GeneralExpenses;
+
+  /// No description provided for @m7EquipmentShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصة المعدة'**
+  String get m7EquipmentShare;
+
+  /// No description provided for @m7OriginalTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي العملية الأصلية'**
+  String get m7OriginalTotal;
+
+  /// No description provided for @m7ChoosePeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الفترة'**
+  String get m7ChoosePeriod;
+
+  /// No description provided for @m7ChooseMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الشهر'**
+  String get m7ChooseMonth;
+
+  /// No description provided for @m7FilterEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلترة بالمعدة'**
+  String get m7FilterEquipment;
+
+  /// No description provided for @m7FilterProject.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلترة بالمشروع'**
+  String get m7FilterProject;
+
+  /// No description provided for @m7AllEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المعدات'**
+  String get m7AllEquipment;
+
+  /// No description provided for @m7AllProjects.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المشاريع'**
+  String get m7AllProjects;
+
+  /// No description provided for @m7FromDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'من'**
+  String get m7FromDate;
+
+  /// No description provided for @m7ToDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى'**
+  String get m7ToDate;
+
+  /// No description provided for @m7Movement.
+  ///
+  /// In ar, this message translates to:
+  /// **'حركة مالية'**
+  String get m7Movement;
+
+  /// No description provided for @m7Refund.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرداد'**
+  String get m7Refund;
+
+  /// No description provided for @m7Settlement.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية'**
+  String get m7Settlement;
+
+  /// No description provided for @m7NoReportsPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تملك صلاحية عرض التقارير.'**
+  String get m7NoReportsPermission;
+
+  /// No description provided for @m7OriginalMovement.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الحركة الأصلية'**
+  String get m7OriginalMovement;
+
+  /// No description provided for @m7AccountInfo.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلومات الحساب'**
+  String get m7AccountInfo;
+
+  /// No description provided for @m7NoRecentEntries.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عمليات مالية حديثة بعد.'**
+  String get m7NoRecentEntries;
 }
 
 class _AppLocalizationsDelegate

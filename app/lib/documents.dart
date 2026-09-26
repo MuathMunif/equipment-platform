@@ -1540,15 +1540,17 @@ class _DocumentVersionPageState extends State<DocumentVersionPage> {
 
 class HomeDocumentAttention extends StatefulWidget {
   final Api api;
-  const HomeDocumentAttention({super.key, required this.api});
+  final bool showIncomplete;
+  const HomeDocumentAttention({super.key, required this.api, this.showIncomplete = true});
   @override
   State<HomeDocumentAttention> createState() => _HomeDocumentAttentionState();
 }
 
 class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
   List<Map<String, dynamic>> items = [], incomplete = [];
-  String? error;
+  String? error, incompleteError;
   bool loading = true;
+  int generation = 0;
   @override
   void initState() {
     super.initState();
@@ -1556,33 +1558,31 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
   }
 
   Future<void> load() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
+    final request = ++generation, workspace = widget.api.workspace;
+    setState(() { loading = true; error = null; incompleteError = null; items = []; incomplete = []; });
     try {
-      final attention = await widget.api.json(
-        'GET',
-        widget.api.scoped('/attention'),
-      ) as List<dynamic>;
-      final missing = await widget.api.json(
-        'GET',
-        widget.api.scoped('/documents/incomplete'),
-      ) as List<dynamic>;
-      if (mounted) {
-        setState(() {
-          items = attention
-              .map((e) => Map<String, dynamic>.from(e as Map))
-              .toList();
-          incomplete = missing
-              .map((e) => Map<String, dynamic>.from(e as Map))
-              .toList();
-        });
+      final attention = await widget.api.json('GET', widget.api.scoped('/attention')) as List<dynamic>;
+      if (mounted && request == generation && workspace == widget.api.workspace) {
+        setState(() => items = attention.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+      }
+      if (widget.showIncomplete) {
+        try {
+          final missing = await widget.api.json('GET', widget.api.scoped('/documents/incomplete')) as List<dynamic>;
+          if (mounted && request == generation && workspace == widget.api.workspace) {
+            setState(() => incomplete = missing.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+          }
+        } catch (e) {
+          if (mounted && request == generation && workspace == widget.api.workspace) {
+            setState(() => incompleteError = localizedError(context, e));
+          }
+        }
       }
     } catch (e) {
-      if (mounted) setState(() => error = localizedError(context, e));
+      if (mounted && request == generation && workspace == widget.api.workspace) {
+        setState(() => error = localizedError(context, e));
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted && request == generation && workspace == widget.api.workspace) setState(() => loading = false);
     }
   }
 
@@ -1673,17 +1673,20 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                 },
                 child: Text(l10n(context).viewAll),
               ),
+            if (widget.showIncomplete) ...[
             const Divider(),
             Text(
               l10n(context).uiDetailsToComplete,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            Text(
+            if (incompleteError != null)
+              TextButton(onPressed: load, child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain))
+            else Text(
               incomplete.isEmpty
                   ? l10n(context).uiNoDocumentsHaveMissingInformation
                   : l10n(context).missingDocumentsCount('${incomplete.length}'),
             ),
-            if (incomplete.isNotEmpty)
+            if (incompleteError == null && incomplete.isNotEmpty)
               TextButton(
                 key: const Key('openIncompleteDocuments'),
                 onPressed: () => Navigator.push(
@@ -1694,6 +1697,7 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                 ),
                 child: Text(l10n(context).uiViewDocuments),
               ),
+            ],
           ],
         ],
       ),

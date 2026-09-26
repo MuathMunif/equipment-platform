@@ -5,6 +5,7 @@ import 'api.dart';
 import 'file_export.dart';
 import 'localization.dart';
 import 'main.dart' show ExpenseForm, InlineError, brand;
+import 'reports.dart' show ReportsPage;
 
 List<Map<String, dynamic>> m6Rows(Object? value) =>
     (value as List<dynamic>? ?? [])
@@ -1241,6 +1242,24 @@ class _ProjectDetailState extends State<ProjectDetail> {
   List<Map<String, dynamic>> links = [];
   bool loading = true, busy = false;
   String? error;
+  void openReport(int kind, {String? entryType}) {
+    if (!widget.api.can('REPORT_VIEW')) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReportsPage(
+          api: widget.api,
+          canProjects: true,
+          initialKind: kind,
+          initialProjectId: widget.id,
+          initialProjectName: '${item?['name']}',
+          initialEntryType: entryType,
+          lifetime: kind != 2,
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1485,32 +1504,43 @@ class _ProjectDetailState extends State<ProjectDetail> {
                     context,
                     l10n(context).m6RecordedIncome,
                     summary!['recordedIncome'],
+                    onTap: () => openReport(0, entryType: 'INCOME'),
                   ),
                   _money(
                     context,
                     l10n(context).m6RecordedExpenses,
                     summary!['recordedExpenses'],
+                    onTap: () => openReport(0, entryType: 'EXPENSE'),
                   ),
                   _money(
                     context,
                     l10n(context).m6RecordedDifference,
                     summary!['recordedDifference'],
+                    onTap: () => openReport(0),
                   ),
                   _money(
                     context,
-                    l10n(context).m6Collected,
+                    l10n(context).m7NetCollected,
                     summary!['collected'],
+                    onTap: () => openReport(1, entryType: 'INCOME'),
                   ),
-                  _money(context, l10n(context).m6Paid, summary!['paid']),
+                  _money(
+                    context,
+                    l10n(context).m7NetPaid,
+                    summary!['paid'],
+                    onTap: () => openReport(1, entryType: 'EXPENSE'),
+                  ),
                   _money(
                     context,
                     l10n(context).m6ReceivablesRemaining,
                     summary!['receivablesRemaining'],
+                    onTap: () => openReport(2, entryType: 'INCOME'),
                   ),
                   _money(
                     context,
                     l10n(context).m6PayablesRemaining,
                     summary!['payablesRemaining'],
+                    onTap: () => openReport(2, entryType: 'EXPENSE'),
                   ),
                 ],
                 if (widget.canFinance && !archived)
@@ -1575,9 +1605,15 @@ class _ProjectDetailState extends State<ProjectDetail> {
       value == null || '$value'.isEmpty
       ? const SizedBox.shrink()
       : ListTile(title: Text(title), subtitle: Text('$value'));
-  Widget _money(BuildContext context, String title, Object? value) => ListTile(
+  Widget _money(
+    BuildContext context,
+    String title,
+    Object? value, {
+    VoidCallback? onTap,
+  }) => ListTile(
     title: Text(title),
     trailing: Text(localizedMoney(context, value)),
+    onTap: widget.api.can('REPORT_VIEW') ? onTap : null,
   );
 }
 

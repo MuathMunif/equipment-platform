@@ -24,6 +24,71 @@ Widget host(Widget child, [String locale = 'ar']) => MaterialApp(
 );
 
 void main() {
+  testWidgets('project lifetime figure opens matching report basis and Back preserves summary',(tester)async{
+    tester.view.physicalSize=const Size(800,1500);tester.view.devicePixelRatio=1;
+    addTearDown(tester.view.resetPhysicalSize);addTearDown(tester.view.resetDevicePixelRatio);
+    final paths=<Uri>[];
+    final api=Api(client:MockClient((request)async{
+      paths.add(request.url);
+      final path=request.url.path;
+      if(path.endsWith('/projects/p/equipment')) return answer([]);
+      if(path.endsWith('/projects/p/financial-summary')) {
+        return answer({
+        'recordedIncome':'1000.00','recordedExpenses':'0.00',
+        'recordedDifference':'1000.00','collected':'400.00','paid':'0.00',
+        'receivablesRemaining':'600.00','payablesRemaining':'0.00'});
+      }
+      if(path.endsWith('/projects/p')) {
+        return answer({'id':'p','name':'Contract A',
+        'kind':'PROJECT','status':'ACTIVE','archived_at':null});
+      }
+      if(path.endsWith('/reports/recorded')) {
+        return answer({'summary':{
+        'recordedIncome':'1000.00','recordedExpenses':'0.00',
+        'recordedDifference':'1000.00','fromDate':'0001-01-01',
+        'toDate':'9999-12-31','groups':[]},'items':[],
+        'page':0,'pageSize':30,'total':0});
+      }
+      if(path.endsWith('/reports/movements')) {
+        return answer({'summary':{
+        'collected':'600.00','incomeRefunds':'200.00','netCollected':'400.00',
+        'paid':'0.00','expenseRefunds':'0.00','netPaid':'0.00',
+        'fromDate':'0001-01-01','toDate':'9999-12-31'},'items':[],
+        'page':0,'pageSize':30,'total':0});
+      }
+      if(path.endsWith('/reports/outstanding')) {
+        return answer({'summary':{
+        'receivable':'600.00','payable':'0.00'},'items':[],
+        'page':0,'pageSize':30,'total':0});
+      }
+      return answer([],404);
+    }),base:'http://localhost/api/v1',persistNative:false)..workspace='w';
+    await tester.pumpWidget(host(ProjectDetail(api:api,id:'p',canManage:false,canFinance:true),'en'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Recorded income'));
+    await tester.tap(find.text('Recorded income'));
+    await tester.pumpAndSettle();
+    final recorded=paths.lastWhere((uri)=>uri.path.endsWith('/reports/recorded'));
+    expect(recorded.queryParameters['projectId'],'p');
+    expect(recorded.queryParameters['entryType'],'INCOME');
+    expect(recorded.queryParameters['fromDate'],'0001-01-01');
+    expect(recorded.queryParameters['toDate'],'9999-12-31');
+    await tester.pageBack();await tester.pumpAndSettle();
+    expect(find.text('Contract A'),findsOneWidget);
+    await tester.ensureVisible(find.text('Net collected'));
+    await tester.tap(find.text('Net collected'));await tester.pumpAndSettle();
+    final movements=paths.lastWhere((uri)=>uri.path.endsWith('/reports/movements'));
+    expect(movements.queryParameters['projectId'],'p');
+    expect(movements.queryParameters['entryType'],'INCOME');
+    expect(movements.queryParameters.containsKey('movementType'),false);
+    expect(find.text('Net collected'), findsOneWidget);
+    await tester.pageBack();await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Remaining receivable'));
+    await tester.tap(find.text('Remaining receivable'));await tester.pumpAndSettle();
+    final outstanding=paths.lastWhere((uri)=>uri.path.endsWith('/reports/outstanding'));
+    expect(outstanding.queryParameters['projectId'],'p');
+    expect(outstanding.queryParameters.containsKey('fromDate'),false);
+  });
   testWidgets('organization creation keeps only name required', (tester) async {
     Map<String, dynamic>? sent;
     final api = Api(
