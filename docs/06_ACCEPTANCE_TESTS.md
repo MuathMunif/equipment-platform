@@ -137,3 +137,12 @@ OPS-05: Account deletion never accidentally cascades other members' shared recor
 Record: ID, commit/diff, environment, command or manual steps, expected result, actual result,
 status (PASS/FAIL/NOT RUN), evidence path, defect links and reviewer identity/session if available.
 No fabricated pass counts, screenshots, CI links or deployed URLs.
+## M7 local acceptance — 2026-09-26
+
+- REPORT-01: Recorded totals use original operation dates and totals, include unpaid entries, and exclude cancelled, draft and pending/rejected submissions; approved submissions contribute only through the M2 entry. Equal-amount entries and attachments never multiply totals.
+- REPORT-02: Each settlement/refund uses its own movement date. A September expense 1000.00 paid 600.00 in September and refunded 200.00 in October reports September recorded 1000.00/net paid 600.00, October recorded 0.00/net paid -200.00, and current payable 600.00. The analogous income case applies.
+- REPORT-03: Current receivable/payable spans all dates, excludes fully settled and non-posted entries, and derives from D-19. Missing due date is not overdue. Summary and paged detail use identical filters/scope.
+- REPORT-04: Shared expense appears once globally, with exact M2 allocation for equipment views; general expense is separate and never allocated. Fractional shares reconcile. Current allocation/project corrections change grouping without rewriting movements.
+- REPORT-05: REPORT_VIEW and FINANCE_VIEW both gate reports. FINANCE_VIEW alone may retain home/journal. Scope filters totals, rows, groups, filters and counts before aggregation; restricted members cannot see general expense, a partly inaccessible shared entry, or unauthorized project metadata.
+- REPORT-06: Dashboard finance cards link to the matching journal period/type; movements link to dated movement detail and its original entry; outstanding links to M2 detail. Attention remains current and separate from incomplete document data and report month.
+- REPORT-07: Workspace switching, revocation and changed organization scope remove stale privileged data. Owner first use needs only equipment name/model; invited users and drivers keep their M5 flows. Empty, no match and load failure differ. New UI uses ar/en/ur with correct direction and signed money.
