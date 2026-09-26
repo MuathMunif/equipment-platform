@@ -1,5 +1,5 @@
 # Delivery backlog
-Status 2026-09-26: M0–M6 are merged in `main` for local V1 development. M7 dashboard, three practical reports and product integration are implemented and locally tested on `feat/m7-dashboard-reports-polish`; populated Web visual QA and PR/CI remain pending. See `docs/tasks/007_M7_STATUS.md` and `HANDOFF.md`. Private production object storage, malware scanning, live Push and production OTP remain deferred. This is not production readiness.
+Status 2026-09-26: M0–M6 are merged in `main` for local V1 development. M7 dashboard, three practical reports and product integration are implemented and locally tested on `feat/m7-dashboard-reports-polish`; PR #7 is open, with CI and populated Web visual QA pending. See `docs/tasks/007_M7_STATUS.md` and `HANDOFF.md`. Private production object storage, malware scanning, live Push and production OTP remain deferred. This is not production readiness.
 
 Localization foundation before M4 is merged into main: `ar`, `en`, `ur` resources, user-level saved preference, localized app UI and semantic notification templates. Arabic remains fallback. Urdu copy requires native-speaker review before public release.
 
