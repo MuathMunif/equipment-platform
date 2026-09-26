@@ -108,6 +108,7 @@ class M7ReportsTest {
   JsonNode visible=ok("GET",recorded(owner,"2026-09"),null,member.token,null).json;
   assertEquals("10.00",visible.get("summary").get("recordedExpenses").asString());assertEquals(1,visible.get("total").asInt());
   assertEquals("0.00",ok("GET",recorded(owner,"2026-09")+"&projectId="+project,null,member.token,null).json.get("summary").get("recordedExpenses").asString());
+  assertEquals("0.00",ok("GET",base+"/projects/"+project+"/financial-summary",null,member.token,null).json.get("recordedExpenses").asString());
   assertEquals(404,call("GET",recorded(owner,"2026-09")+"&equipmentId="+b,null,member.token,null).status);
   ok("PUT",base+"/equipment/"+a+"/organization",Map.of(),owner.token,null);
   assertEquals("0.00",ok("GET",recorded(owner,"2026-09"),null,member.token,null).json.get("summary").get("recordedExpenses").asString());
@@ -178,6 +179,29 @@ class M7ReportsTest {
   assertEquals("0.00",ok("GET",recorded(owner,"2026-09")+"&projectId="+first,null,owner.token,null).json.get("summary").get("recordedExpenses").asString());
   assertEquals("1.00",ok("GET",recorded(owner,"2026-09")+"&projectId="+second,null,owner.token,null).json.get("summary").get("recordedExpenses").asString());
   assertEquals("31.00",ok("GET",recorded(owner,"2026-09")+"&equipmentId="+eq,null,owner.token,null).json.get("summary").get("recordedExpenses").asString());
+ }
+
+ @Test void projectSearchPagesAfterAuthorizationAndKeepsHistoricalSelectionReadable()throws Exception{
+  User owner=login("0500000491"),member=login("0500000492");String base=w(owner);
+  String permittedOrg=ok("POST",base+"/organizations",Map.of("name","Permitted"),owner.token,null).json.get("id").asString();
+  String hiddenOrg=ok("POST",base+"/organizations",Map.of("name","Hidden"),owner.token,null).json.get("id").asString();
+  String selected=ok("POST",base+"/projects",Map.of("name","Accessible older project","kind","PROJECT","organizationId",permittedOrg),owner.token,null).json.get("id").asString();
+  String hidden=null;
+  for(int i=0;i<101;i++){
+   UUID id=UUID.randomUUID();hidden=id.toString();
+   db.update("insert into project_or_contract(id,workspace_id,kind,name,organization_id,created_by,created_at) values(?,?,?,?,?,?,now()+ (? * interval '1 second'))",id,UUID.fromString(owner.workspace),"PROJECT","Hidden project "+i,UUID.fromString(hiddenOrg),UUID.fromString(owner.id),i);
+  }
+  JsonNode first=ok("GET",base+"/projects?page=0",null,owner.token,null).json;
+  JsonNode second=ok("GET",base+"/projects?page=1",null,owner.token,null).json;
+  assertEquals(100,first.size());assertEquals(2,second.size());
+  assertEquals(1,ok("GET",base+"/projects?search=Accessible%20older%20project&page=0",null,owner.token,null).json.size());
+  String invite=ok("POST",base+"/team/invitations",Map.of("displayName","Restricted","phone","0500000492","role","ACCOUNTANT","scope","SELECTED_ORGANIZATIONS","organizationIds",List.of(permittedOrg)),owner.token,null).json.get("id").asString();
+  ok("POST","/account/invitations/"+invite+"/accept",null,member.token,null);
+  JsonNode visible=ok("GET",base+"/projects?page=0",null,member.token,null).json;
+  assertEquals(1,visible.size());assertEquals(selected,visible.get(0).get("id").asString());
+  assertEquals(selected,ok("GET",base+"/projects/"+selected,null,member.token,null).json.get("id").asString());
+  assertEquals(0,ok("GET",base+"/projects?search=Hidden&page=0",null,member.token,null).json.size());
+  assertEquals(404,call("GET",base+"/projects/"+hidden,null,member.token,null).status);
  }
 
 }

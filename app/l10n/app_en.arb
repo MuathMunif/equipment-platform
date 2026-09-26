@@ -1056,7 +1056,7 @@
   "m7CurrentBasis": "Current outstanding across all periods.",
   "m7RecordedDifference": "Difference between recorded income and expenses",
   "m7Collected": "Collected",
-  "m7IncomeRefunds": "المعاد للطرف الآخر",
+  "m7IncomeRefunds": "Returned to customer",
   "m7NetCollected": "Net collected",
   "m7Paid": "Paid",
   "m7ExpenseRefunds": "Recovered from expenses",

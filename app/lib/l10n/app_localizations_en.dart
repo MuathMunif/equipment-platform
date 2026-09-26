@@ -2191,7 +2191,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get m7Collected => 'Collected';
 
   @override
-  String get m7IncomeRefunds => 'المعاد للطرف الآخر';
+  String get m7IncomeRefunds => 'Returned to customer';
 
   @override
   String get m7NetCollected => 'Net collected';

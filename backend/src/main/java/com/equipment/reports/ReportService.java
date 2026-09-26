@@ -65,16 +65,27 @@ public class ReportService {
             }return null;
         });
     }
+    private void scanWithAllocations(UUID workspace,String sql,List<Object> args,java.util.function.BiConsumer<Map<String,Object>,List<FinanceService.AllocationAmount>> consumer){
+        List<Map<String,Object>> batch=new ArrayList<>(256);
+        java.util.function.Consumer<List<Map<String,Object>>> flush=rows->{
+            Set<UUID> ids=new HashSet<>();
+            for(var row:rows)if("EXPENSE".equals(row.get("entry_type")))ids.add((UUID)row.get("entry_id"));
+            var allocations=finance.allocationAmounts(workspace,ids);
+            for(var row:rows)consumer.accept(row,allocations.getOrDefault((UUID)row.get("entry_id"),List.of()));
+        };
+        scan(sql,args,row->{batch.add(row);if(batch.size()==256){flush.accept(batch);batch.clear();}});
+        if(!batch.isEmpty())flush.accept(batch);
+    }
     private static final class PageRows {
         final List<Map<String,Object>> items=new ArrayList<>();final int page;long total;
         PageRows(int page){this.page=page;}
         void add(Map<String,Object> row){long index=total++;if(index>=(long)page*SIZE&&index<(long)(page+1)*SIZE)items.add(row);}
         Map<String,Object> result(Map<String,Object> summary){return Map.of("summary",summary,"items",items,"page",page,"pageSize",SIZE,"total",total);}
     }
-    private BigDecimal contribution(UUID workspace,Map<String,Object> row,UUID equipmentId,BigDecimal value,boolean movement){
+    private BigDecimal contribution(Map<String,Object> row,UUID equipmentId,BigDecimal value,boolean movement,List<FinanceService.AllocationAmount> allocations){
         if(equipmentId==null||!"EXPENSE".equals(row.get("entry_type")))return value;
         if(!movement)return amount(row.get("allocation_amount"));
-        return finance.movementShareDelta(workspace,(UUID)row.get("entry_id"),equipmentId,amount(row.get("entry_amount")),amount(row.get("prior_paid")),amount(row.get("prior_refunded")),amount(row.get("final_paid")),value,"REFUND".equals(row.get("movement_type")));
+        return finance.movementShareDelta(allocations,equipmentId,amount(row.get("entry_amount")),amount(row.get("prior_paid")),amount(row.get("prior_refunded")),amount(row.get("final_paid")),value,"REFUND".equals(row.get("movement_type")));
     }
     private List<Map<String,Object>> recordedGroups(Scope s,UUID equipmentId){
         List<Object> args=new ArrayList<>();
@@ -95,7 +106,7 @@ public class ReportService {
         args.add(Date.valueOf(s.from()));args.add(Date.valueOf(s.to()));
         BigDecimal[] totals={ZERO,ZERO};PageRows detail=new PageRows(filter.page());
         scan(sql,args,row->{
-            BigDecimal share=contribution(workspace,row,filter.equipmentId(),amount(row.get("entry_amount")),false);
+            BigDecimal share=contribution(row,filter.equipmentId(),amount(row.get("entry_amount")),false,List.of());
             if("INCOME".equals(row.get("entry_type")))totals[0]=totals[0].add(share);else totals[1]=totals[1].add(share);
             Map<String,Object> item=new LinkedHashMap<>();item.put("entryId",row.get("entry_id"));item.put("entryType",row.get("entry_type"));item.put("operationDate",row.get("operation_date").toString());item.put("amount",money(share));item.put("entryTotal",money(amount(row.get("entry_amount"))));item.put("expenseScope",row.get("expense_scope"));item.put("equipmentId",row.get("equipment_id"));item.put("equipmentName",row.get("equipment_name"));item.put("partyName",row.get("party_name"));detail.add(item);
         });
@@ -105,37 +116,74 @@ public class ReportService {
     @Transactional(readOnly=true)
     public Map<String,Object> movements(Actor actor,UUID workspace,Filter filter){
         Scope s=scope(actor,workspace,filter,true,true);
+        if(filter.equipmentId()==null)return unallocatedMovements(workspace,filter,s);
         String sql="select f.id as entry_id,f.entry_type,f.amount as entry_amount,f.expense_scope,f.equipment_id,e.name as equipment_name,m.id as movement_id,m.movement_type,m.movement_date,m.amount as movement_amount,m.prior_paid,m.prior_refunded,m.final_paid from financial_entry f join lateral (select x.*,coalesce(sum(case when x.movement_type='SETTLEMENT' then x.amount else 0 end) over (order by x.movement_date,case when x.movement_type='SETTLEMENT' then 0 else 1 end,x.id rows between unbounded preceding and 1 preceding),0) as prior_paid,coalesce(sum(case when x.movement_type='REFUND' then x.amount else 0 end) over (order by x.movement_date,case when x.movement_type='SETTLEMENT' then 0 else 1 end,x.id rows between unbounded preceding and 1 preceding),0) as prior_refunded,coalesce(sum(case when x.movement_type='SETTLEMENT' then x.amount else 0 end) over (),0) as final_paid from (select id,'SETTLEMENT' as movement_type,paid_on as movement_date,amount from settlement where workspace_id=f.workspace_id and entry_id=f.id union all select id,'REFUND',refunded_on,amount from financial_refund where workspace_id=f.workspace_id and entry_id=f.id) x) m on true left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where "+s.where()+" and m.movement_date>=? and m.movement_date<=?"+(filter.movementType()==null?"":" and m.movement_type=?")+" order by m.movement_date desc,m.id desc";
         List<Object> args=new ArrayList<>(s.args());args.add(Date.valueOf(s.from()));args.add(Date.valueOf(s.to()));if(filter.movementType()!=null)args.add(filter.movementType());
         BigDecimal[] totals={ZERO,ZERO,ZERO,ZERO};PageRows detail=new PageRows(filter.page());
-        scan(sql,args,row->{
-            BigDecimal share=contribution(workspace,row,filter.equipmentId(),amount(row.get("movement_amount")),true);
+        java.util.function.BiConsumer<Map<String,Object>,List<FinanceService.AllocationAmount>> consume=(row,allocations)->{
+            BigDecimal share=contribution(row,filter.equipmentId(),amount(row.get("movement_amount")),true,allocations);
             boolean income="INCOME".equals(row.get("entry_type")),refund="REFUND".equals(row.get("movement_type"));
             if(income){if(refund)totals[1]=totals[1].add(share);else totals[0]=totals[0].add(share);}else{if(refund)totals[3]=totals[3].add(share);else totals[2]=totals[2].add(share);}
             Map<String,Object> item=new LinkedHashMap<>();item.put("movementId",row.get("movement_id"));item.put("entryId",row.get("entry_id"));item.put("entryType",row.get("entry_type"));item.put("movementType",row.get("movement_type"));item.put("movementDate",row.get("movement_date").toString());item.put("amount",money(share));item.put("movementTotal",money(amount(row.get("movement_amount"))));item.put("entryTotal",money(amount(row.get("entry_amount"))));item.put("expenseScope",row.get("expense_scope"));item.put("equipmentId",row.get("equipment_id"));item.put("equipmentName",row.get("equipment_name"));detail.add(item);
-        });
+        };
+        if(filter.equipmentId()==null)scan(sql,args,row->consume.accept(row,List.of()));
+        else scanWithAllocations(workspace,sql,args,consume);
         Map<String,Object> summary=Map.of("collected",money(totals[0]),"incomeRefunds",money(totals[1]),"netCollected",money(totals[0].subtract(totals[1])),"paid",money(totals[2]),"expenseRefunds",money(totals[3]),"netPaid",money(totals[2].subtract(totals[3])),"fromDate",s.from().toString(),"toDate",s.to().toString());
         return detail.result(summary);
+    }
+    /** Without equipment-share rounding, SQL can total all matching movements and page detail directly. */
+    private Map<String,Object> unallocatedMovements(UUID workspace,Filter filter,Scope s){
+        String movements="(select x.workspace_id,x.entry_id,x.id,'SETTLEMENT' as movement_type,x.paid_on as movement_date,x.amount from settlement x where x.workspace_id=? and x.paid_on>=? and x.paid_on<=? union all select x.workspace_id,x.entry_id,x.id,'REFUND',x.refunded_on,x.amount from financial_refund x where x.workspace_id=? and x.refunded_on>=? and x.refunded_on<=?) m";
+        String from=" from "+movements+" join financial_entry f on f.workspace_id=m.workspace_id and f.id=m.entry_id";
+        String condition=" where "+s.where()+(filter.movementType()==null?"":" and m.movement_type=?");
+        List<Object> args=new ArrayList<>(List.of(workspace,Date.valueOf(s.from()),Date.valueOf(s.to()),workspace,Date.valueOf(s.from()),Date.valueOf(s.to())));
+        args.addAll(s.args());if(filter.movementType()!=null)args.add(filter.movementType());
+        var totals=db.queryForMap("select count(*) as total,coalesce(sum(case when f.entry_type='INCOME' and m.movement_type='SETTLEMENT' then m.amount end),0) as collected,coalesce(sum(case when f.entry_type='INCOME' and m.movement_type='REFUND' then m.amount end),0) as income_refunds,coalesce(sum(case when f.entry_type='EXPENSE' and m.movement_type='SETTLEMENT' then m.amount end),0) as paid,coalesce(sum(case when f.entry_type='EXPENSE' and m.movement_type='REFUND' then m.amount end),0) as expense_refunds"+from+condition,args.toArray());
+        BigDecimal collected=amount(totals.get("collected")),incomeRefunds=amount(totals.get("income_refunds")),paid=amount(totals.get("paid")),expenseRefunds=amount(totals.get("expense_refunds"));
+        Map<String,Object> summary=Map.of("collected",money(collected),"incomeRefunds",money(incomeRefunds),"netCollected",money(collected.subtract(incomeRefunds)),"paid",money(paid),"expenseRefunds",money(expenseRefunds),"netPaid",money(paid.subtract(expenseRefunds)),"fromDate",s.from().toString(),"toDate",s.to().toString());
+        List<Object> pageArgs=new ArrayList<>(args);pageArgs.add(SIZE);pageArgs.add(filter.page()*SIZE);
+        String detailSql="select f.id as entry_id,f.entry_type,f.amount as entry_amount,f.expense_scope,f.equipment_id,e.name as equipment_name,m.id as movement_id,m.movement_type,m.movement_date,m.amount as movement_amount"+from+" left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id"+condition+" order by m.movement_date desc,m.id desc limit ? offset ?";
+        var items=db.query(detailSql,(rs,n)->{
+            Map<String,Object> item=new LinkedHashMap<>();item.put("movementId",rs.getObject("movement_id",UUID.class));item.put("entryId",rs.getObject("entry_id",UUID.class));item.put("entryType",rs.getString("entry_type"));item.put("movementType",rs.getString("movement_type"));item.put("movementDate",rs.getDate("movement_date").toString());item.put("amount",money(rs.getBigDecimal("movement_amount")));item.put("movementTotal",money(rs.getBigDecimal("movement_amount")));item.put("entryTotal",money(rs.getBigDecimal("entry_amount")));item.put("expenseScope",rs.getString("expense_scope"));item.put("equipmentId",rs.getObject("equipment_id",UUID.class));item.put("equipmentName",rs.getString("equipment_name"));return item;
+        },pageArgs.toArray());
+        return Map.of("summary",summary,"items",items,"page",filter.page(),"pageSize",SIZE,"total",((Number)totals.get("total")).longValue());
     }
     @Transactional(readOnly=true)
     public Map<String,Object> outstanding(Actor actor,UUID workspace,Filter filter){
         Scope s=scope(actor,workspace,filter,true,false);
+        if(filter.equipmentId()==null)return unallocatedOutstanding(workspace,filter,s);
         String allocation=filter.equipmentId()==null?"null::numeric as allocation_amount":"(select a.amount from expense_allocation a where a.workspace_id=f.workspace_id and a.entry_id=f.id and a.equipment_id=?) as allocation_amount";
         List<Object> args=new ArrayList<>();if(filter.equipmentId()!=null)args.add(filter.equipmentId());args.addAll(s.args());
         String sql="select f.id as entry_id,f.entry_type,f.amount as entry_amount,f.operation_date,f.due_date,f.party_name,f.expense_scope,f.equipment_id,e.name as equipment_name,"+allocation+",coalesce((select sum(x.amount) from settlement x where x.workspace_id=f.workspace_id and x.entry_id=f.id),0) as settled,coalesce((select sum(x.amount) from financial_refund x where x.workspace_id=f.workspace_id and x.entry_id=f.id),0) as refunded from financial_entry f left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id where "+s.where()+" order by f.due_date nulls last,f.operation_date,f.id";
         BigDecimal[] totals={ZERO,ZERO};PageRows detail=new PageRows(filter.page());
         LocalDate today=LocalDate.now(RIYADH);
-        scan(sql,args,row->{
+        java.util.function.BiConsumer<Map<String,Object>,List<FinanceService.AllocationAmount>> consume=(row,allocations)->{
             BigDecimal total=amount(row.get("entry_amount")),net=amount(row.get("settled")).subtract(amount(row.get("refunded"))),remaining=total.subtract(net);
             if(filter.equipmentId()!=null&&"EXPENSE".equals(row.get("entry_type"))){
                 // M2 bounds net shares by gross shares, including fractional-cent refund cases.
-                remaining=finance.remainingShare(workspace,(UUID)row.get("entry_id"),filter.equipmentId(),total,amount(row.get("settled")),amount(row.get("refunded")));
+                remaining=finance.remainingShare(allocations,filter.equipmentId(),total,amount(row.get("settled")),amount(row.get("refunded")));
             }
             if(remaining.signum()<=0)return;
             if("INCOME".equals(row.get("entry_type")))totals[0]=totals[0].add(remaining);else totals[1]=totals[1].add(remaining);
             Date due=(Date)row.get("due_date");Map<String,Object> item=new LinkedHashMap<>();item.put("entryId",row.get("entry_id"));item.put("entryType",row.get("entry_type"));item.put("operationDate",row.get("operation_date").toString());item.put("dueDate",due==null?null:due.toString());item.put("overdue",due!=null&&due.toLocalDate().isBefore(today));item.put("partyName",row.get("party_name"));item.put("remaining",money(remaining));item.put("entryTotal",money(total));item.put("expenseScope",row.get("expense_scope"));item.put("equipmentId",row.get("equipment_id"));item.put("equipmentName",row.get("equipment_name"));detail.add(item);
-        });
+        };
+        if(filter.equipmentId()==null)scan(sql,args,row->consume.accept(row,List.of()));
+        else scanWithAllocations(workspace,sql,args,consume);
         return detail.result(Map.of("receivable",money(totals[0]),"payable",money(totals[1]),"asOfDate",today.toString()));
+    }
+    private Map<String,Object> unallocatedOutstanding(UUID workspace,Filter filter,Scope s){
+        String from=" from financial_entry f left join (select entry_id,sum(amount) amount from settlement where workspace_id=? group by entry_id) paid on paid.entry_id=f.id left join (select entry_id,sum(amount) amount from financial_refund where workspace_id=? group by entry_id) refunded on refunded.entry_id=f.id";
+        String remaining="(f.amount-coalesce(paid.amount,0)+coalesce(refunded.amount,0))";
+        String condition=" where "+s.where()+" and "+remaining+">0";
+        List<Object> args=new ArrayList<>(List.of(workspace,workspace));args.addAll(s.args());
+        var totals=db.queryForMap("select count(*) total,coalesce(sum(case when f.entry_type='INCOME' then "+remaining+" end),0) receivable,coalesce(sum(case when f.entry_type='EXPENSE' then "+remaining+" end),0) payable"+from+condition,args.toArray());
+        List<Object> pageArgs=new ArrayList<>(args);pageArgs.add(SIZE);pageArgs.add(filter.page()*SIZE);
+        String sql="select f.id entry_id,f.entry_type,f.amount entry_amount,f.operation_date,f.due_date,f.party_name,f.expense_scope,f.equipment_id,e.name equipment_name,"+remaining+" remaining"+from+" left join equipment e on e.workspace_id=f.workspace_id and e.id=f.equipment_id"+condition+" order by f.due_date nulls last,f.operation_date,f.id limit ? offset ?";
+        LocalDate today=LocalDate.now(RIYADH);
+        var items=db.query(sql,(rs,n)->{
+            Date due=rs.getDate("due_date");Map<String,Object> item=new LinkedHashMap<>();item.put("entryId",rs.getObject("entry_id",UUID.class));item.put("entryType",rs.getString("entry_type"));item.put("operationDate",rs.getDate("operation_date").toString());item.put("dueDate",due==null?null:due.toString());item.put("overdue",due!=null&&due.toLocalDate().isBefore(today));item.put("partyName",rs.getString("party_name"));item.put("remaining",money(rs.getBigDecimal("remaining")));item.put("entryTotal",money(rs.getBigDecimal("entry_amount")));item.put("expenseScope",rs.getString("expense_scope"));item.put("equipmentId",rs.getObject("equipment_id",UUID.class));item.put("equipmentName",rs.getString("equipment_name"));return item;
+        },pageArgs.toArray());
+        return Map.of("summary",Map.of("receivable",money(amount(totals.get("receivable"))),"payable",money(amount(totals.get("payable"))),"asOfDate",today.toString()),"items",items,"page",filter.page(),"pageSize",SIZE,"total",((Number)totals.get("total")).longValue());
     }
     @Transactional(readOnly=true)
     public Map<String,Object> dashboard(Actor actor,UUID workspace,String month){

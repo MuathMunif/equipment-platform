@@ -7,6 +7,7 @@ import 'api.dart';
 import 'documents.dart';
 import 'localization.dart';
 import 'maintenance.dart';
+import 'reports.dart' show ProjectSearchPicker;
 
 List<Map<String, dynamic>> records(Object? value) =>
     (value as List<dynamic>? ?? [])
@@ -1529,15 +1530,12 @@ class _DriverHomePageState extends State<DriverHomePage> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text(
-                switch (widget.section) {
-                  1 => l10n(context).m5MyIssues,
-                  2 => l10n(context).m5MySubmissions,
-                  3 => l10n(context).m7More,
-                  _ => l10n(context).m5DriverHome,
-                },
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text(switch (widget.section) {
+                1 => l10n(context).m5MyIssues,
+                2 => l10n(context).m5MySubmissions,
+                3 => l10n(context).m7More,
+                _ => l10n(context).m5DriverHome,
+              }, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
               if (widget.section == 0 && equipment == null)
                 Card(
@@ -1613,39 +1611,49 @@ class _DriverHomePageState extends State<DriverHomePage> {
                   ),
               ],
               if (widget.section == 2) ...[
-              const SizedBox(height: 20),
-              Text(
-                l10n(context).m5MySubmissions,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (submissions.isEmpty) Text(l10n(context).m5NoSubmissions),
-              for (final item in submissions)
-                Card(
-                  child: ListTile(
-                    title: Text(
-                      item['amount'] == null
-                          ? l10n(context).m5ReceiptOnly
-                          : localizedMoney(context, item['amount']),
-                    ),
-                    subtitle: Text(
-                      '${m5Status(context, item['status'])} • ${item['equipmentName']}',
-                    ),
-                    onTap: () => open(
-                      SubmissionDetailPage(
-                        api: widget.api,
-                        id: item['id'] as String,
-                        reviewer: false,
+                const SizedBox(height: 20),
+                Text(
+                  l10n(context).m5MySubmissions,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (submissions.isEmpty) Text(l10n(context).m5NoSubmissions),
+                for (final item in submissions)
+                  Card(
+                    child: ListTile(
+                      title: Text(
+                        item['amount'] == null
+                            ? l10n(context).m5ReceiptOnly
+                            : localizedMoney(context, item['amount']),
+                      ),
+                      subtitle: Text(
+                        '${m5Status(context, item['status'])} • ${item['equipmentName']}',
+                      ),
+                      onTap: () => open(
+                        SubmissionDetailPage(
+                          api: widget.api,
+                          id: item['id'] as String,
+                          reviewer: false,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
               if (widget.section == 3) ...[
-                ListTile(leading: const Icon(Icons.mail_outline),
+                ListTile(
+                  leading: const Icon(Icons.mail_outline),
                   title: Text(l10n(context).m5MyInvitations),
-                  onTap: () => open(AccountInvitationsPage(api: widget.api, changed: widget.reloadUser ?? () async {}))),
-                ListTile(leading: const Icon(Icons.settings_outlined),
-                  title: Text(l10n(context).settings), onTap: widget.onSettings),
+                  onTap: () => open(
+                    AccountInvitationsPage(
+                      api: widget.api,
+                      changed: widget.reloadUser ?? () async {},
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings_outlined),
+                  title: Text(l10n(context).settings),
+                  onTap: widget.onSettings,
+                ),
               ],
             ],
           ),
@@ -2148,7 +2156,7 @@ class _ApprovalPageState extends State<ApprovalPage> {
       paidOn = todayRiyadh();
   String? dueDate, error;
   String? projectId;
-  List<Map<String, dynamic>> projects = [];
+  String? projectName;
   bool busy = false;
   @override
   void initState() {
@@ -2156,18 +2164,24 @@ class _ApprovalPageState extends State<ApprovalPage> {
     amount.text = '${widget.submission['amount'] ?? ''}';
     note.text = '${widget.submission['note'] ?? ''}';
     date = widget.submission['transactionDate'] as String? ?? todayRiyadh();
-    loadProjects();
   }
 
-  Future<void> loadProjects() async {
-    try {
-      final result = await widget.api.json(
-        'GET',
-        widget.api.scoped('/projects'),
-      );
-      if (mounted) setState(() => projects = records(result));
-    } catch (_) {
-      /* Project classification is optional. */
+  Future<void> chooseProject() async {
+    final selected = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => ProjectSearchPicker(
+        api: widget.api,
+        includeArchived: false,
+        allowNone: true,
+        selectedId: projectId,
+        selectedName: projectName,
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        projectId = selected['id'] as String?;
+        projectName = selected['name'] as String?;
+      });
     }
   }
 
@@ -2307,31 +2321,17 @@ class _ApprovalPageState extends State<ApprovalPage> {
           ],
           onChanged: (value) => setState(() => category = value!),
         ),
-        if (projects.isNotEmpty)
-          ExpansionTile(
-            title: Text(l10n(context).m6AdditionalDetails),
-            children: [
-              DropdownButtonFormField<String?>(
-                key: const Key('approvalProject'),
-                initialValue: projectId,
-                decoration: InputDecoration(
-                  labelText: l10n(context).m6ProjectClassification,
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text(l10n(context).m6NoProjects),
-                  ),
-                  for (final project in projects)
-                    DropdownMenuItem<String?>(
-                      value: '${project['id']}',
-                      child: Text('${project['name']}'),
-                    ),
-                ],
-                onChanged: (v) => setState(() => projectId = v),
-              ),
-            ],
-          ),
+        ExpansionTile(
+          title: Text(l10n(context).m6AdditionalDetails),
+          children: [
+            OutlinedButton.icon(
+              key: const Key('approvalProject'),
+              onPressed: busy ? null : chooseProject,
+              icon: const Icon(Icons.folder_outlined),
+              label: Text(projectName ?? l10n(context).m6ProjectClassification),
+            ),
+          ],
+        ),
         ListTile(
           title: Text(l10n(context).m5TransactionDate),
           subtitle: Text(localizedDate(context, date)),

@@ -1,0 +1,257 @@
+M7 FINAL ACCEPTANCE — COMPLETE PR #7, NO NEW MILESTONE
+
+Continue the existing M7 work only. Do not merge, deploy, start a new milestone,
+redesign the product, or change approved M0–M7 business rules.
+
+Known state from your delivery report:
+- Branch: feat/m7-dashboard-reports-polish
+- PR: #7
+- Reported HEAD: a3e5c88c0eb72d8786afd6c0d4b32952aa40f97f
+- Reported local tests: 89 backend and 98 Flutter, passing
+- Reported CI: Backend and Flutter passed at that HEAD
+- Open items: populated M7 visual acceptance, report query scaling,
+  a project selector limited to the first 100 projects, and missing navigation
+  from the project financial summary to its contributing report records.
+
+Use the repository and the existing written M7 specification as the authority.
+Do not rebuild completed work from this summary.
+
+1. SAFE START, CONTINUITY AND RESOURCE LIMITS
+
+Inspect git status, branch, HEAD and PR status using already-authorized tools.
+If HEAD has advanced, inspect and preserve newer work rather than resetting it.
+If PR #7 is already merged, stop and report; do not reopen/reset/revert it.
+The user may have just added this task file at:
+docs/tasks/M7_FINAL_ACCEPTANCE_CODEX_PROMPT.txt
+That expected task document alone is not a worktree blocker; preserve it.
+If other unexpected local changes exist, preserve them and report the conflict.
+
+Continue on the existing feature branch and PR. Do not create a second M7 PR,
+switch to main, stash work automatically, or rewrite history.
+
+Preserve AGENTS.md and existing model/reasoning settings. Only one implementation
+writer at a time, no parallel/nested subagents or automatic model escalation.
+Use an implementer only when useful. Do not repeat full prior UX/security reviews.
+Use at most one focused independent diff review if financial-query or access-control
+code changes warrant it. Keep context and test output scoped.
+
+After context compaction, re-read the current M7 task/HANDOFF and git status.
+Resume this task, not an old main-synchronization instruction.
+
+2. COMPLETE THE TWO KNOWN NAVIGATION GAPS
+
+A. Project financial summary -> contributing records
+
+Add the missing authorized drill-down from existing M6 project financial figures
+to the corresponding M7 report/detail, preserving the project and the actual basis
+of the number clicked.
+
+- Recorded income/expense -> recorded-entry basis.
+- Payments, collections or refunds -> movement-date basis where those figures exist.
+- Current outstanding -> current outstanding, without a misleading monthly filter.
+- A lifetime project figure must not open only the current month by default.
+- The destination must explain the clicked amount under identical scope/filters.
+- Do not add new cards or invent project accounting rules.
+- Do not widen project or financial access to make navigation work.
+- Preserve useful navigation state on Back.
+
+If an existing project metric and report genuinely use different meanings, document
+that mapping issue. Do not silently connect mismatching numbers.
+
+B. Project selector beyond the first 100 results
+
+Replace the silent first-page limitation with bounded, server-side search and/or
+load-more pagination using existing authorized project endpoints where suitable.
+Do not solve it by downloading every project without a bound.
+
+Test with at least 101 synthetic accessible projects:
+- a project outside the first page can be found and selected;
+- an existing/deep-linked selection stays visible even if not in the loaded page;
+- unauthorized projects do not appear or become accessible;
+- loading/empty/error states remain localized;
+- report-history filters retain existing M6 history rules rather than assuming
+  that every report project must be eligible for a new financial assignment.
+
+3. POPULATED M7 UI ACCEPTANCE — NOT ANOTHER WHOLE-APP AUDIT
+
+Prepare a small, reproducible, isolated synthetic dataset using existing safe
+fixture tooling or authenticated development APIs. Do not reset the user's data.
+
+Include:
+- recorded income and expense;
+- partial payment/collection;
+- an October refund against a September settlement;
+- a shared expense and a general expense;
+- a cancelled entry and pending submission/draft excluded from totals;
+- project classification;
+- an actual document/issue attention item;
+- owner, restricted member, and driver contexts where already supported.
+
+Inspect these M7 screens with real populated API/PostgreSQL data:
+1. Home.
+2. Recorded entries report.
+3. Payments/collections report, including a negative period net value.
+4. Current outstanding report.
+
+Verify a representative path:
+project figure -> appropriate filtered report -> original entry -> Back.
+Also verify a home card opens the matching journal/report period.
+
+Minimum visual coverage:
+- Arabic RTL on desktop and compact width around 390–400 logical px;
+- English LTR on desktop and compact width;
+- a populated Urdu report at compact width.
+
+Check signs, decimals, dates, clipped controls, mixed-direction names, filters,
+shared equipment share versus original invoice total, and genuine empty/error states.
+Do not demand a full M0–M7 screen matrix or Urdu linguistic approval in this task.
+
+LOGIN TOOLING:
+The same browser-control input failure has occurred repeatedly. Do not spend an
+unbounded session retrying that method.
+
+Use an existing supported Flutter integration approach with stable widget keys
+and the normal development login flow if available. Small testability keys are
+acceptable; do not create an authentication bypass, public report endpoint,
+disabled authorization, or privileged credential hardcoded in the application.
+
+Fixture creation via API is test setup, NOT evidence that the UI journey passed.
+API success or old iOS tests are NOT evidence that the new M7 screens were viewed.
+Screenshots, if captured, must be actual rendered application screens.
+
+After two focused unsuccessful attempts at an environment/input obstacle,
+continue independent fixes and measurements. Provide exact local startup commands,
+synthetic test-account instructions, expected report values, and a short manual
+walkthrough so the user can complete the remaining screen checks. Mark missing
+checks NOT VERIFIED. Do not fabricate a pass or disable macOS security settings.
+
+4. SMALL REPORT PERFORMANCE BASELINE AND TARGETED FIXES
+
+Do not declare the application slow or fast without measurements.
+Inspect the reported allocation-per-row lookups and summary implementation.
+
+Distinguish:
+- a database aggregate scanning qualifying rows, which is not by itself a defect;
+- fetching unbounded detail history into application memory for totals;
+- querying allocations separately for every returned movement/entry.
+
+Use isolated synthetic datasets of approximately 100 and 5,000 financial entries,
+with representative allocations, settlements, refunds, and more than one workspace.
+Keep the fixture deterministic and compliant with M2 invariants.
+
+For dashboard and the three reports record:
+- dataset size and request filters;
+- SQL query count where measurable;
+- elapsed request time from a few repeat runs;
+- relevant query-plan/rows information if obtainable with existing tools;
+- limited machine/database context needed to interpret the result.
+
+These are local development measurements, not a production SLA or a statistically
+sound p95 benchmark. Do not claim otherwise.
+
+If allocation lookups perform a query per record, replace that with an appropriately
+bounded batch/join approach. Reuse M2's exact allocation/rounding behavior.
+If totals fetch an unbounded history into memory, replace that with a bounded or
+set-based aggregation approach where safely possible without changing semantics.
+
+Pagination must never turn all-matching totals into current-page totals.
+Do not remove authorization filters, drop older entries, suppress refunds, clamp
+negative period net values, or use SUM(DISTINCT amount) to mask duplicate joins.
+
+No Redis, new reporting infrastructure, materialized snapshots, or speculative
+indexing project. Use only small justified improvements and remeasure affected
+requests. If a safe fix needs a larger redesign, report the specific limitation
+and evidence rather than altering financial semantics.
+
+5. FOCUSED FINANCIAL AND SCOPE REGRESSION
+
+Preserve D-19, D-20, cancellation, current-classification, and current-scope rules.
+Any query optimization must be checked against independently expected values.
+
+Verify:
+- expense 1000, September payment 600, October refund 200:
+  September recorded expense 1000; October net paid -200;
+  lifetime net paid 400; current remaining 600;
+- analogous income behavior;
+- shared/general expense totals reconcile to the underlying records;
+- paid/refunded/net equipment shares agree with existing M2 rules;
+- equal-amount independent entries both count;
+- multiple settlements/refunds/attachments do not multiply original totals;
+- totals cover all filtered pages;
+- cancelled/draft/pending records remain excluded according to M2;
+- project drill-down totals match the displayed figure;
+- selected-equipment and selected-organization authorization applies before
+  aggregation, including shared entries and general-expense exclusions;
+- financial/project filters cannot disclose forbidden names or amounts.
+
+The reported equipment shares 1700 and 500 and general expense 50 may belong to a
+larger acceptance dataset. Do not assume they correspond to the standalone
+1000/600/200 example. Show a short fixture-based reconciliation with expected and
+actual values rather than asserting correctness from those totals alone.
+
+6. VERIFICATION, EVIDENCE AND REVIEW
+
+Run targeted tests during changes and the normal final backend/Flutter regression,
+flutter analyze, web release build, and git diff --check on the final code state.
+Validate OpenAPI if affected, stating the actual validation depth.
+Test fresh/upgrade migrations only if schema changes are genuinely necessary.
+Never edit applied migrations or destroy development data.
+
+Update only relevant HANDOFF/acceptance documentation with:
+- closed gaps;
+- actual populated screens and viewports inspected;
+- test/measurement commands and results;
+- before/after performance evidence where applicable;
+- the exact remaining manual checks, if any.
+
+Do not claim full visual/native/linguistic acceptance from unit tests or old iOS
+integration tests. Android, exhaustive visual QA, native Urdu review, and production
+providers remain separately deferred.
+
+7. SAME PR, FINAL CI, NO MERGE
+
+Commit logical completed changes on feat/m7-dashboard-reports-polish and push them
+to the existing remote branch so PR #7 updates. Do not force push or create another PR.
+Do not alter GitHub authentication or protection settings.
+
+After the LAST actual code/documentation commit, check the required CI jobs on
+that exact final commit. They must have executed successfully, not been skipped.
+
+Do not create another repository commit solely to say the latest CI passed and
+then trigger CI again indefinitely. Report final CI status and SHA in your final
+response; update PR text where authorized if helpful.
+
+If only manual UI verification is blocked, still commit/push completed safe fixes,
+report pending acceptance honestly, and provide the short user walkthrough.
+
+Do NOT merge automatically. Do NOT start the next milestone.
+
+FINAL REPORT
+
+M7_FINAL_ACCEPTANCE:
+PROJECT_DRILLDOWN:
+PROJECT_PICKER_BEYOND_100:
+POPULATED_SCREENS_ACTUALLY_VERIFIED:
+LOCALES_AND_VIEWPORTS:
+LOGIN_TOOLING_OR_MANUAL_STEP:
+PERFORMANCE_DATASETS:
+QUERY_COUNTS_BEFORE_AFTER:
+REQUEST_TIMES_BEFORE_AFTER:
+ALLOCATION_LOOKUP_BEHAVIOR:
+FINANCIAL_RECONCILIATION:
+AUTHORIZATION_REGRESSION:
+BACKEND_TESTS:
+FLUTTER_TESTS:
+ANALYZE:
+WEB_BUILD:
+FOCUSED_REVIEW:
+REMAINING_ISSUES:
+NEW_COMMITS:
+FINAL_FEATURE_HEAD:
+PR_NUMBER:
+CI_RESULT_AT_FINAL_HEAD:
+GIT_STATUS:
+READY_FOR_USER_MERGE_REVIEW: YES or NO, with specific reasons
+REMAINING_PRE_BETA_WORK:
+
+Then STOP.

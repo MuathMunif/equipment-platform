@@ -974,7 +974,8 @@ paths:
         - {in: query, name: status, schema: {type: string, enum: [ACTIVE, COMPLETED]}}
         - {in: query, name: organizationId, schema: {type: string, format: uuid}}
         - {in: query, name: search, schema: {type: string, maxLength: 100}}
-      responses: {'200': {description: Authorized unified project/contract list, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ProjectOrContract'}}}}}}
+        - {in: query, name: page, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}, description: Zero-based page of at most 100 authorized projects; search is applied before paging}
+      responses: {'200': {description: Authorized unified project/contract list, up to 100 per page, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ProjectOrContract'}}}}}}
     post:
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProjectInput'}}}}
       responses: {'200': {description: Created ACTIVE project or contract}}

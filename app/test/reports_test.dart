@@ -28,6 +28,35 @@ Map<String,dynamic> movements({String paid='0.00',String recovered='200.00',Stri
     'movementDate':'2026-10-03','amount':'200.00','movementTotal':'200.00','entryTotal':'1000.00','expenseScope':'SINGLE'}],
   'page':0,'pageSize':30,'total':1};
 void main(){
+  testWidgets('project picker searches and pages beyond 100 without exposing forbidden projects',(tester)async{
+    tester.view.physicalSize=const Size(800,1100);tester.view.devicePixelRatio=1;
+    addTearDown(tester.view.resetPhysicalSize);addTearDown(tester.view.resetDevicePixelRatio);
+    final requests=<Uri>[];
+    final first=List.generate(100,(i)=>{'id':'p$i','name':'Project $i'});
+    final api=Api(client:MockClient((request)async{
+      requests.add(request.url);
+      final q=request.url.queryParameters;
+      if(q['search']=='Project 101') return answer([{'id':'p101','name':'Project 101'}]);
+      if(q['page']=='1') return answer([{'id':'p101','name':'Project 101'}]);
+      return answer(first);
+    }),base:'http://localhost/api/v1',persistNative:false)..workspace='w';
+    await tester.pumpWidget(host(Scaffold(body:ProjectSearchPicker(api:api,
+      selectedId:'p101',selectedName:'Project 101')),locale:'en'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('projectPickerSelection')),findsOneWidget);
+    expect(find.text('Forbidden project'),findsNothing);
+    await tester.scrollUntilVisible(find.byKey(const Key('projectPickerMore')),500,
+      scrollable:find.byType(Scrollable).last);
+    await tester.tap(find.byKey(const Key('projectPickerMore')));
+    await tester.pumpAndSettle();
+    expect(requests.last.queryParameters['page'],'1');
+    await tester.enterText(find.byKey(const Key('projectPickerSearch')),'Project 101');
+    await tester.pump(const Duration(milliseconds:350));
+    await tester.pumpAndSettle();
+    expect(requests.last.queryParameters['search'],'Project 101');
+    expect(requests.last.queryParameters['page'],'0');
+    expect(find.widgetWithText(ListTile,'Project 101'),findsOneWidget);
+  });
   testWidgets('dashboard expense card opens journal with identical month and type',(tester)async{
     tester.view.physicalSize=const Size(800,1400);tester.view.devicePixelRatio=1;
     addTearDown(tester.view.resetPhysicalSize);addTearDown(tester.view.resetDevicePixelRatio);
