@@ -47,9 +47,9 @@ class OwnerSliceTest {
  @LocalServerPort int port; @Autowired JdbcTemplate db; @Autowired com.equipment.notifications.NotificationService notifications; @Autowired ContentValidator validator; @Autowired TransactionTemplate transactions;
  static final JsonMapper JSON=JsonMapper.builder().build();
  final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
- @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {registry.add("app.storage-root",()->"../.local/test-objects/"+UUID.randomUUID());}
+ @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {registry.add("app.storage-root",()->"../.local/test-objects/"+UUID.randomUUID());registry.add("spring.datasource.url",TestDatabase::url);}
  @BeforeEach void emptyIsolatedTestDatabase() throws Exception {
-  try(var connection=Objects.requireNonNull(db.getDataSource()).getConnection()) {assertTrue(connection.getMetaData().getURL().equals("jdbc:postgresql://127.0.0.1:55433/equipment_test"),"Never reset a non-test database");}
+  TestDatabase.requireIsolated(db);
   db.execute("truncate audit_event,idempotency_record,attachment,settlement,financial_entry,equipment,app_session,otp_challenge,membership,workspace,app_user restart identity cascade");
  }
  record Reply(int status,JsonNode json,HttpResponse<byte[]> raw) {}
@@ -695,7 +695,8 @@ class OwnerSliceTest {
   assertEquals(1,request("GET",base+"/duplicates?type=INSURANCE",null,owner.token,null).json.size());
   assertEquals(1,request("GET",path(owner,"/documents/incomplete"),null,owner.token,null).json.size());
   assertEquals(404,request("GET",path(other,"/documents/"+id),null,other.token,null).status);
-  var edited=request("PUT",detail,Map.of("expectedVersionId",first,"type","INSURANCE","documentNumber","EDIT","expiryDate","2026-10-20"),owner.token,null);assertEquals(200,edited.status);assertEquals("EDIT",edited.json.get("documentNumber").asString());assertEquals("EXPIRING_SOON",edited.json.get("status").asString());
+  var edited=request("PUT",detail,Map.of("expectedVersionId",first,"type","INSURANCE","documentNumber","EDIT","issueDate","2026-10-01","expiryDate","2026-10-20"),owner.token,null);assertEquals(200,edited.status);assertEquals("EDIT",edited.json.get("documentNumber").asString());assertEquals("EXPIRING_SOON",edited.json.get("status").asString());
+  assertEquals("2026-10-01",edited.json.get("issueDate").asString());assertEquals("2026-10-20",edited.json.get("expiryDate").asString());
   var second=request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"expiryDate","2027-01-01","documentNumber","NEW"),owner.token,null);assertEquals(200,second.status);
   String next=second.json.get("versionId").asString();assertNotEquals(first,next);assertEquals(2,request("GET",detail+"/versions",null,owner.token,null).json.size());
   assertEquals("PREVIOUS_VERSION",request("GET",detail+"/versions/"+first,null,owner.token,null).json.get("status").asString());
@@ -713,6 +714,31 @@ class OwnerSliceTest {
   assertEquals(200,request("POST",detail+"/restore",null,owner.token,null).status);
   assertEquals(1,request("GET",base,null,owner.token,null).json.size());
   assertEquals(1,db.queryForObject("select count(*) from audit_event where action='DOCUMENT_RENEWED' and resource_id=?",Integer.class,UUID.fromString(id)));
+ }
+ @Test void documentCalendarDatesRoundTrip() throws Exception {
+  String expectedZone=System.getenv("EQUIPMENT_TEST_TIMEZONE");
+  if(expectedZone!=null){assertEquals(expectedZone,TimeZone.getDefault().getID());assertEquals(expectedZone,db.queryForObject("show timezone",String.class));}
+  User owner=login("0500000001");String eq=equipment(owner),base=path(owner,"/equipment/"+eq+"/documents");
+  var created=request("POST",base,Map.of("type","REGISTRATION","issueDate","2026-09-24","expiryDate","2026-10-01"),owner.token,key());
+  assertEquals(200,created.status);String id=created.json.get("id").asString(),first=created.json.get("versionId").asString(),detail=path(owner,"/documents/"+id);
+  assertEquals("2026-09-24",created.json.get("issueDate").asString());assertEquals("2026-10-01",created.json.get("expiryDate").asString());
+  assertEquals("EXPIRING_SOON",created.json.get("status").asString());assertTrue(created.json.get("createdAt").asString().contains("T"));
+  assertEquals("2026-10-01",request("GET",detail,null,owner.token,null).json.get("expiryDate").asString());
+  assertEquals("2026-10-01",request("GET",base,null,owner.token,null).json.get(0).get("expiryDate").asString());
+  assertEquals(1,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  var missing=request("POST",base,Map.of("type","INSURANCE","issueDate","2026-12-31"),owner.token,key());
+  assertEquals(200,missing.status);assertTrue(missing.json.get("expiryDate").isNull());assertEquals("MISSING_EXPIRY",missing.json.get("status").asString());
+  var leap=request("POST",base,Map.of("type","PERIODIC_INSPECTION","issueDate","2028-02-28","expiryDate","2028-02-29"),owner.token,key());
+  assertEquals(200,leap.status);assertEquals("2028-02-28",leap.json.get("issueDate").asString());assertEquals("2028-02-29",leap.json.get("expiryDate").asString());
+  var renewed=request("POST",detail+"/renewals",Map.of("expectedVersionId",first,"issueDate","2026-12-31","expiryDate","2027-01-01"),owner.token,null);
+  assertEquals(200,renewed.status);assertEquals("2026-12-31",renewed.json.get("issueDate").asString());assertEquals("2027-01-01",renewed.json.get("expiryDate").asString());
+  assertEquals("2027-01-01",request("GET",detail,null,owner.token,null).json.get("expiryDate").asString());
+  var currentList=request("GET",base,null,owner.token,null).json;boolean foundCurrent=false;
+  for(var item:currentList)if(id.equals(item.get("id").asString())){assertEquals("2027-01-01",item.get("expiryDate").asString());foundCurrent=true;}
+  assertTrue(foundCurrent);
+  var previous=request("GET",detail+"/versions/"+first,null,owner.token,null);assertEquals("2026-10-01",previous.json.get("expiryDate").asString());assertEquals("PREVIOUS_VERSION",previous.json.get("status").asString());
+  assertEquals(0,request("GET",path(owner,"/attention/documents"),null,owner.token,null).json.size());
+  assertInstanceOf(java.sql.Timestamp.class,db.queryForObject("select created_at from audit_event where action='DOCUMENT_CREATED' and resource_id=?",Object.class,UUID.fromString(id)));
  }
  @Test void concurrentDocumentRenewalAndVersionAttachments() throws Exception {
   User user=login("0500000001");String eq=equipment(user),base=path(user,"/equipment/"+eq+"/documents");
