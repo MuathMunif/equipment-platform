@@ -2272,4 +2272,125 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get m7NoRecentEntries => 'لا توجد عمليات مالية حديثة بعد.';
+
+  @override
+  String get previewSynthetic => 'معاينة تصميم · بيانات تجريبية';
+
+  @override
+  String get previewOverview => 'نظرة على يومك';
+
+  @override
+  String get previewAttention => 'يحتاج انتباهك';
+
+  @override
+  String get previewAttentionHelp => 'ابدأ بما يحتاج متابعة اليوم.';
+
+  @override
+  String get previewPeriod => 'أكتوبر ٢٠٢٦';
+
+  @override
+  String get previewViewEquipment => 'عرض المعدات';
+
+  @override
+  String get previewViewAll => 'عرض الكل';
+
+  @override
+  String get previewEquipmentRecords => 'سجل المعدة';
+
+  @override
+  String get previewIssueSample => 'صوت غير معتاد في المحرك';
+
+  @override
+  String get previewMaintenanceSample => 'تغيير زيت المحرك';
+
+  @override
+  String get previewIncomeSample => 'دفعة أعمال نقل';
+
+  @override
+  String get previewRelatedContext => 'ارتباطات اختيارية';
+
+  @override
+  String get previewNoConnection => 'غير مرتبط';
+
+  @override
+  String get previewInvoice => 'فاتورة المصروف';
+
+  @override
+  String get previewAttachmentHelp =>
+      'إرفاق الصورة أو PDF يتم بعد حفظ السجل. يمكنك تجربة عرض المرفق هنا.';
+
+  @override
+  String get previewTryAttachment => 'تجربة مرفق';
+
+  @override
+  String get previewTrySave => 'اختبار النموذج';
+
+  @override
+  String get previewNoWrite =>
+      'الحقول صحيحة. هذه معاينة فقط؛ لم يُحفظ سجل أو مبلغ.';
+
+  @override
+  String get previewDiscardTitle => 'مغادرة النموذج؟';
+
+  @override
+  String get previewDiscardHelp => 'ستُمسح التغييرات التجريبية في هذا النموذج.';
+
+  @override
+  String get previewKeepEditing => 'متابعة التعديل';
+
+  @override
+  String get previewLeave => 'مغادرة';
+
+  @override
+  String get previewLifetime => 'إجمالي السجل · جميع الدفعات والاستردادات';
+
+  @override
+  String get previewStates => 'المكونات والحالات';
+
+  @override
+  String get previewLoading => 'جارٍ تحميل السجل…';
+
+  @override
+  String get previewNotAvailable => 'المبلغ غير متاح';
+
+  @override
+  String get previewOnlyAction =>
+      'هذا الإجراء خارج الشاشات الثلاث المعروضة. لا تُغيّر المعاينة أي بيانات.';
+
+  @override
+  String get previewDocumentDate => 'تنتهي في ١٥ أكتوبر ٢٠٢٦';
+
+  @override
+  String get previewEquipmentHelp => 'الاسم والموديل يكفيان للبدء.';
+
+  @override
+  String get previewScopeHelp => 'مصروف مشترك أو عام، أو ربط بمشروع';
+
+  @override
+  String get previewCategoryDate => 'تفاصيل المصروف';
+
+  @override
+  String get previewPaymentSection => 'طريقة التسوية';
+
+  @override
+  String get previewCurrentEquipment => 'المعدة المحددة';
+
+  @override
+  String get previewFixtureNotice =>
+      'الاسم والمبالغ والمواعيد أمثلة ثابتة للمقارنة.';
+
+  @override
+  String get previewAttachmentRemoved => 'أُزيل المرفق التجريبي';
+
+  @override
+  String get previewRemoveAttachment => 'إزالة المرفق التجريبي';
+
+  @override
+  String get previewFormHint => 'سجّل المبلغ والتفاصيل، ثم راجع التسوية.';
+
+  @override
+  String get previewRecordedExpenses => 'المصروفات المسجلة';
+
+  @override
+  String get previewRecordedIncome => 'الإيرادات المسجلة';
 }

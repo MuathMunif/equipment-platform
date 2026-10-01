@@ -1,3 +1,14 @@
+# Current UI task checkpoint — 2026-10-01
+
+Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.
+
+- Run instructions, actual results, limitations and next step: [ui-refresh/STATUS.md](design/ui-refresh/STATUS.md).
+- Individual screenshots: [SCREENSHOTS.md](design/ui-refresh/SCREENSHOTS.md); comparison and independent review: [DIRECTIONS.md](design/ui-refresh/DIRECTIONS.md).
+- Verification: full Flutter suite133 passed once; final focused preview suite35 passed; analyze, preview/production web builds and iOS simulator build passed. Native A/Arabic keyboard and no-write result inspected.
+- Main wrote the preview; one explicitly requested Astra/high visual reviewer reviewed rendered prototypes. Project defaults unchanged. Next action is owner visual choice (recommend B), then a separately authorized bounded production migration. Do not resume old milestones automatically.
+
+---
+
 # حالة التسليم — M0–M6 مدمجة في main؛ M7 على فرع ميزة
 
 ## قبول M7 النهائي الجاري — 2026-09-26

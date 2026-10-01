@@ -27,3 +27,4 @@ flutter:
   uses-material-design: true
   assets:
     - integration_test/fixtures/synthetic-receipt.png
+    - assets/design_fonts/

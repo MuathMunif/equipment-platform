@@ -1,0 +1,78 @@
+# UI directions — visual selection checkpoint
+
+## Current task and Git baseline
+- Active task completed: three runnable isolated Flutter directions. **Owner selection pending; production restyling has not started.**
+- Branch: `feat/ui-design-directions`.
+- Source baseline: `8aae24fddf37ec39d5a93b475e4a65a82d406923`, equal to freshly fetched `origin/main` on 2026-10-01. Initial worktree was clean. No reset/stash/cherry-pick or write on main.
+- Date serialization fix `8c29ebf` and its tests `649bb3a43cea7e5973ebce15b5f49d079a5b4468` are already merged; ancestor check passed. No backend changes or repeated date acceptance campaign.
+
+## Delivered
+- A Clear, B Industrial, C Warm: owner home, equipment detail, add expense; shared components/state screen.
+- Entry: `app/lib/main_design_preview.dart`. Direction/locale/viewport/text-scale controls; deterministic synthetic fixtures; no API client instantiated or writes.
+- ar/en/ur: 39 new preview localization keys per locale. Exact formatter and date-only semantics reused. Optional contexts remain optional.
+- 28 actual JPEG screenshots:18 primary images (390×1000 /1440×1000) +10 focused language/text/state/native images in `screenshots/`; individual links in `SCREENSHOTS.md`.
+- One independent reviewer inspected 22 images, recommended B, identified three P2 issues. Fixed compact mobile context, collapsible attachment experiment, control-border contrast. Post-fix checks/screenshots are lead self-review. Details in `DIRECTIONS.md`.
+
+## Model/agent policy
+- User-reported main UI selection: Astra / High. Supported runtime identity/effort telemetry was not exposed; no private logs/credentials searched.
+- Inspected project default remains `gpt-6-sol / low` and max concurrent subagents 1. `.codex`, `AGENTS.md` and global configuration unchanged.
+- Main wrote all implementation. Exactly one child: `ui_visual_review`, default role, explicitly requested `gpt-6-astra / high`, narrow context, read-only, no nested agents. No forced Sol/Luna role used. Child runtime identity likewise not independently exposed.
+- Temporary exception applies only to this sprint. No temporary config files to restore; no permanent expensive policy added. No further work until owner selection.
+
+## Commands actually executed
+From `/Users/muath/Desktop/equipment-platform/app`:
+
+```sh
+flutter gen-l10n
+dart format lib/design_preview lib/main_design_preview.dart test/design_preview_test.dart
+flutter analyze
+flutter test test/design_preview_test.dart --reporter expanded
+flutter test --reporter expanded
+flutter build web --release -t lib/main_design_preview.dart --output=../.local/ui-refresh/web-preview
+flutter build web --release -t lib/main.dart --output=../.local/ui-refresh/web-production
+flutter build ios --simulator --debug -t lib/main_design_preview.dart
+```
+
+Preview server (from repository root), actually running during delivery:
+
+```sh
+python3 -m http.server 8084 --bind 127.0.0.1 --directory .local/ui-refresh/web-preview
+```
+
+Open `http://127.0.0.1:8084/?direction=b&screen=home&locale=ar`. Supported query values: `direction=a|b|c`, `screen=home|equipment|expense|states`, `locale=ar|en|ur`, `scale=1|1.3|1.6|2`. Gallery viewport controls cap available width; they do not enlarge a smaller host window. Scroll to content below the viewport. The sliders icon opens developer controls.
+
+Native commands executed from repository root (existing booted simulator):
+
+```sh
+xcrun simctl install 657C142E-E597-481F-B8F9-8C07082C1D30 app/build/ios/iphonesimulator/Runner.app
+xcrun simctl launch 657C142E-E597-481F-B8F9-8C07082C1D30 com.equipment.equipmentApp
+```
+
+## Actual checks and results
+| Check | Result |
+|---|---|
+| Normal Flutter suite, run once at completed implementation checkpoint | **133 passed** = 100 existing +33 preview |
+| Final targeted preview suite, after adding review regressions | **35 passed**; includes two additional tests, not another full-suite run |
+| Flutter analyze | **PASS**, no issues |
+| Preview web release / normal web release / iOS simulator debug | **PASS** |
+| Arabic 3 directions ×3 screens ×390/1440 | Rendered, saved and visually inspected |
+| Widget layout matrix | 18 primary sizes +9 direction/locale cases cycling all4 screens at320/1.6; no overflow exceptions |
+| Money/status/form behavior | Full default, partial amount+party validation, unpaid party, cancel guard, exact shared sum/general scope, retry retains input, unavailable ≠zero |
+| Accessibility | Arabic A home tap-target/label/text-contrast guidelines pass; all direction control outlines >=3:1; keyboard inset test confirms amount and action can scroll into visible area |
+| Native | iPhone17 Pro /iOS26.5: owner→equipment→expense; focused amount visible above numeric keyboard; preview result explicitly says nothing saved; two actual window screenshots |
+| Isolation | Production local-import graph (16 files) excludes preview; built production JS lacks developer gallery markers; backend/API/router/math/auth/config unchanged |
+| Locale/Git hygiene | 39 preview keys match ar/en/ur; `git diff --check` passed; generated l10n files are intentional; ignored builds/logs stay `.local` |
+
+Additional browser self-checks: English LTR expense, Urdu RTL B home, C Arabic320 at160%; partial/unpaid fields and validation; simultaneous load/attachment failure; direction/locale/viewport controls. Native keyboard visibility was temporarily toggled and restored; no hardware-keyboard/language/model/global config changed.
+
+## Failures encountered, resolved / limitations
+- Initial Dart parse error and four string-placeholder type errors were fixed before first successful build/analyze.
+- First preview test run:32 passed/1 failed because test SemanticsHandle cleanup happened too late. Fixed; next33 passed. Added regression test initially referenced a nonexistent TextFormField getter; corrected to rendered TextField; final35 passed.
+- Sandboxed server/simulator access required approved execution. First native launch guessed wrong bundle ID and failed; read actual built Info.plist ID and launched successfully.
+- Native CUA scrolling/window-screenshot methods sometimes returned `noWindowsAvailable`; state-and-screenshot/AX actions worked. Native gesture-scrolling with keyboard is **not claimed verified**; widget visible-area check passed.
+- Existing Flutter tool emitted its own failed version tag fetch; SDK remained3.47.2 /Dart3.13.2. Web builds warn about existing secure-storage WASM incompatibility/missing Cupertino font expectation; JS release builds pass. iOS warns existing plugins need future Swift Package Manager adoption. No upgrades performed.
+- No live authenticated baseline (8080/8081 not listening), backend/end-to-end campaign, Android preview run, physical-device test, all-language/all-native matrix, human Urdu linguistic approval, production rollout, or full-app restyling. Native rendering is A/Arabic only.
+- Preview fonts add about1.64MB uncompressed to shared asset bundle; production typography unchanged. Consider preview-only asset packaging during chosen-direction integration.
+
+## Next concrete action
+Owner chooses A/B/C (recommend B). Then authorize a bounded first production-screen migration using its existing real state and access rules. **Stop here; no new milestone or automatic continuation.**
