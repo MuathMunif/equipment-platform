@@ -2,7 +2,7 @@
 
 ## Current task and Git baseline
 - Active task completed: three runnable isolated Flutter directions. **Owner selection pending; production restyling has not started.**
-- Branch: `feat/ui-design-directions`.
+- Branch: `feat/ui-design-directions`. Implementation/evidence commit: `eeadef0`. Pushed to the existing `origin/feat/ui-design-directions`; no PR, merge, main push or deployment. Final follow-up is documentation-only delivery metadata.
 - Source baseline: `8aae24fddf37ec39d5a93b475e4a65a82d406923`, equal to freshly fetched `origin/main` on 2026-10-01. Initial worktree was clean. No reset/stash/cherry-pick or write on main.
 - Date serialization fix `8c29ebf` and its tests `649bb3a43cea7e5973ebce15b5f49d079a5b4468` are already merged; ancestor check passed. No backend changes or repeated date acceptance campaign.
 

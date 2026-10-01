@@ -1,6 +1,6 @@
 # Current UI task checkpoint — 2026-10-01
 
-Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.
+Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`; implementation/evidence commit `eeadef0` is pushed to the existing origin feature branch. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.
 
 - Run instructions, actual results, limitations and next step: [ui-refresh/STATUS.md](design/ui-refresh/STATUS.md).
 - Individual screenshots: [SCREENSHOTS.md](design/ui-refresh/SCREENSHOTS.md); comparison and independent review: [DIRECTIONS.md](design/ui-refresh/DIRECTIONS.md).
