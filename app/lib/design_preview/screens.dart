@@ -316,6 +316,7 @@ class OwnerPreview extends StatelessWidget {
                   ];
                   return stack
                       ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             cards[0],
                             const SizedBox(height: 12),

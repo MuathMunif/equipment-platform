@@ -2,7 +2,7 @@
 
 ## Current task and Git baseline
 - Active task completed: three runnable isolated Flutter directions. **Owner selection pending; production restyling has not started.**
-- Branch: `feat/ui-design-directions`. Implementation/evidence commit: `eeadef0`. Pushed to the existing `origin/feat/ui-design-directions`; no PR, merge, main push or deployment. Final follow-up is documentation-only delivery metadata.
+- Branch: `feat/ui-design-directions`. Implementation/evidence base commit: `eeadef0`; later commits record delivery metadata and a bounded narrow-width alignment fix. Pushed to the existing `origin/feat/ui-design-directions`; no PR, merge, main push or deployment.
 - Source baseline: `8aae24fddf37ec39d5a93b475e4a65a82d406923`, equal to freshly fetched `origin/main` on 2026-10-01. Initial worktree was clean. No reset/stash/cherry-pick or write on main.
 - Date serialization fix `8c29ebf` and its tests `649bb3a43cea7e5973ebce15b5f49d079a5b4468` are already merged; ancestor check passed. No backend changes or repeated date acceptance campaign.
 
@@ -10,7 +10,7 @@
 - A Clear, B Industrial, C Warm: owner home, equipment detail, add expense; shared components/state screen.
 - Entry: `app/lib/main_design_preview.dart`. Direction/locale/viewport/text-scale controls; deterministic synthetic fixtures; no API client instantiated or writes.
 - ar/en/ur: 39 new preview localization keys per locale. Exact formatter and date-only semantics reused. Optional contexts remain optional.
-- 28 actual JPEG screenshots:18 primary images (390×1000 /1440×1000) +10 focused language/text/state/native images in `screenshots/`; individual links in `SCREENSHOTS.md`.
+- 29 actual JPEG screenshots:18 primary images (390×1000 /1440×1000) +11 focused language/text/state/native images in `screenshots/`; individual links in `SCREENSHOTS.md`.
 - One independent reviewer inspected 22 images, recommended B, identified three P2 issues. Fixed compact mobile context, collapsible attachment experiment, control-border contrast. Post-fix checks/screenshots are lead self-review. Details in `DIRECTIONS.md`.
 
 ## Model/agent policy
@@ -52,7 +52,7 @@ xcrun simctl launch 657C142E-E597-481F-B8F9-8C07082C1D30 com.equipment.equipment
 | Check | Result |
 |---|---|
 | Normal Flutter suite, run once at completed implementation checkpoint | **133 passed** = 100 existing +33 preview |
-| Final targeted preview suite, after adding review regressions | **35 passed**; includes two additional tests, not another full-suite run |
+| Final targeted preview suite, after adding review regressions | **36 passed**; includes three additional tests, not another full-suite run |
 | Flutter analyze | **PASS**, no issues |
 | Preview web release / normal web release / iOS simulator debug | **PASS** |
 | Arabic 3 directions ×3 screens ×390/1440 | Rendered, saved and visually inspected |
@@ -67,12 +67,14 @@ Additional browser self-checks: English LTR expense, Urdu RTL B home, C Arabic32
 
 ## Failures encountered, resolved / limitations
 - Initial Dart parse error and four string-placeholder type errors were fixed before first successful build/analyze.
-- First preview test run:32 passed/1 failed because test SemanticsHandle cleanup happened too late. Fixed; next33 passed. Added regression test initially referenced a nonexistent TextFormField getter; corrected to rendered TextField; final35 passed.
+- First preview test run:32 passed/1 failed because test SemanticsHandle cleanup happened too late. Fixed; next33 passed. Added regression test initially referenced a nonexistent TextFormField getter; corrected to rendered TextField; targeted35 passed, then36 passed after the narrow-width regression test.
 - Sandboxed server/simulator access required approved execution. First native launch guessed wrong bundle ID and failed; read actual built Info.plist ID and launched successfully.
 - Native CUA scrolling/window-screenshot methods sometimes returned `noWindowsAvailable`; state-and-screenshot/AX actions worked. Native gesture-scrolling with keyboard is **not claimed verified**; widget visible-area check passed.
 - Existing Flutter tool emitted its own failed version tag fetch; SDK remained3.47.2 /Dart3.13.2. Web builds warn about existing secure-storage WASM incompatibility/missing Cupertino font expectation; JS release builds pass. iOS warns existing plugins need future Swift Package Manager adoption. No upgrades performed.
 - No live authenticated baseline (8080/8081 not listening), backend/end-to-end campaign, Android preview run, physical-device test, all-language/all-native matrix, human Urdu linguistic approval, production rollout, or full-app restyling. Native rendering is A/Arabic only.
 - Preview fonts add about1.64MB uncompressed to shared asset bundle; production typography unchanged. Consider preview-only asset packaging during chosen-direction integration.
+
+Final delivery self-check found centered, intrinsic-width finance cards at320px. Stacked cards now stretch to content width; a dedicated280px card-width assertion passes. Primary390/1440 renders are unaffected. Native sample predates this320px-only home adjustment; no broader native matrix is claimed.
 
 ## Next concrete action
 Owner chooses A/B/C (recommend B). Then authorize a bounded first production-screen migration using its existing real state and access rules. **Stop here; no new milestone or automatic continuation.**

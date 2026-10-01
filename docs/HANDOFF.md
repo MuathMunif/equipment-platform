@@ -1,10 +1,10 @@
 # Current UI task checkpoint — 2026-10-01
 
-Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`; implementation/evidence commit `eeadef0` is pushed to the existing origin feature branch. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.
+Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`; implementation/evidence base commit `eeadef0` plus a narrow-width alignment follow-up are pushed to the existing origin feature branch. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.
 
 - Run instructions, actual results, limitations and next step: [ui-refresh/STATUS.md](design/ui-refresh/STATUS.md).
 - Individual screenshots: [SCREENSHOTS.md](design/ui-refresh/SCREENSHOTS.md); comparison and independent review: [DIRECTIONS.md](design/ui-refresh/DIRECTIONS.md).
-- Verification: full Flutter suite133 passed once; final focused preview suite35 passed; analyze, preview/production web builds and iOS simulator build passed. Native A/Arabic keyboard and no-write result inspected.
+- Verification: full Flutter suite133 passed once; final focused preview suite36 passed; analyze, preview/production web builds and iOS simulator build passed. Native A/Arabic keyboard and no-write result inspected.
 - Main wrote the preview; one explicitly requested Astra/high visual reviewer reviewed rendered prototypes. Project defaults unchanged. Next action is owner visual choice (recommend B), then a separately authorized bounded production migration. Do not resume old milestones automatically.
 
 ---

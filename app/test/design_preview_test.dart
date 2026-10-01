@@ -1,6 +1,7 @@
 import 'package:equipment_app/design_preview/gallery.dart';
 import 'package:equipment_app/design_preview/fixtures.dart';
 import 'package:equipment_app/design_preview/tokens.dart';
+import 'package:equipment_app/design_preview/screens.dart';
 import 'package:equipment_app/main_design_preview.dart' show loadPreviewFonts;
 import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -234,6 +235,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(PreviewFixtures.equipment), findsNothing);
       expect(find.text(loc.uiAWorkspaceExpenseItIsNotAssigned), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'narrow home finance cards use the full available content width',
+    (tester) async {
+      await open(tester, width: 320, locale: 'en');
+      final loc = lookupAppLocalizations(const Locale('en'));
+      for (final title in [
+        loc.previewRecordedExpenses,
+        loc.previewRecordedIncome,
+      ]) {
+        final card = find.ancestor(
+          of: find.text(title),
+          matching: find.byType(PreviewSurface),
+        );
+        expect(tester.getSize(card).width, 280);
+      }
     },
   );
 

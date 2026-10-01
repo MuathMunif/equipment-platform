@@ -16,6 +16,7 @@ Flutter rendered in the local in-app browser; synthetic fixtures. Primary viewpo
 
 ## عينات إضافية
 
+- [b-home-ar-320.jpg](screenshots/b-home-ar-320.jpg)
 - [a-expense-en-1440.jpg](screenshots/a-expense-en-1440.jpg)
 - [a-expense-ios-keyboard.jpg](screenshots/a-expense-ios-keyboard.jpg)
 - [a-expense-ios-preview-result.jpg](screenshots/a-expense-ios-preview-result.jpg)
