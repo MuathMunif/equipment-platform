@@ -4512,6 +4512,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الإيرادات المسجلة'**
   String get previewRecordedIncome;
+
+  /// No description provided for @pilotEquipmentRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل المعدة'**
+  String get pilotEquipmentRecord;
+
+  /// No description provided for @pilotOptionalConnections.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارتباطات اختيارية'**
+  String get pilotOptionalConnections;
 }
 
 class _AppLocalizationsDelegate

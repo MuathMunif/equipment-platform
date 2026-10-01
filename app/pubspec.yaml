@@ -28,3 +28,7 @@ flutter:
   assets:
     - integration_test/fixtures/synthetic-receipt.png
     - assets/design_fonts/
+  fonts:
+    - family: EquipmentNoto
+      fonts:
+        - asset: assets/design_fonts/NotoSansArabic[wdth,wght].ttf

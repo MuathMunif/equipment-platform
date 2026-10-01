@@ -2415,4 +2415,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get previewRecordedIncome => 'درج شدہ آمدنی';
+
+  @override
+  String get pilotEquipmentRecord => 'مشین کا ریکارڈ';
+
+  @override
+  String get pilotOptionalConnections => 'اختیاری روابط';
 }

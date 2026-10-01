@@ -2419,4 +2419,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get previewRecordedIncome => 'Recorded income';
+
+  @override
+  String get pilotEquipmentRecord => 'Equipment record';
+
+  @override
+  String get pilotOptionalConnections => 'Optional connections';
 }

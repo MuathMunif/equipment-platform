@@ -2,6 +2,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'file_export.dart';
 import 'localization.dart';
 import 'main.dart' show ExpenseForm, InlineError, brand;
@@ -483,6 +484,7 @@ class EquipmentM6Context extends StatefulWidget {
   final Api api;
   final Map<String, dynamic> equipment;
   final bool canManage, canProjects, canFinance;
+  final bool showLoadState;
   const EquipmentM6Context({
     super.key,
     required this.api,
@@ -490,6 +492,7 @@ class EquipmentM6Context extends StatefulWidget {
     required this.canManage,
     required this.canProjects,
     required this.canFinance,
+    this.showLoadState = false,
   });
   @override
   State<EquipmentM6Context> createState() => _EquipmentM6ContextState();
@@ -497,7 +500,8 @@ class EquipmentM6Context extends StatefulWidget {
 
 class _EquipmentM6ContextState extends State<EquipmentM6Context> {
   List<Map<String, dynamic>> projects = [];
-  String? organizationId, organizationName;
+  String? organizationId, organizationName, error;
+  bool loading = true;
   @override
   void initState() {
     super.initState();
@@ -505,6 +509,12 @@ class _EquipmentM6ContextState extends State<EquipmentM6Context> {
   }
 
   Future<void> load() async {
+    if (mounted) {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+    }
     try {
       final equipment = await widget.api.json(
         'GET',
@@ -525,64 +535,80 @@ class _EquipmentM6ContextState extends State<EquipmentM6Context> {
           projects = m6Rows(active);
         });
       }
-    } catch (_) {
-      /* Existing equipment detail remains usable without M6 access. */
+    } catch (e) {
+      if (mounted) setState(() => error = localizedError(context, e));
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      ListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(l10n(context).m6Organizations),
-        subtitle: Text(organizationName ?? l10n(context).m6NoOrganization),
-        trailing: widget.canManage
-            ? TextButton(
-                key: const Key('changeEquipmentOrganization'),
-                onPressed: () async {
-                  await Navigator.push(
+  Widget build(BuildContext context) => widget.showLoadState && loading
+      ? const EquipmentLoading()
+      : widget.showLoadState && error != null
+      ? EquipmentError(message: error!, retry: load)
+      : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n(context).m6Organizations),
+              subtitle: Text(
+                organizationName ?? l10n(context).m6NoOrganization,
+              ),
+              trailing: widget.canManage
+                  ? widget.showLoadState
+                        ? IconButton(
+                            key: const Key('changeEquipmentOrganization'),
+                            tooltip: l10n(context).edit,
+                            onPressed: editOrganization,
+                            icon: const Icon(Icons.edit_outlined),
+                          )
+                        : TextButton(
+                            key: const Key('changeEquipmentOrganization'),
+                            onPressed: editOrganization,
+                            child: Text(l10n(context).edit),
+                          )
+                  : null,
+            ),
+            if (widget.canProjects) ...[
+              Text(
+                l10n(context).m6ActiveProjects,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (projects.isEmpty) Text(l10n(context).m6NoActiveProjects),
+              for (final project in projects)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('${project['name']}'),
+                  leading: const Icon(Icons.folder_outlined),
+                  onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => EquipmentOrganizationPage(
+                      builder: (_) => ProjectDetail(
                         api: widget.api,
-                        equipmentId: '${widget.equipment['id']}',
+                        id: '${project['id']}',
+                        canManage: widget.canManage,
+                        canFinance: widget.canFinance,
                       ),
                     ),
-                  );
-                  load();
-                },
-                child: Text(l10n(context).edit),
-              )
-            : null,
-      ),
-      if (widget.canProjects) ...[
-        Text(
-          l10n(context).m6ActiveProjects,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        if (projects.isEmpty) Text(l10n(context).m6NoActiveProjects),
-        for (final project in projects)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('${project['name']}'),
-            leading: const Icon(Icons.folder_outlined),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProjectDetail(
-                  api: widget.api,
-                  id: '${project['id']}',
-                  canManage: widget.canManage,
-                  canFinance: widget.canFinance,
+                  ),
                 ),
-              ),
-            ),
-          ),
-      ],
-    ],
-  );
+            ],
+          ],
+        );
+  Future<void> editOrganization() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EquipmentOrganizationPage(
+          api: widget.api,
+          equipmentId: '${widget.equipment['id']}',
+        ),
+      ),
+    );
+    if (mounted) load();
+  }
 }
 
 class _EquipmentOrganizationPageState extends State<EquipmentOrganizationPage> {

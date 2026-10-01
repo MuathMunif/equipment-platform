@@ -1,11 +1,11 @@
-# Migration map — selection pending
+# Migration map — A approved, Equipment Detail pilot complete
 
-Nothing below authorizes migration yet. Normal `lib/main.dart`, router, services and backend remain unchanged.
+Owner approved A on 2026-10-02. Only EquipmentDetail has been migrated in this pilot; the remaining rows are proposed order for later owner approval. Services/backend/router architecture remain unchanged.
 
 | Current presentation | Preview study | Later bounded migration |
 |---|---|---|
 | `reports.dart: DashboardSection` + `main.dart: EquipmentList` | `OwnerPreview` | Owner home hierarchy, attention sources, period/basis labels; preserve capabilities and M7 requests |
-| `main.dart: EquipmentDetail` / `LedgerPage` | `EquipmentPreview` | Compact identity/actions and grouped sections; preserve archive/history and authorization |
+| `main.dart: EquipmentDetail` / `LedgerPage` | `EquipmentPreview` A | **Pilot complete:** scoped A, existing actions/history/access and real API; see PILOT.md |
 | `main.dart: ExpenseForm` | `ExpensePreview` | Selected equipment, payment-state visibility, optional details; wire existing validation/controllers without replacing domain rules |
 | `main.dart: EntryDetail` | `StatePreview` + `MoneyPreviewRow` | Lifetime totals and all load/permission/attachment states; preserve refunds and settlement contracts |
 | `team.dart: DriverHomePage` | Source inspected; not redesigned in this sprint | Later selected-direction adaptation only; retain assigned equipment, issue and submission actions |
@@ -13,4 +13,4 @@ Nothing below authorizes migration yet. Normal `lib/main.dart`, router, services
 
 Prototype limits: secondary actions may open a labeled synthetic detail/notice rather than a complete workflow. Shared expense preview has two fixed fixture equipment allocations; it is not a replacement for production allocation editing. Gallery locale is transient and never updates the account.
 
-Before integrating the chosen direction: identify one bounded production screen, reuse its real state and access checks, verify actual flows, and preserve the merged date-only fix. Do not transplant fixture logic into production.
+Stop at Equipment Detail pilot review. Suggested later sequence: ExpenseForm → EntryDetail → equipment list/owner home. Each requires separate authorization and its own real-state checks. Do not transplant fixtures into production.

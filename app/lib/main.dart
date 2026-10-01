@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:file_selector/file_selector.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'file_export.dart';
 import 'documents.dart';
 import 'maintenance.dart';
@@ -1408,77 +1409,85 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(equipment['name']),
-      actions: [
-        if (widget.canAssignDrivers && equipment['archivedAt'] == null)
-          IconButton(
-            key: const Key('openEquipmentDriverAssignment'),
-            tooltip: l10n(context).m5DriverAssignment,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => EquipmentDriverAssignmentPage(
-                  api: widget.api,
-                  equipment: equipment,
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.person_pin_outlined),
-          ),
-        if (widget.canManage)
-          TextButton(
-            key: const Key('toggleEquipmentArchive'),
-            onPressed: busy ? null : toggleArchive,
-            child: Text(
-              equipment['archivedAt'] == null
-                  ? l10n(context).uiArchiveEquipment
-                  : l10n(context).uiRestoreEquipment,
-            ),
-          ),
-      ],
-    ),
-    body: widget.canFinance
-        ? LedgerPage(
-            api: widget.api,
-            equipment: equipment,
-            canManage: widget.canFinanceManage,
-            canSubmitReview: widget.canSubmitReview,
-            canDocuments: widget.canDocuments,
-            canMaintenance: widget.canMaintenance,
-          )
-        : ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              Text(
-                '${equipment['name']}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              Text(l10n(context).modelValue('${equipment['model']}')),
-              Text('${equipment['reference']}'),
-              EquipmentM6Context(
-                api: widget.api,
-                equipment: equipment,
-                canManage: widget.canManage,
-                canProjects:
-                    widget.api.capabilities?.contains('PROJECT_VIEW') ?? false,
-                canFinance: widget.canFinance,
-              ),
-              if (widget.canSubmitReview)
-                FilledButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SubmissionFormPage(
-                        api: widget.api,
-                        equipment: equipment,
-                      ),
+  Widget build(BuildContext context) => Theme(
+    data: EquipmentA.theme(),
+    child: Builder(
+      builder: (context) => Scaffold(
+        appBar: AppBar(
+          title: Text(l10n(context).equipment),
+          actions: [
+            if (widget.canAssignDrivers && equipment['archivedAt'] == null)
+              IconButton(
+                key: const Key('openEquipmentDriverAssignment'),
+                tooltip: l10n(context).m5DriverAssignment,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EquipmentDriverAssignmentPage(
+                      api: widget.api,
+                      equipment: equipment,
                     ),
                   ),
-                  child: Text(l10n(context).m5SubmitExpense),
                 ),
-            ],
-          ),
+                icon: const Icon(Icons.person_pin_outlined),
+              ),
+            if (widget.canManage)
+              IconButton(
+                key: const Key('toggleEquipmentArchive'),
+                onPressed: busy ? null : toggleArchive,
+                tooltip: equipment['archivedAt'] == null
+                    ? l10n(context).uiArchiveEquipment
+                    : l10n(context).uiRestoreEquipment,
+                icon: Icon(
+                  equipment['archivedAt'] == null
+                      ? Icons.archive_outlined
+                      : Icons.unarchive_outlined,
+                ),
+              ),
+          ],
+        ),
+        body: widget.canFinance
+            ? LedgerPage(
+                api: widget.api,
+                equipment: equipment,
+                equipmentPilot: true,
+                canManage: widget.canFinanceManage,
+                canSubmitReview: widget.canSubmitReview,
+                canDocuments: widget.canDocuments,
+                canMaintenance: widget.canMaintenance,
+              )
+            : EquipmentCanvas(
+                children: [
+                  EquipmentIdentity(equipment),
+                  const SizedBox(height: EquipmentA.gap),
+                  EquipmentPanel(
+                    child: EquipmentM6Context(
+                      api: widget.api,
+                      equipment: equipment,
+                      canManage: widget.canManage,
+                      canProjects:
+                          widget.api.capabilities?.contains('PROJECT_VIEW') ??
+                          false,
+                      canFinance: widget.canFinance,
+                      showLoadState: true,
+                    ),
+                  ),
+                  if (widget.canSubmitReview)
+                    FilledButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SubmissionFormPage(
+                            api: widget.api,
+                            equipment: equipment,
+                          ),
+                        ),
+                      ),
+                      child: Text(l10n(context).m5SubmitExpense),
+                    ),
+                ],
+              ),
+      ),
+    ),
   );
 }
 
@@ -1488,6 +1497,7 @@ class LedgerPage extends StatefulWidget {
   final bool canManage;
   final bool canSubmitReview;
   final bool canDocuments, canMaintenance;
+  final bool equipmentPilot;
   final String? initialEntryType, initialFromDate, initialToDate;
   const LedgerPage({
     super.key,
@@ -1497,6 +1507,7 @@ class LedgerPage extends StatefulWidget {
     this.canSubmitReview = false,
     this.canDocuments = true,
     this.canMaintenance = true,
+    this.equipmentPilot = false,
     this.initialEntryType,
     this.initialFromDate,
     this.initialToDate,
@@ -1877,6 +1888,7 @@ class _LedgerPageState extends State<LedgerPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.equipmentPilot) return equipmentPresentation();
     if (loading) return const Center(child: CircularProgressIndicator());
     if (error != null) return ErrorPanel(message: error!, retry: load);
     return ListView(
@@ -1933,56 +1945,7 @@ class _LedgerPageState extends State<LedgerPage> {
                         false,
                   ),
                   const SizedBox(height: 24),
-                  if (widget.canManage)
-                    FilledButton.icon(
-                      key: const Key('addExpense'),
-                      onPressed: () => add(),
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n(context).addExpense),
-                    ),
-                  const SizedBox(height: 12),
-                  if (widget.canManage)
-                    OutlinedButton.icon(
-                      key: const Key('addIncome'),
-                      onPressed: () => add(income: true),
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n(context).addIncome),
-                    ),
-                  const SizedBox(height: 12),
-                  if (widget.canManage)
-                    OutlinedButton.icon(
-                      key: const Key('quickCapture'),
-                      onPressed: captureDraft,
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      label: Text(
-                        l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater,
-                      ),
-                    ),
-                  if (widget.canSubmitReview)
-                    FilledButton.icon(
-                      key: const Key('submitExpenseForReview'),
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SubmissionFormPage(
-                              api: widget.api,
-                              equipment: widget.equipment!,
-                            ),
-                          ),
-                        );
-                        if (mounted) load();
-                      },
-                      icon: const Icon(Icons.send_outlined),
-                      label: Text(l10n(context).m5SubmitExpense),
-                    ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    key: const Key('openEquipmentDrafts'),
-                    onPressed: showDrafts,
-                    icon: const Icon(Icons.pending_actions_outlined),
-                    label: Text(l10n(context).uiAwaitingCompletion),
-                  ),
+                  ...equipmentActions(),
                 ],
               ),
             ),
@@ -2001,94 +1964,237 @@ class _LedgerPageState extends State<LedgerPage> {
             ),
         ],
         const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.equipment == null
-                    ? l10n(context).uiGeneralRecords
-                    : l10n(context).uiEquipmentHistory,
-                style: Theme.of(context).textTheme.titleLarge,
+        ...historyContent(),
+      ],
+    );
+  }
+
+  List<Widget> equipmentActions() => [
+    if (widget.canManage)
+      FilledButton.icon(
+        key: const Key('addExpense'),
+        onPressed: () => add(),
+        icon: const Icon(Icons.add),
+        label: Text(l10n(context).addExpense),
+      ),
+    const SizedBox(height: 12),
+    if (widget.canManage)
+      OutlinedButton.icon(
+        key: const Key('addIncome'),
+        onPressed: () => add(income: true),
+        icon: const Icon(Icons.add),
+        label: Text(l10n(context).addIncome),
+      ),
+    const SizedBox(height: 12),
+    if (widget.canManage)
+      OutlinedButton.icon(
+        key: const Key('quickCapture'),
+        onPressed: captureDraft,
+        icon: const Icon(Icons.photo_camera_outlined),
+        label: Text(l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater),
+      ),
+    if (widget.canSubmitReview)
+      FilledButton.icon(
+        key: const Key('submitExpenseForReview'),
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SubmissionFormPage(
+                api: widget.api,
+                equipment: widget.equipment!,
               ),
             ),
-            IconButton(
-              tooltip: l10n(context).uiRefreshRecords,
-              onPressed: load,
-              icon: const Icon(Icons.refresh),
+          );
+          if (mounted) load();
+        },
+        icon: const Icon(Icons.send_outlined),
+        label: Text(l10n(context).m5SubmitExpense),
+      ),
+    const SizedBox(height: 12),
+    TextButton.icon(
+      key: const Key('openEquipmentDrafts'),
+      onPressed: showDrafts,
+      icon: const Icon(Icons.pending_actions_outlined),
+      label: Text(l10n(context).uiAwaitingCompletion),
+    ),
+  ];
+
+  List<Widget> historyContent() => [
+    Row(
+      children: [
+        Expanded(
+          child: Text(
+            widget.equipment == null
+                ? l10n(context).uiGeneralRecords
+                : l10n(context).uiEquipmentHistory,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        IconButton(
+          tooltip: l10n(context).uiRefreshRecords,
+          onPressed: load,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
+    const SizedBox(height: 8),
+    Text(l10n(context).uiEachEntryItsPaymentsAndAttachmentsIn),
+    const SizedBox(height: 12),
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: const Key('historySearch'),
+                controller: searchController,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  labelText: l10n(context).searchLedger,
+                  hintText: l10n(context).uiEquipmentNameReferencePartyOrNote,
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onSubmitted: (_) {
+                  setState(() => search = searchController.text.trim());
+                  applyFilter();
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              key: const Key('applyHistorySearch'),
+              tooltip: l10n(context).uiSearch,
+              onPressed: () {
+                setState(() => search = searchController.text.trim());
+                applyFilter();
+              },
+              icon: const Icon(Icons.search),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(l10n(context).uiEachEntryItsPaymentsAndAttachmentsIn),
-        const SizedBox(height: 12),
+      ),
+    ),
+    const SizedBox(height: 8),
+    historyFilters(),
+    const SizedBox(height: 12),
+    if (items.isEmpty)
+      if (widget.equipmentPilot)
+        EquipmentEmpty(
+          hasFilters
+              ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
+              : l10n(context).noEntries,
+        )
+      else
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    key: const Key('historySearch'),
-                    controller: searchController,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      labelText: l10n(context).searchLedger,
-                      hintText: l10n(context)
-                          .uiEquipmentNameReferencePartyOrNote,
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onSubmitted: (_) {
-                      setState(() => search = searchController.text.trim());
-                      applyFilter();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  key: const Key('applyHistorySearch'),
-                  tooltip: l10n(context).uiSearch,
-                  onPressed: () {
-                    setState(() => search = searchController.text.trim());
-                    applyFilter();
-                  },
-                  icon: const Icon(Icons.search),
-                ),
-              ],
+            padding: const EdgeInsets.all(28),
+            child: Text(
+              hasFilters
+                  ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
+                  : l10n(context).noEntries,
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        historyFilters(),
-        const SizedBox(height: 12),
-        if (items.isEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Text(
-                hasFilters
-                    ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
-                    : l10n(context).noEntries,
+    ...items.map(
+      (entry) => widget.equipmentPilot
+          ? pilotEntry(entry)
+          : Card(
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                leading: const CircleAvatar(
+                  child: Icon(Icons.receipt_long_outlined),
+                ),
+                title: Text(
+                  '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
+                      ? l10n(context).generalExpense
+                      : entry['expenseScope'] == 'SHARED'
+                      ? l10n(context).uiMultipleEquipment
+                      : entry['equipmentName']}',
+                ),
+                subtitle: Text(
+                  l10n(context).entryDateStatus(
+                    localizedDate(context, entry['operationDate'] as String),
+                    entry['lifecycle'] == 'CANCELLED'
+                        ? l10n(context).cancelled
+                        : localizedFinancialStatus(
+                            context,
+                            entry['entryType'] == 'INCOME',
+                            entry['settlementStatus'],
+                          ),
+                  ),
+                ),
+                isThreeLine: true,
+                trailing: Text(
+                  localizedMoney(context, entry['amount']),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: brand,
+                  ),
+                ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        EntryDetail(api: widget.api, id: entry['id']),
+                  ),
+                ),
               ),
             ),
+    ),
+    Pager(
+      page: page,
+      total: total,
+      change: (value) {
+        page = value;
+        load();
+      },
+    ),
+  ];
+  Widget pilotEntry(dynamic entry) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(EquipmentA.radius),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EntryDetail(api: widget.api, id: entry['id']),
           ),
-        ...items.map(
-          (entry) => Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsetsDirectional.only(end: 12),
+                    child: Icon(
+                      Icons.receipt_long_outlined,
+                      color: EquipmentA.accent,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
+                          ? l10n(context).generalExpense
+                          : entry['expenseScope'] == 'SHARED'
+                          ? l10n(context).uiMultipleEquipment
+                          : entry['equipmentName']}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, size: 18),
+                ],
               ),
-              leading: const CircleAvatar(
-                child: Icon(Icons.receipt_long_outlined),
-              ),
-              title: Text(
-                '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
-                    ? l10n(context).generalExpense
-                    : entry['expenseScope'] == 'SHARED'
-                    ? l10n(context).uiMultipleEquipment
-                    : entry['equipmentName']}',
-              ),
-              subtitle: Text(
+              const SizedBox(height: 10),
+              Text(
                 l10n(context).entryDateStatus(
                   localizedDate(context, entry['operationDate'] as String),
                   entry['lifecycle'] == 'CANCELLED'
@@ -2099,35 +2205,94 @@ class _LedgerPageState extends State<LedgerPage> {
                           entry['settlementStatus'],
                         ),
                 ),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-              isThreeLine: true,
-              trailing: Text(
+              const SizedBox(height: 10),
+              Text(
                 localizedMoney(context, entry['amount']),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: brand,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => EntryDetail(api: widget.api, id: entry['id']),
-                ),
-              ),
-            ),
+            ],
           ),
         ),
-        Pager(
-          page: page,
-          total: total,
-          change: (value) {
-            page = value;
-            load();
-          },
+      ),
+    ),
+  );
+
+  Widget equipmentPresentation() => EquipmentCanvas(
+    children: [
+      EquipmentIdentity(widget.equipment!),
+      const SizedBox(height: EquipmentA.gap),
+      Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: equipmentActions()
+            .where((child) => child is! SizedBox)
+            .toList(),
+      ),
+      const SizedBox(height: EquipmentA.gap),
+      EquipmentColumns(
+        main: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.canDocuments) ...[
+              EquipmentDocumentsCard(
+                api: widget.api,
+                equipment: widget.equipment!,
+              ),
+              const SizedBox(height: EquipmentA.gap),
+            ],
+            if (widget.canMaintenance) ...[
+              EquipmentMaintenanceCard(
+                api: widget.api,
+                equipment: widget.equipment!,
+              ),
+              const SizedBox(height: EquipmentA.gap),
+            ],
+            EquipmentPanel(
+              child: ExpansionTile(
+                key: const Key('pilotOptionalConnections'),
+                tilePadding: EdgeInsets.zero,
+                title: Text(
+                  l10n(context).pilotOptionalConnections,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                children: [
+                  EquipmentM6Context(
+                    api: widget.api,
+                    equipment: widget.equipment!,
+                    canManage:
+                        widget.api.capabilities?.contains('EQUIPMENT_MANAGE') ??
+                        false,
+                    canProjects:
+                        widget.api.capabilities?.contains('PROJECT_VIEW') ??
+                        false,
+                    canFinance:
+                        widget.api.capabilities?.contains('FINANCE_VIEW') ??
+                        false,
+                    showLoadState: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
-    );
-  }
+        secondary: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (loading) ...[
+              EquipmentHeading(l10n(context).uiEquipmentHistory),
+              const EquipmentLoading(),
+            ] else if (error != null) ...[
+              EquipmentHeading(l10n(context).uiEquipmentHistory),
+              EquipmentError(message: error!, retry: load),
+            ] else
+              ...historyContent(),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class HistoryEquipmentPicker extends StatefulWidget {

@@ -1,3 +1,26 @@
+# Direction A — actual production pilot captures (2026-10-02)
+
+Normal `lib/main.dart`, local API/PostgreSQL and normal development auth. Synthetic owner/equipment data persisted through the real API; these are not preview fixtures. JPEG bytes saved directly from capture tools; no edited/generated screenshots. Mobile images are real viewports, with content below them reachable by scrolling.
+
+| Capture | File |
+|---|---|
+| Before, Arabic mobile390 | [before-ar-390.jpg](screenshots/pilot/before-ar-390.jpg) |
+| Before, Arabic desktop1440 | [before-ar-1440.jpg](screenshots/pilot/before-ar-1440.jpg) |
+| A, Arabic mobile390 | [after-ar-390.jpg](screenshots/pilot/after-ar-390.jpg) |
+| A, Arabic desktop1440 | [after-ar-1440.jpg](screenshots/pilot/after-ar-1440.jpg) |
+| A, mobile financial history/optional connections | [after-ar-390-history.jpg](screenshots/pilot/after-ar-390-history.jpg) |
+| A, English mobile390 | [after-en-390.jpg](screenshots/pilot/after-en-390.jpg) |
+| A, Urdu mobile390 | [after-ur-390.jpg](screenshots/pilot/after-ur-390.jpg) |
+| Empty, Arabic desktop1440 | [empty-ar-1440.jpg](screenshots/pilot/empty-ar-1440.jpg) |
+| Empty, Urdu mobile390 | [empty-ur-390.jpg](screenshots/pilot/empty-ur-390.jpg) |
+| A, actual iPhone17Pro/iOS26.5 simulator window | [after-ar-ios.jpg](screenshots/pilot/after-ar-ios.jpg) |
+
+The EN/UR top-of-page captures precede only a tonal search-button color correction below their visible viewport. Final Arabic/history/native captures and builds include it. Independent visual review covered representative primary renders; the additional mobile-history image is lead self-review. No claim of human Urdu linguistic approval.
+
+---
+
+## Historical three-direction preview captures
+
 # فهرس الصور الفعلية
 
 Flutter rendered in the local in-app browser; synthetic fixtures. Primary viewports: 390×1000 and 1440×1000 logical pixels. No concept renders or edited screenshots.

@@ -1129,5 +1129,7 @@
   "previewRemoveAttachment": "آزمائشی منسلکہ ہٹائیں",
   "previewFormHint": "رقم اور تفصیلات درج کریں، پھر ادائیگی کا جائزہ لیں۔",
   "previewRecordedExpenses": "درج شدہ اخراجات",
-  "previewRecordedIncome": "درج شدہ آمدنی"
+  "previewRecordedIncome": "درج شدہ آمدنی",
+  "pilotEquipmentRecord": "مشین کا ریکارڈ",
+  "pilotOptionalConnections": "اختیاری روابط"
 }

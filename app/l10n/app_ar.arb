@@ -1129,5 +1129,7 @@
   "previewRemoveAttachment": "إزالة المرفق التجريبي",
   "previewFormHint": "سجّل المبلغ والتفاصيل، ثم راجع التسوية.",
   "previewRecordedExpenses": "المصروفات المسجلة",
-  "previewRecordedIncome": "الإيرادات المسجلة"
+  "previewRecordedIncome": "الإيرادات المسجلة",
+  "pilotEquipmentRecord": "سجل المعدة",
+  "pilotOptionalConnections": "ارتباطات اختيارية"
 }

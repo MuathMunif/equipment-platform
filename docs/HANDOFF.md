@@ -1,3 +1,17 @@
+# نقطة تسليم تجربة A — تفاصيل المعدة الإنتاجية — 2026-10-02
+
+- اعتمد المالك **A «واضح وهادئ»**. نُقلت شاشة `EquipmentDetail` الحقيقية وحدها إلى A عبر مسارات التطبيق المعتادة؛ B/C والمعرض محفوظة كمراجع غير مختارة. لا يبدأ ترحيل بقية التطبيق تلقائيًا.
+- الفرع `feat/ui-a-equipment-pilot` من تصميم نظيف عند `1f8ac5dc2d3f04eb409315ae774f520831d9dec4`؛ HEAD الذي يحمل هذا التسليم هو commit التجربة. لم يحدث reset/stash/دمج أو تغيير main. الدفع لفرع التجربة فقط، دون نشر.
+- مكوّنات A المعزولة في `app/lib/design_system/equipment_a.dart`؛ theme محلي وNoto عربي، تخطيط جوال/ويب، حالات تحميل/فشل/فراغ. الأفعال الحالية ومساراتها وقيود الوصول والتنسيق الدقيق والتواريخ باقية. لا backend/API/schema أو منطق أموال جديد، وشجرة الإنتاج لا تستورد المعرض.
+- تحقق فعلي: اختبارات التجربة19 ثم اختبار تباين إضافي ضمن المجموعة النهائية؛ اختبارات مرتبطة76؛ **المجموعة الكاملة156/156 مرة واحدة**، `flutter analyze` نظيف، Web release من `main.dart` وiOS simulator debug ناجحان، و`git diff --check` ناجح. تجاوز الأرشفة والنص الأردي المكبر وتباين البحث أُصلحت قبل التسليم.
+- 10 صور فعلية قبل/بعد وفي ar/en/ur وحالة فارغة وسجل المال وiOS: `docs/design/ui-refresh/screenshots/pilot/`. تشغيل متصل بمصادقة التطوير العادية وPostgreSQL؛ معدتا اختبار EQ-000037/EQ-000038 تحت المالك الاصطناعي0500000802. لا بيانات حقيقية أو تجاوز مصادقة. Docker استعاد العمل بعد إعادة تشغيل وافق عليها المالك؛ volumes محفوظة وschema21 بلا ترحيل.
+- الرئيسي الكاتب الوحيد، واستثناء Astra/High مؤقت بتصريح المالك؛ runtime غير مكشوف بصورة موثوقة، إعداد المشروع والعام لم يتغير. مراجع بصري مستقل واحد `pilot_visual_review` مطلوب Astra/High بعد الصور، بلا تعديل/تفريع؛ لا ملاحظات قابلة للتنفيذ. المراجع لم يختبر التفاعل/قارئ الشاشة، وفحص التطبيق والاختبارات من الكاتب.
+- تشغيل جُرّب: `docker compose -f infra/compose.yaml up -d --wait postgres` ثم `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/backend-dev.sh`. من `app/`: `flutter build web --release -t lib/main.dart --output=../.local/ui-refresh/web-pilot`. من الجذر: `python3 -m http.server 8081 --bind 127.0.0.1 --directory .local/ui-refresh/web-pilot`. افتح8081، رقم التطوير0500000802، رمز123456، ثم المعدات وUI-A. المعرض8084 منفصل.
+- الحدود: لا Android/جهاز فعلي/حملة native كاملة أو قارئ شاشة تفاعلي؛ حالات التقييد والفشل والتكبير مثبتة في widget tests وليست كلها صورًا متصلة. الأردية تحتاج مراجعة لغوية بشرية. لم تُعد حملة Backend لتعديل العرض وحده؛ قيود تكاملات الإنتاج السابقة باقية.
+- **توقف لمراجعة تجربة صفحة المعدة.** التالي المقترح بعد موافقة منفصلة: نموذج إضافة المصروف، ثم تفاصيل العملية، ثم القائمة/الرئيسية. الدليل الكامل والأوامر: `docs/design/ui-refresh/PILOT.md`؛ نقطة الاستئناف الحالية: `docs/design/ui-refresh/STATUS.md`.
+
+---
+
 # Current UI task checkpoint — 2026-10-01
 
 Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`; implementation/evidence base commit `eeadef0` plus a narrow-width alignment follow-up are pushed to the existing origin feature branch. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.

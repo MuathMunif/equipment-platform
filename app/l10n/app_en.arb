@@ -1129,5 +1129,7 @@
   "previewRemoveAttachment": "Remove trial attachment",
   "previewFormHint": "Enter the amount and details, then check the settlement.",
   "previewRecordedExpenses": "Recorded expenses",
-  "previewRecordedIncome": "Recorded income"
+  "previewRecordedIncome": "Recorded income",
+  "pilotEquipmentRecord": "Equipment record",
+  "pilotOptionalConnections": "Optional connections"
 }

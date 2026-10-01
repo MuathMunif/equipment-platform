@@ -1,4 +1,21 @@
-# UI directions — visual selection checkpoint
+# Direction A — Equipment Detail pilot review checkpoint
+
+- **A / واضح وهادئ approved by the owner, 2026-10-02.** B/C remain unselected development-preview references. One production screen migrated; no full-app rollout.
+- Branch: `feat/ui-a-equipment-pilot`. Source baseline: clean `feat/ui-design-directions` at `1f8ac5dc2d3f04eb409315ae774f520831d9dec4`. Pilot implementation/checkpoint is carried by this branch HEAD; read `git log -1` for its commit. No reset/stash/merge/main changes.
+- Completed: real EquipmentDetail with scoped A design system, existing Ledger state/actions, optional-context loading/error/retry, ar/en/ur resources, responsive layout. Production import graph19 local files excludes preview. Preview remains available separately.
+- Evidence:10 actual JPEGs in `screenshots/pilot/`: before ar390/ar1440; after ar390/ar1440/en390/ur390; mobile financial history; empty ar1440/ur390; iOS Arabic. Index: `SCREENSHOTS.md`.
+- Actual checks: focused19 passed then a twentieth contrast regression included in final full suite; related76 passed; **full Flutter156/156 passed once**, analyze clean, production web release and iOS simulator debug passed, diff whitespace check passed. Initial overflow/lint failures fixed; see `PILOT.md` for exact commands and limits.
+- Real API/PostgreSQL17.11, schema21 current/no migration. Existing synthetic owner0500000802, normal dev auth. New synthetic EQ-000037 populated and EQ-000038 empty. No real customer data, bypass or production credentials.
+- Docker recovered only after owner-approved restart; normal restart timed out, supported force-stop/start succeeded with volumes retained. API log `.local/ui-refresh/pilot-api-restarted.log`; web8081 serves `.local/ui-refresh/web-pilot`. Preview8084 retained.
+- Main sole writer, user-authorized Astra/High temporary exception; no runtime identity telemetry exposed, no private investigation/config change. One independent read-only child `pilot_visual_review`, requested `gpt-6-astra/high`, limited context/no nesting, after actual renders. No actionable visual findings; full limits in `PILOT.md`.
+- Untested: Android/physical device/full native matrix, interactive screen reader, human Urdu approval; restricted/error/160% states verified in widget tests, not all captured live. No backend suite rerun or deployment.
+- **Next concrete action: owner reviews the pilot. Stop.** Recommended next bounded migration after approval: add-expense form, then entry detail, then equipment list/home. Do not resume old milestone tasks or automatically migrate another screen.
+
+Full pilot evidence and exact run commands: [PILOT.md](PILOT.md). Historical preview evidence below is preserved and is not pending work.
+
+---
+
+# Historical preview sprint checkpoint — superseded by A approval
 
 ## Current task and Git baseline
 - Active task completed: three runnable isolated Flutter directions. **Owner selection pending; production restyling has not started.**

@@ -2393,4 +2393,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get previewRecordedIncome => 'الإيرادات المسجلة';
+
+  @override
+  String get pilotEquipmentRecord => 'سجل المعدة';
+
+  @override
+  String get pilotOptionalConnections => 'ارتباطات اختيارية';
 }
