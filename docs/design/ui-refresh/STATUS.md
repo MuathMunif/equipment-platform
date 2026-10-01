@@ -1,3 +1,18 @@
+# Active task — Direction A typography selection checkpoint
+
+- **A layout approved; current Noto font rejected; F1/F2/F3 READY FOR SELECTION; FULL ROLLOUT PAUSED.** Production default unchanged.
+- Branch `feat/ui-a-typography`, source clean pilot `ca6201d`. HEAD of this branch carries the comparison/checkpoint; read `git log -1 --oneline` for its SHA. Pilot, date fix, old previews preserved. No main/merge/PR/deployment.
+- Completed: preview-only font switcher, reused pilot equipment widgets + existing ExpensePreview, identical synthetic content, real400/700 faces. F1 Plex, F2 Tajawal (whole Urdu locale Plex), F3 Almarai. Rejected Noto explicitly labelled baseline. Source/OFL/hash records included; font binaries unmodified.
+- Evidence: **20 actual JPEGs** in `screenshots/typography/`:12 Arabic390/1440 +7 bounded web language/specimen/320-text160% samples +F3/ar iOS. All visually self-inspected. Index, comparison and commands: [TYPOGRAPHY.md](TYPOGRAPHY.md).
+- Actual checks: initial focused80/80 (24 typography+36 preview+20 pilot); final typography25/25 after device-scaling fix; analyze clean; preview and production web release +iOS simulator debug pass. Six font HTTP200 responses; distinct rendered family/weight pixels; twelve bundled source/license/metadata hashes verified; production19-file import graph excludes preview.
+- Accessibility fix composes the lab multiplier with device scaling. Final F2/expense1440 render byte-matches earlier capture at device1x. No fixed text heights or shrinking to mask overflow.
+- Existing iPhone17 Pro simulator runs F3 Arabic preview. Initial terminate returned “nothing to terminate”; install/launch succeeded. No auth/API/database work, new tools, global installs, or dependency upgrades.
+- Main sole writer/self-reviewer, **0 subagents**. Existing user-approved Astra/High exception; no model/config changes or repeated identity investigation. Runtime telemetry not independently exposed.
+- Limits: no full-suite/backend campaign, Android/physical device/full native matrix, interactive screen reader or human Urdu approval. Exact glyph attribution not proven. New font binaries add912,764 bytes to shared asset bundle; production does not register/use the candidates. Existing Cupertino/open_filex build warnings remain.
+- **Next concrete action: owner selects F1/F2/F3. STOP.** Recommend F3 as a visual opinion only. Applying the selected font to the pilot requires the next bounded authorization; no automatic full rollout.
+
+---
+
 # Direction A — Equipment Detail pilot review checkpoint
 
 - **A / واضح وهادئ approved by the owner, 2026-10-02.** B/C remain unselected development-preview references. One production screen migrated; no full-app rollout.

@@ -115,7 +115,7 @@ class PreviewBadge extends StatelessWidget {
       label,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: warning ? const Color(0xFF795019) : tokens(context).ink,
-        fontWeight: FontWeight.w600,
+        fontWeight: tokens(context).emphasis,
       ),
     ),
   );
@@ -170,7 +170,7 @@ class PreviewRow extends StatelessWidget {
                       localizedMoney(context, amount),
                       style: TextStyle(
                         color: t.ink,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: tokens(context).emphasis,
                         fontSize: 16,
                       ),
                     ),
@@ -424,7 +424,7 @@ class OwnerPreview extends StatelessWidget {
             ),
             style: TextStyle(
               fontSize: t.direction == DesignDirection.b ? 23 : 21,
-              fontWeight: FontWeight.w600,
+              fontWeight: tokens(context).emphasis,
               height: 1.4,
             ),
           ),
@@ -794,7 +794,7 @@ class ExpensePreviewState extends State<ExpensePreview> {
                             textDirection: TextDirection.ltr,
                             style: TextStyle(
                               fontSize: 30,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: tokens(context).emphasis,
                               color: t.ink,
                             ),
                             keyboardType: const TextInputType.numberWithOptions(
@@ -1492,7 +1492,7 @@ class MoneyPreviewRow extends StatelessWidget {
     builder: (context, box) {
       final amount = Text(
         localizedMoney(context, value),
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        style: TextStyle(fontSize: 20, fontWeight: tokens(context).emphasis),
       );
       return box.maxWidth < 360 ||
               MediaQuery.textScalerOf(context).scale(1) > 1.2

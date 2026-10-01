@@ -28,6 +28,7 @@ flutter:
   assets:
     - integration_test/fixtures/synthetic-receipt.png
     - assets/design_fonts/
+    - assets/typography_fonts/
   fonts:
     - family: EquipmentNoto
       fonts:

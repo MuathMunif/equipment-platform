@@ -9,6 +9,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
   final Color canvas, ink, muted, line, accent, tint;
   final double radius, gap;
   final String family, headingFamily;
+  final FontWeight emphasis;
   const DesignTokens({
     required this.direction,
     required this.canvas,
@@ -21,6 +22,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
     required this.gap,
     required this.family,
     required this.headingFamily,
+    this.emphasis = FontWeight.w600,
   });
 
   static DesignTokens forDirection(DesignDirection d) => switch (d) {
@@ -95,14 +97,14 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
           headlineLarge: TextStyle(
             fontFamily: headingFamily,
             color: ink,
-            fontWeight: FontWeight.w600,
+            fontWeight: emphasis,
             fontSize: direction == DesignDirection.c ? 36 : 30,
             height: 1.45,
           ),
           headlineSmall: TextStyle(
             fontFamily: headingFamily,
             color: ink,
-            fontWeight: FontWeight.w600,
+            fontWeight: emphasis,
             fontSize: 24,
             height: 1.5,
           ),
@@ -110,14 +112,14 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
             fontFamily: family,
             color: ink,
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: emphasis,
             height: 1.5,
           ),
           titleMedium: TextStyle(
             fontFamily: family,
             color: ink,
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: emphasis,
             height: 1.55,
           ),
           bodyMedium: TextStyle(
@@ -135,7 +137,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
           labelLarge: TextStyle(
             fontFamily: family,
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: emphasis,
             height: 1.5,
           ),
         );
