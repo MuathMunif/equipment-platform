@@ -4530,6 +4530,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'وصول مسحوب'**
   String get m5AccessRevoked;
+
+  /// No description provided for @m6NoProjectSelected.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مشروع أو عقد'**
+  String get m6NoProjectSelected;
 }
 
 class _AppLocalizationsDelegate

@@ -107,8 +107,8 @@ class _OrganizationsPageState extends State<OrganizationsPage> {
         ? Center(
             child: TextButton(onPressed: load, child: Text(error!)),
           )
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               Text(l10n(context).m6OrganizationsOptional),
               const SizedBox(height: 16),
@@ -118,6 +118,7 @@ class _OrganizationsPageState extends State<OrganizationsPage> {
                   labelText: l10n(context).m6SearchOrganizations,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: IconButton(
+                    tooltip: l10n(context).uiSearch,
                     onPressed: load,
                     icon: const Icon(Icons.search),
                   ),
@@ -139,16 +140,22 @@ class _OrganizationsPageState extends State<OrganizationsPage> {
                 ),
               for (final item in items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     key: Key('organization-${item['id']}'),
                     title: Text('${item['name']}'),
                     subtitle: Text(
                       '${l10n(context).equipment}: ${item['equipment_count']} • ${l10n(context).m6ProjectsContracts}: ${item['project_count']}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
+                    ),
                     onTap: () => open(item),
                   ),
                 ),
+              const SizedBox(height: 96),
             ],
           ),
     floatingActionButton: widget.canManage
@@ -235,36 +242,45 @@ class _OrganizationFormState extends State<OrganizationForm> {
             : l10n(context).edit,
       ),
     ),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
+    body: EquipmentPageBody(
+      maxWidth: 800,
       children: [
-        TextField(
-          key: const Key('organizationName'),
-          controller: name,
-          maxLength: 100,
-          decoration: InputDecoration(
-            labelText: '${l10n(context).m6OrganizationName} *',
-          ),
-        ),
-        TextField(
-          controller: identifier,
-          maxLength: 100,
-          decoration: InputDecoration(
-            labelText: l10n(context).m6IdentifierOptional,
-          ),
-        ),
-        TextField(
-          controller: notes,
-          maxLength: 1000,
-          maxLines: 3,
-          decoration: InputDecoration(labelText: l10n(context).uiNoteOptional),
-        ),
-        InlineError(error),
-        const SizedBox(height: 12),
-        FilledButton(
-          key: const Key('saveOrganization'),
-          onPressed: busy ? null : save,
-          child: Text(l10n(context).save),
+        EquipmentFormSection(
+          children: [
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('organizationName'),
+              controller: name,
+              maxLength: 100,
+              decoration: InputDecoration(
+                labelText: '${l10n(context).m6OrganizationName} *',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: identifier,
+              maxLength: 100,
+              decoration: InputDecoration(
+                labelText: l10n(context).m6IdentifierOptional,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notes,
+              maxLength: 1000,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l10n(context).uiNoteOptional,
+              ),
+            ),
+            InlineError(error),
+            const SizedBox(height: 12),
+            FilledButton(
+              key: const Key('saveOrganization'),
+              onPressed: busy ? null : save,
+              child: Text(l10n(context).save),
+            ),
+          ],
         ),
       ],
     ),
@@ -376,79 +392,92 @@ class _OrganizationDetailState extends State<OrganizationDetail> {
         ? Center(
             child: TextButton(onPressed: load, child: Text(error!)),
           )
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
+              Text(
+                '${item?['name'] ?? ''}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
               if (item?['identifier'] != null)
                 Text(
                   '${l10n(context).m6IdentifierOptional}: ${item!['identifier']}',
                 ),
               if (item?['notes'] != null) Text('${item!['notes']}'),
               const SizedBox(height: 16),
-              Text(
-                l10n(context).equipment,
-                style: Theme.of(context).textTheme.titleMedium,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    l10n(context).equipment,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text('${item?['equipment_count'] ?? 0}'),
+                  for (final eq in equipment)
+                    ListTile(
+                      title: Text('${eq['name']}'),
+                      subtitle: Text('${eq['reference']}'),
+                    ),
+                  if (widget.canManage && item?['archived_at'] == null)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EquipmentOrganizationPage(
+                              api: widget.api,
+                              organizationId: widget.id,
+                            ),
+                          ),
+                        );
+                        load();
+                      },
+                      icon: const Icon(Icons.swap_horiz),
+                      label: Text(l10n(context).m6ManageEquipment),
+                    ),
+                ],
               ),
-              Text('${item?['equipment_count'] ?? 0}'),
-              for (final eq in equipment)
-                ListTile(
-                  title: Text('${eq['name']}'),
-                  subtitle: Text('${eq['reference']}'),
-                ),
-              if (widget.canManage && item?['archived_at'] == null)
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EquipmentOrganizationPage(
-                          api: widget.api,
-                          organizationId: widget.id,
-                        ),
-                      ),
-                    );
-                    load();
-                  },
-                  icon: const Icon(Icons.swap_horiz),
-                  label: Text(l10n(context).m6ManageEquipment),
-                ),
               const SizedBox(height: 16),
-              Text(
-                l10n(context).m6ProjectsContracts,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              for (final project in projects)
-                ListTile(
-                  title: Text('${project['name']}'),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProjectDetail(
-                        api: widget.api,
-                        id: '${project['id']}',
-                        canManage: widget.canManage,
-                        canFinance: true,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    l10n(context).m6ProjectsContracts,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  for (final project in projects)
+                    ListTile(
+                      title: Text('${project['name']}'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProjectDetail(
+                            api: widget.api,
+                            id: '${project['id']}',
+                            canManage: widget.canManage,
+                            canFinance: true,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              if (widget.canManage && item?['archived_at'] == null)
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProjectForm(
-                          api: widget.api,
-                          initialOrganizationId: widget.id,
-                        ),
-                      ),
-                    );
-                    load();
-                  },
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n(context).m6AddProject),
-                ),
+                  if (widget.canManage && item?['archived_at'] == null)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProjectForm(
+                              api: widget.api,
+                              initialOrganizationId: widget.id,
+                            ),
+                          ),
+                        );
+                        load();
+                      },
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n(context).m6AddProject),
+                    ),
+                ],
+              ),
               const SizedBox(height: 20),
               if (widget.canManage)
                 OutlinedButton(
@@ -679,11 +708,13 @@ class _EquipmentOrganizationPageState extends State<EquipmentOrganizationPage> {
     appBar: AppBar(title: Text(l10n(context).m6AssignEquipment)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (widget.equipmentId != null) ...[
                 DropdownButtonFormField<String?>(
+                  isExpanded: true,
+                  itemHeight: null,
                   key: const Key('equipmentOrganizationChoice'),
                   initialValue: currentOrganization,
                   decoration: InputDecoration(
@@ -747,6 +778,7 @@ Future<bool> m6Confirm(BuildContext context, String message) async =>
     await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
+        scrollable: true,
         title: Text(l10n(dialog).m6ConfirmAction),
         content: Text(message),
         actions: [
@@ -850,8 +882,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
         ? Center(
             child: TextButton(onPressed: load, child: Text(error!)),
           )
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               Text(l10n(context).m6ProjectsOptional),
               const SizedBox(height: 12),
@@ -861,6 +893,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                   labelText: l10n(context).m6SearchProjects,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: IconButton(
+                    tooltip: l10n(context).uiSearch,
                     onPressed: load,
                     icon: const Icon(Icons.search),
                   ),
@@ -868,29 +901,30 @@ class _ProjectsPageState extends State<ProjectsPage> {
                 onSubmitted: (_) => load(),
               ),
               const SizedBox(height: 12),
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(value: 'ALL', label: Text(l10n(context).m6All)),
-                  ButtonSegment(
-                    value: 'ACTIVE',
-                    label: Text(l10n(context).active),
-                  ),
-                  ButtonSegment(
-                    value: 'COMPLETED',
-                    label: Text(l10n(context).m6Completed),
-                  ),
-                  ButtonSegment(
-                    value: 'ARCHIVED',
-                    label: Text(l10n(context).archived),
-                  ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final choice in {
+                    'ALL': l10n(context).m6All,
+                    'ACTIVE': l10n(context).active,
+                    'COMPLETED': l10n(context).m6Completed,
+                    'ARCHIVED': l10n(context).archived,
+                  }.entries)
+                    ChoiceChip(
+                      label: Text(choice.value),
+                      selected: status == choice.key,
+                      onSelected: (_) {
+                        status = choice.key;
+                        load();
+                      },
+                    ),
                 ],
-                selected: {status},
-                onSelectionChanged: (v) {
-                  status = v.first;
-                  load();
-                },
               ),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
+                isExpanded: true,
+                itemHeight: null,
                 key: const Key('projectKindFilter'),
                 initialValue: kind,
                 decoration: InputDecoration(
@@ -917,6 +951,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
               ),
               if (organizations.isNotEmpty)
                 DropdownButtonFormField<String?>(
+                  isExpanded: true,
+                  itemHeight: null,
                   initialValue: organizationId,
                   decoration: InputDecoration(
                     labelText: l10n(context).m6Organizations,
@@ -944,13 +980,22 @@ class _ProjectsPageState extends State<ProjectsPage> {
                 ),
               for (final project in items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     key: Key('project-${project['id']}'),
                     title: Text('${project['name']}'),
                     subtitle: Text(
-                      '${project['kind'] == 'CONTRACT' ? l10n(context).m6Contract : l10n(context).m6Project} • ${project['status'] == 'COMPLETED' ? l10n(context).m6Completed : l10n(context).active}',
+                      '${project['kind'] == 'CONTRACT' ? l10n(context).m6Contract : l10n(context).m6Project} • ${project['archived_at'] != null
+                          ? l10n(context).archived
+                          : project['status'] == 'COMPLETED'
+                          ? l10n(context).m6Completed
+                          : l10n(context).active}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
+                    ),
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -967,6 +1012,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                     },
                   ),
                 ),
+              const SizedBox(height: 96),
             ],
           ),
     floatingActionButton: widget.canManage
@@ -1131,117 +1177,135 @@ class _ProjectFormState extends State<ProjectForm> {
         widget.item == null ? l10n(context).m6AddProject : l10n(context).edit,
       ),
     ),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
+    body: EquipmentPageBody(
+      maxWidth: 800,
       children: [
-        DropdownButtonFormField<String>(
-          key: const Key('projectKind'),
-          initialValue: kind,
-          decoration: InputDecoration(labelText: l10n(context).m6RecordKind),
-          items: [
-            DropdownMenuItem(
-              value: 'PROJECT',
-              child: Text(l10n(context).m6Project),
+        EquipmentFormSection(
+          children: [
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              itemHeight: null,
+              key: const Key('projectKind'),
+              initialValue: kind,
+              decoration: InputDecoration(
+                labelText: l10n(context).m6RecordKind,
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'PROJECT',
+                  child: Text(l10n(context).m6Project),
+                ),
+                DropdownMenuItem(
+                  value: 'CONTRACT',
+                  child: Text(l10n(context).m6Contract),
+                ),
+              ],
+              onChanged: (v) => setState(() => kind = v!),
             ),
-            DropdownMenuItem(
-              value: 'CONTRACT',
-              child: Text(l10n(context).m6Contract),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('projectName'),
+              controller: name,
+              maxLength: 100,
+              decoration: InputDecoration(labelText: '${l10n(context).name} *'),
+            ),
+            if (loadingOrganizations)
+              const LinearProgressIndicator()
+            else
+              DropdownButtonFormField<String?>(
+                isExpanded: true,
+                itemHeight: null,
+                key: const Key('projectOrganization'),
+                initialValue: organizationId,
+                decoration: InputDecoration(
+                  labelText: l10n(context).m6OrganizationOptional,
+                ),
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text(l10n(context).m6NoOrganization),
+                  ),
+                  if (organizationId != null &&
+                      !organizations.any((o) => o['id'] == organizationId))
+                    DropdownMenuItem<String?>(
+                      value: organizationId,
+                      child: Text(
+                        '${widget.item?['organization_name'] ?? l10n(context).m6Organizations}',
+                      ),
+                    ),
+                  for (final org in organizations)
+                    DropdownMenuItem<String?>(
+                      value: '${org['id']}',
+                      child: Text('${org['name']}'),
+                    ),
+                ],
+                onChanged: organizationLoadFailed
+                    ? null
+                    : (v) => setState(() => organizationId = v),
+              ),
+            if (organizationLoadFailed)
+              TextButton.icon(
+                onPressed: loadOrganizations,
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n(context).retry),
+              ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: client,
+              maxLength: 100,
+              decoration: InputDecoration(
+                labelText: l10n(context).m6ClientOptional,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: number,
+              maxLength: 100,
+              decoration: InputDecoration(
+                labelText: l10n(context).m6ContractNumberOptional,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => pickDate(true),
+              icon: const Icon(Icons.event),
+              label: Text(
+                startDate == null
+                    ? l10n(context).m6StartDateOptional
+                    : localizedDate(context, startDate),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => pickDate(false),
+              icon: const Icon(Icons.event),
+              label: Text(
+                endDate == null
+                    ? l10n(context).m6EndDateOptional
+                    : localizedDate(context, endDate),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notes,
+              maxLength: 1000,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l10n(context).uiNoteOptional,
+              ),
+            ),
+            InlineError(error),
+            FilledButton(
+              key: const Key('saveProject'),
+              onPressed:
+                  busy ||
+                      loadingOrganizations ||
+                      (organizationLoadFailed && organizationId != null)
+                  ? null
+                  : save,
+              child: Text(l10n(context).save),
             ),
           ],
-          onChanged: (v) => setState(() => kind = v!),
-        ),
-        TextField(
-          key: const Key('projectName'),
-          controller: name,
-          maxLength: 100,
-          decoration: InputDecoration(labelText: '${l10n(context).name} *'),
-        ),
-        if (loadingOrganizations)
-          const LinearProgressIndicator()
-        else
-          DropdownButtonFormField<String?>(
-            key: const Key('projectOrganization'),
-            initialValue: organizationId,
-            decoration: InputDecoration(
-              labelText: l10n(context).m6OrganizationOptional,
-            ),
-            items: [
-              DropdownMenuItem<String?>(
-                value: null,
-                child: Text(l10n(context).m6NoOrganization),
-              ),
-              if (organizationId != null &&
-                  !organizations.any((o) => o['id'] == organizationId))
-                DropdownMenuItem<String?>(
-                  value: organizationId,
-                  child: Text(
-                    '${widget.item?['organization_name'] ?? l10n(context).m6Organizations}',
-                  ),
-                ),
-              for (final org in organizations)
-                DropdownMenuItem<String?>(
-                  value: '${org['id']}',
-                  child: Text('${org['name']}'),
-                ),
-            ],
-            onChanged: organizationLoadFailed
-                ? null
-                : (v) => setState(() => organizationId = v),
-          ),
-        if (organizationLoadFailed)
-          TextButton.icon(
-            onPressed: loadOrganizations,
-            icon: const Icon(Icons.refresh),
-            label: Text(l10n(context).retry),
-          ),
-        TextField(
-          controller: client,
-          maxLength: 100,
-          decoration: InputDecoration(
-            labelText: l10n(context).m6ClientOptional,
-          ),
-        ),
-        TextField(
-          controller: number,
-          maxLength: 100,
-          decoration: InputDecoration(
-            labelText: l10n(context).m6ContractNumberOptional,
-          ),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => pickDate(true),
-          icon: const Icon(Icons.event),
-          label: Text(
-            startDate == null
-                ? l10n(context).m6StartDateOptional
-                : localizedDate(context, startDate),
-          ),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => pickDate(false),
-          icon: const Icon(Icons.event),
-          label: Text(
-            endDate == null
-                ? l10n(context).m6EndDateOptional
-                : localizedDate(context, endDate),
-          ),
-        ),
-        TextField(
-          controller: notes,
-          maxLength: 1000,
-          maxLines: 3,
-          decoration: InputDecoration(labelText: l10n(context).uiNoteOptional),
-        ),
-        InlineError(error),
-        FilledButton(
-          key: const Key('saveProject'),
-          onPressed:
-              busy ||
-                  loadingOrganizations ||
-                  (organizationLoadFailed && organizationId != null)
-              ? null
-              : save,
-          child: Text(l10n(context).save),
         ),
       ],
     ),
@@ -1446,55 +1510,68 @@ class _ProjectDetailState extends State<ProjectDetail> {
           ? Center(
               child: TextButton(onPressed: load, child: Text(error!)),
             )
-          : ListView(
-              padding: const EdgeInsets.all(20),
+          : EquipmentPageBody(
+              maxWidth: 960,
               children: [
-                Text(
-                  row?['kind'] == 'CONTRACT'
-                      ? l10n(context).m6Contract
-                      : l10n(context).m6Project,
-                  style: Theme.of(context).textTheme.titleMedium,
+                EquipmentFormSection(
+                  children: [
+                    Text(
+                      '${row?['name'] ?? ''}',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+
+                    Text(
+                      row?['kind'] == 'CONTRACT'
+                          ? l10n(context).m6Contract
+                          : l10n(context).m6Project,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      archived
+                          ? l10n(context).archived
+                          : row?['status'] == 'COMPLETED'
+                          ? l10n(context).m6Completed
+                          : l10n(context).active,
+                    ),
+                    const SizedBox(height: 12),
+                    _detail(
+                      context,
+                      l10n(context).m6Organizations,
+                      row?['organization_id'] == null
+                          ? l10n(context).m6NoOrganization
+                          : '${row?['organization_name'] ?? l10n(context).m6Organizations}',
+                    ),
+                    _detail(
+                      context,
+                      l10n(context).m6ClientOptional,
+                      row?['client_name'],
+                    ),
+                    _detail(
+                      context,
+                      l10n(context).m6ContractNumberOptional,
+                      row?['contract_number'],
+                    ),
+                    _detail(
+                      context,
+                      l10n(context).m6StartDateOptional,
+                      row?['start_date'] == null
+                          ? null
+                          : localizedDate(context, '${row?['start_date']}'),
+                    ),
+                    _detail(
+                      context,
+                      l10n(context).m6EndDateOptional,
+                      row?['end_date'] == null
+                          ? null
+                          : localizedDate(context, '${row?['end_date']}'),
+                    ),
+                    _detail(
+                      context,
+                      l10n(context).uiNoteOptional,
+                      row?['notes'],
+                    ),
+                  ],
                 ),
-                Text(
-                  archived
-                      ? l10n(context).archived
-                      : row?['status'] == 'COMPLETED'
-                      ? l10n(context).m6Completed
-                      : l10n(context).active,
-                ),
-                const SizedBox(height: 12),
-                _detail(
-                  context,
-                  l10n(context).m6Organizations,
-                  row?['organization_id'] == null
-                      ? l10n(context).m6NoOrganization
-                      : '${row?['organization_name'] ?? l10n(context).m6Organizations}',
-                ),
-                _detail(
-                  context,
-                  l10n(context).m6ClientOptional,
-                  row?['client_name'],
-                ),
-                _detail(
-                  context,
-                  l10n(context).m6ContractNumberOptional,
-                  row?['contract_number'],
-                ),
-                _detail(
-                  context,
-                  l10n(context).m6StartDateOptional,
-                  row?['start_date'] == null
-                      ? null
-                      : localizedDate(context, '${row?['start_date']}'),
-                ),
-                _detail(
-                  context,
-                  l10n(context).m6EndDateOptional,
-                  row?['end_date'] == null
-                      ? null
-                      : localizedDate(context, '${row?['end_date']}'),
-                ),
-                _detail(context, l10n(context).uiNoteOptional, row?['notes']),
                 const SizedBox(height: 20),
                 Text(
                   l10n(context).equipment,
@@ -1526,47 +1603,51 @@ class _ProjectDetailState extends State<ProjectDetail> {
                     l10n(context).m6FinancialSummary,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  _money(
-                    context,
-                    l10n(context).m6RecordedIncome,
-                    summary!['recordedIncome'],
-                    onTap: () => openReport(0, entryType: 'INCOME'),
-                  ),
-                  _money(
-                    context,
-                    l10n(context).m6RecordedExpenses,
-                    summary!['recordedExpenses'],
-                    onTap: () => openReport(0, entryType: 'EXPENSE'),
-                  ),
-                  _money(
-                    context,
-                    l10n(context).m6RecordedDifference,
-                    summary!['recordedDifference'],
-                    onTap: () => openReport(0),
-                  ),
-                  _money(
-                    context,
-                    l10n(context).m7NetCollected,
-                    summary!['collected'],
-                    onTap: () => openReport(1, entryType: 'INCOME'),
-                  ),
-                  _money(
-                    context,
-                    l10n(context).m7NetPaid,
-                    summary!['paid'],
-                    onTap: () => openReport(1, entryType: 'EXPENSE'),
-                  ),
-                  _money(
-                    context,
-                    l10n(context).m6ReceivablesRemaining,
-                    summary!['receivablesRemaining'],
-                    onTap: () => openReport(2, entryType: 'INCOME'),
-                  ),
-                  _money(
-                    context,
-                    l10n(context).m6PayablesRemaining,
-                    summary!['payablesRemaining'],
-                    onTap: () => openReport(2, entryType: 'EXPENSE'),
+                  EquipmentGrid(
+                    children: [
+                      _money(
+                        context,
+                        l10n(context).m6RecordedIncome,
+                        summary!['recordedIncome'],
+                        onTap: () => openReport(0, entryType: 'INCOME'),
+                      ),
+                      _money(
+                        context,
+                        l10n(context).m6RecordedExpenses,
+                        summary!['recordedExpenses'],
+                        onTap: () => openReport(0, entryType: 'EXPENSE'),
+                      ),
+                      _money(
+                        context,
+                        l10n(context).m6RecordedDifference,
+                        summary!['recordedDifference'],
+                        onTap: () => openReport(0),
+                      ),
+                      _money(
+                        context,
+                        l10n(context).m7NetCollected,
+                        summary!['collected'],
+                        onTap: () => openReport(1, entryType: 'INCOME'),
+                      ),
+                      _money(
+                        context,
+                        l10n(context).m7NetPaid,
+                        summary!['paid'],
+                        onTap: () => openReport(1, entryType: 'EXPENSE'),
+                      ),
+                      _money(
+                        context,
+                        l10n(context).m6ReceivablesRemaining,
+                        summary!['receivablesRemaining'],
+                        onTap: () => openReport(2, entryType: 'INCOME'),
+                      ),
+                      _money(
+                        context,
+                        l10n(context).m6PayablesRemaining,
+                        summary!['payablesRemaining'],
+                        onTap: () => openReport(2, entryType: 'EXPENSE'),
+                      ),
+                    ],
                   ),
                 ],
                 if (widget.canFinance && !archived)
@@ -1611,6 +1692,11 @@ class _ProjectDetailState extends State<ProjectDetail> {
                     ),
                   OutlinedButton(
                     key: const Key('projectArchive'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: archived
+                          ? EquipmentA.accent
+                          : EquipmentA.danger,
+                    ),
                     onPressed: busy
                         ? null
                         : () => transition(archived ? 'restore' : 'archive'),
@@ -1636,10 +1722,18 @@ class _ProjectDetailState extends State<ProjectDetail> {
     String title,
     Object? value, {
     VoidCallback? onTap,
-  }) => ListTile(
-    title: Text(title),
-    trailing: Text(localizedMoney(context, value)),
-    onTap: widget.api.can('REPORT_VIEW') ? onTap : null,
+  }) => Card(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(EquipmentA.radius),
+      onTap: widget.api.can('REPORT_VIEW') ? onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: EquipmentValue(
+          label: title,
+          value: localizedMoney(context, value),
+        ),
+      ),
+    ),
   );
 }
 
@@ -1713,8 +1807,8 @@ class _ProjectEquipmentPageState extends State<ProjectEquipmentPage> {
       appBar: AppBar(title: Text(l10n(context).m6ManageEquipment)),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(20),
+          : EquipmentPageBody(
+              maxWidth: 960,
               children: [
                 Text(
                   projectOrg == null
@@ -1862,8 +1956,7 @@ class _ProjectAttachmentsState extends State<ProjectAttachments> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => EquipmentFormSection(
     children: [
       Text(
         l10n(context).attachments,
@@ -1880,7 +1973,13 @@ class _ProjectAttachmentsState extends State<ProjectAttachments> {
         for (final file in items)
           ListTile(
             title: Text('${file['filename']}'),
-            subtitle: Text('${file['state']}'),
+            subtitle: Text(
+              file['state'] == 'READY'
+                  ? l10n(context).uiReadyToView
+                  : file['state'] == 'FAILED'
+                  ? l10n(context).uiUploadFailed
+                  : l10n(context).uiUploadIncomplete,
+            ),
             onTap: file['state'] == 'READY' ? () => open(file) : null,
             trailing: widget.canManage && file['state'] != 'READY'
                 ? TextButton(

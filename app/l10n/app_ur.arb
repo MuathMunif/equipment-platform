@@ -1132,5 +1132,6 @@
   "previewRecordedIncome": "درج شدہ آمدنی",
   "pilotEquipmentRecord": "مشین کا ریکارڈ",
   "pilotOptionalConnections": "اختیاری روابط",
-  "m5AccessRevoked": "رسائی واپس لے لی گئی"
+  "m5AccessRevoked": "رسائی واپس لے لی گئی",
+  "m6NoProjectSelected": "کوئی منصوبہ یا معاہدہ نہیں"
 }

@@ -2424,4 +2424,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get m5AccessRevoked => 'رسائی واپس لے لی گئی';
+
+  @override
+  String get m6NoProjectSelected => 'کوئی منصوبہ یا معاہدہ نہیں';
 }

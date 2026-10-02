@@ -2402,4 +2402,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get m5AccessRevoked => 'وصول مسحوب';
+
+  @override
+  String get m6NoProjectSelected => 'بدون مشروع أو عقد';
 }

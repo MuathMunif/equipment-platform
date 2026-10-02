@@ -4936,7 +4936,7 @@ class _EntryDetailState extends State<EntryDetail> {
                       subtitle: Text(
                         projectName ??
                             (entry!['projectId'] == null
-                                ? l10n(context).m6NoProjects
+                                ? l10n(context).m6NoProjectSelected
                                 : l10n(context).m6ProjectsContracts),
                       ),
                       trailing: cancelled || !widget.api.canPostFinance
@@ -5077,9 +5077,9 @@ class _EntryDetailState extends State<EntryDetail> {
                   const SizedBox(height: 12),
                   if (attachments.isEmpty)
                     Text(l10n(context).noEntryAttachments),
-                ...attachments.map(
-                  (file) => Card(
-                    margin: const EdgeInsets.only(bottom: 12),
+                  ...attachments.map(
+                    (file) => Card(
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(

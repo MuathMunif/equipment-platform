@@ -8,6 +8,7 @@ import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:equipment_app/main.dart';
 import 'package:equipment_app/maintenance.dart';
 import 'package:equipment_app/reports.dart';
+import 'package:equipment_app/projects.dart';
 import 'package:equipment_app/team.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -60,6 +61,53 @@ void main() {
       await loader.load();
     }
   });
+
+  for (final locale in ['ar', 'en', 'ur']) {
+    testWidgets('project filters and optional form fit320/200% $locale', (
+      tester,
+    ) async {
+      viewport(tester, 320, 800);
+      final api = Api(
+        persistNative: false,
+        client: MockClient((_) async => response([])),
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(
+          ProjectsPage(api: api, canManage: true, canFinance: true),
+          locale: locale,
+          scale: 2,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(ChoiceChip), findsNWidgets(4));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(
+        host(ProjectForm(api: api), locale: locale, scale: 2),
+      );
+      await tester.pumpAndSettle();
+      final name = find.byKey(const Key('projectName'));
+      await tester.ensureVisible(name);
+      await tester.enterText(name, 'مشروع الاختبار / Project A');
+      tester.view.physicalSize = const Size(1440, 800);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(name).controller!.text,
+        'مشروع الاختبار / Project A',
+      );
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      addTearDown(tester.view.resetViewInsets);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('saveProject')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getRect(find.byKey(const Key('saveProject'))).bottom,
+        lessThanOrEqualTo(520),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final locale in ['ar', 'en', 'ur']) {
     testWidgets(

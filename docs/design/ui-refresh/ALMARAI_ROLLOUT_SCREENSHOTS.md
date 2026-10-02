@@ -14,10 +14,10 @@ All below are actual production `lib/main.dart`, connected local API/session, sy
 | Account/settings |390|[settings](screenshots/almarai-rollout/settings-ar-390.jpg)|Existing user and language control|
 | Language dialog |390|[language](screenshots/almarai-rollout/language-dialog-ar-390.jpg)|Recaptured batch5 final width280 on actualdriver dialog|
 
-EN/UR connected forms, native, other families and final review still pending. Widget ar/en/ur results are not connected screenshots.
+Later sections contain additional locales/families/native. Widget results remain distinct from connected screenshots.
 
 ## Batch2 — connected production / synthetic OWNER
-Actual images captured and self-inspected: `refund-dialog-ar-390.jpg`, `entry-refunded-ar-390.jpg`, `entry-refunded-ar-1440.jpg`, `entry-history-attachment-ar-390.jpg`, `receipt-viewer-ar-390.jpg`, `report-recorded-ar-1440.jpg`, `report-movements-ar-1440.jpg`, `report-outstanding-ar-390.jpg` in `screenshots/almarai-rollout/`. Financial detail images predate final amount-edge alignment and attachment-margin correction; recapture before final review. Reports show real current synthetic data; outstanding is all-time current600, not an October snapshot. Receipt image350 is an existing generic synthetic attachment, not a calculation input for entry1000.
+Actual images captured and self-inspected: `refund-dialog-ar-390.jpg`, `entry-refunded-ar-390.jpg`, `entry-refunded-ar-1440.jpg`, `entry-history-attachment-ar-390.jpg`, `receipt-viewer-ar-390.jpg`, `report-recorded-ar-1440.jpg`, `report-movements-ar-1440.jpg`, `report-outstanding-ar-390.jpg` in `screenshots/almarai-rollout/`. AR detail390/1440 recaptured with batch6 final alignment. `entry-history-attachment-ar-390.jpg` is historical before attachment-margin correction; do not treat that image as final geometry. Reports show real current synthetic data; outstanding is all-time current600, not an October snapshot. Receipt image350 is an existing generic synthetic attachment, not a calculation input for entry1000.
 
 ## Batch3 source (after1d6b36e, current batch3 changes)
 Connected OWNER/en/390×1000 actual self-inspected: [finance](screenshots/almarai-rollout/entry-refunded-en-390.jpg) latest valuealignment; [document](screenshots/almarai-rollout/document-en-390.jpg), [renewform](screenshots/almarai-rollout/document-renew-en-390.jpg), [oldreadonly](screenshots/almarai-rollout/document-history-en-390.jpg), [protectedoldfile](screenshots/almarai-rollout/document-old-attachment-en-390.jpg). Historicalattachmentname/frame are app-controlled Almarai; imagecontents are syntheticfixture.
@@ -30,3 +30,21 @@ All connectedproduction/syntheticroles/height1000, self-inspected:
 - DRIVER: [ar390](screenshots/almarai-rollout/driver-ar-390.jpg), [en390](screenshots/almarai-rollout/driver-en-390.jpg), [ur390](screenshots/almarai-rollout/driver-ur-390.jpg), [UR form390](screenshots/almarai-rollout/driver-submit-ur-390.jpg) (finalstableunsaved250sample, discarded), [pendingUR](screenshots/almarai-rollout/driver-pending-ur-390.jpg), [approvedUR](screenshots/almarai-rollout/driver-approved-ur-390.jpg).
 - OWNER/reviewer: [requestEN390](screenshots/almarai-rollout/review-en-390.jpg), [approvalEN390](screenshots/almarai-rollout/approval-en-390.jpg), [teamEN1440](screenshots/almarai-rollout/team-en-1440.jpg), [teamUR390](screenshots/almarai-rollout/team-ur-390.jpg). Team images predate smallrevokedlabel+phoneisolatefix; finalrecapturepending.
 - SameuserworkspaceF: [selectorUR390](screenshots/almarai-rollout/workspace-picker-ur-390.jpg), [ownemptyUR390](screenshots/almarai-rollout/workspace-own-empty-ur-390.jpg). Actualemptyconnected, notharness.
+
+
+## Batch6 / final production source (after6345219 plus batch6 changes)
+All connected synthetic OWNER0802; height1000 unless native. Saved and self-inspected:
+| Screen | Locale / viewport | File | Evidence |
+|---|---|---|---|
+| Optional project form | ar/390 | [form](screenshots/almarai-rollout/project-form-ar-390.jpg) | Name-only, no mandatory organization |
+| Populated project summary | ar/1440 | [summary](screenshots/almarai-rollout/project-summary-ar-1440.jpg) | Recorded1000, netpaid400, remaining600 |
+| Project movement report after source/back | ar/1440 | [report](screenshots/almarai-rollout/project-report-back-ar-1440.jpg) | Project/type/lifetime date basis preserved |
+| Organization with assigned EQ38 | ar/390 | [organization](screenshots/almarai-rollout/organization-ar-390.jpg) | Count1; project remains independent |
+| Archive confirmation | ar/390 | [dialog](screenshots/almarai-rollout/organization-archive-dialog-ar-390.jpg) | Existing dependency explanation |
+| Blocked archive | ar/390 | [error](screenshots/almarai-rollout/organization-archive-blocked-ar-390.jpg) | Recaptured after localized error mapping; remains active |
+| Same original financial entry | ur/390 | [finance](screenshots/almarai-rollout/entry-refunded-ur-390.jpg) | 1000/600/200/400/600, RTL + mixed name |
+| Current renewed insurance | ur/390 | [document](screenshots/almarai-rollout/document-ur-390.jpg) | Current2027, new version has no attachments |
+| Receipt-first draft | ur/390 | [draft](screenshots/almarai-rollout/draft-ur-390.jpg) | Unique unposted draft, actual ready file |
+| Native expense form/software keyboard | ur/iPhone17Pro | [iOS keyboard](screenshots/almarai-rollout/ios-expense-ur-keyboard.png) | Actual app restored session;123.45 unsaved, software keyboard |
+| Native unsaved dialog | ur/iPhone17Pro | [iOS dialog](screenshots/almarai-rollout/ios-unsaved-ur.png) | Left safely, no new expense |
+Native window PNGs include simulator chrome (774×1666); native keyboards/system viewers are not app-controlled typography. No image generation or fake fixtures injected into the production app.

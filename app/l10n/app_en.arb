@@ -1132,5 +1132,6 @@
   "previewRecordedIncome": "Recorded income",
   "pilotEquipmentRecord": "Equipment record",
   "pilotOptionalConnections": "Optional connections",
-  "m5AccessRevoked": "Access revoked"
+  "m5AccessRevoked": "Access revoked",
+  "m6NoProjectSelected": "No project or contract"
 }

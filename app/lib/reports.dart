@@ -912,7 +912,7 @@ class _ProjectFilterPickerState extends State<ProjectSearchPicker> {
                     children: [
                       if (widget.allowNone)
                         ListTile(
-                          title: Text(l10n(context).m6NoProjects),
+                          title: Text(l10n(context).m6NoProjectSelected),
                           onTap: () => Navigator.pop(context, <String, dynamic>{
                             'id': null,
                             'name': null,

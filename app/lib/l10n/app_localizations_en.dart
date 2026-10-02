@@ -2428,4 +2428,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get m5AccessRevoked => 'Access revoked';
+
+  @override
+  String get m6NoProjectSelected => 'No project or contract';
 }
