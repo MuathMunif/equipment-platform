@@ -1133,5 +1133,13 @@
   "pilotEquipmentRecord": "Equipment record",
   "pilotOptionalConnections": "Optional connections",
   "m5AccessRevoked": "Access revoked",
-  "m6NoProjectSelected": "No project or contract"
+  "m6NoProjectSelected": "No project or contract",
+  "homeGreeting": "Hello, {name}",
+  "homeWelcome": "Hello",
+  "homeFinancialSummary": "Financial summary",
+  "homeCurrentEquipment": "Currently active equipment",
+  "homeRecordedExpenses": "Recorded expenses",
+  "homeRecordedIncome": "Recorded income",
+  "homeViewJournal": "View journal",
+  "homeMyEquipment": "My equipment"
 }

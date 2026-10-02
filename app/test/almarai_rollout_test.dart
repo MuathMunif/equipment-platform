@@ -646,7 +646,7 @@ void main() {
   }
 
   testWidgets(
-    'owner shell resize preserves search and does not repeat fetches',
+    'owner equipment page resize preserves search and does not repeat fetches',
     (tester) async {
       viewport(tester, 390);
       final reads = <String>[];
@@ -663,6 +663,8 @@ void main() {
         logout: () {},
       );
       await tester.pumpWidget(host(page));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('المعدات').last);
       await tester.pumpAndSettle();
       final search = find.byType(TextField).first;
       await tester.enterText(search, 'Volvo');

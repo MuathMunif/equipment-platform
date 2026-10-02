@@ -2431,4 +2431,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get m6NoProjectSelected => 'No project or contract';
+
+  @override
+  String homeGreeting(String name) {
+    return 'Hello, $name';
+  }
+
+  @override
+  String get homeWelcome => 'Hello';
+
+  @override
+  String get homeFinancialSummary => 'Financial summary';
+
+  @override
+  String get homeCurrentEquipment => 'Currently active equipment';
+
+  @override
+  String get homeRecordedExpenses => 'Recorded expenses';
+
+  @override
+  String get homeRecordedIncome => 'Recorded income';
+
+  @override
+  String get homeViewJournal => 'View journal';
+
+  @override
+  String get homeMyEquipment => 'My equipment';
 }

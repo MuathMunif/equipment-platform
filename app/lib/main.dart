@@ -514,6 +514,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
           key: ValueKey('home-$revision'),
           api: widget.api,
           home: true,
+          onViewAllEquipment: () => setState(() => selected = 1),
           name: widget.user['name'],
           canManage:
               role == null ||
@@ -603,7 +604,31 @@ class _WorkspacePageState extends State<WorkspacePage> {
         : destinations[current].$3;
     return Scaffold(
       appBar: AppBar(
-        title: Text(active?['name'] as String? ?? l10n(context).appTitle),
+        toolbarHeight: !isDriver && current == 0
+            ? 76 * MediaQuery.textScalerOf(context).scale(14) / 14
+            : null,
+        title: !isDriver && current == 0
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (widget.user['name'] as String? ?? '').isEmpty
+                        ? l10n(context).homeWelcome
+                        : l10n(context)
+                              .homeGreeting(widget.user['name'] as String),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    active?['name'] as String? ?? l10n(context).appTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              )
+            : Text(active?['name'] as String? ?? l10n(context).appTitle),
         actions: [
           PopupMenuButton<String>(
             key: const Key('workspaceMenu'),
@@ -830,6 +855,7 @@ class EquipmentList extends StatefulWidget {
   final Api api;
   final bool home;
   final String name;
+  final VoidCallback? onViewAllEquipment;
   final bool canManage,
       canEquipment,
       canFinance,
@@ -843,6 +869,7 @@ class EquipmentList extends StatefulWidget {
     required this.api,
     required this.home,
     required this.name,
+    this.onViewAllEquipment,
     this.canManage = true,
     this.canEquipment = true,
     this.canFinance = true,
@@ -953,6 +980,101 @@ class _EquipmentListState extends State<EquipmentList> {
     ),
   );
 
+  void openEquipment(Map<String, dynamic> item) => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => EquipmentDetail(
+        api: widget.api,
+        equipment: item,
+        canManage: widget.canManage,
+        canFinance: widget.canFinance,
+        canFinanceManage: widget.canFinanceManage,
+        canSubmitReview: widget.canSubmitReview,
+        canDocuments: widget.canDocuments,
+        canMaintenance: widget.canMaintenance,
+        canAssignDrivers: widget.canAssignDrivers,
+      ),
+    ),
+  );
+
+  Widget homeEquipment() {
+    final loc = l10n(context);
+    if (loading) return const LinearProgressIndicator();
+    if (error != null) return ErrorPanel(message: error!, retry: load);
+    return Card(
+      key: const Key('homeEquipment'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            EquipmentHeading(
+              loc.homeMyEquipment,
+              action: TextButton(
+                key: const Key('homeViewEquipment'),
+                onPressed:
+                    widget.onViewAllEquipment ??
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => Scaffold(
+                          appBar: AppBar(title: Text(loc.equipment)),
+                          body: EquipmentList(
+                            api: widget.api,
+                            home: false,
+                            name: widget.name,
+                            canManage: widget.canManage,
+                            canFinance: widget.canFinance,
+                            canFinanceManage: widget.canFinanceManage,
+                            canSubmitReview: widget.canSubmitReview,
+                            canDocuments: widget.canDocuments,
+                            canMaintenance: widget.canMaintenance,
+                            canAssignDrivers: widget.canAssignDrivers,
+                          ),
+                        ),
+                      ),
+                    ),
+                child: Text(loc.viewAll),
+              ),
+            ),
+            if (items.isEmpty) Text(loc.noEquipmentMatches),
+            for (var i = 0; i < items.take(3).length; i++) ...[
+              if (i > 0) const Divider(height: 1),
+              ListTile(
+                key: ValueKey('homeEquipment-${items[i]['id']}'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                minVerticalPadding: 8,
+                leading: const Icon(Icons.local_shipping_outlined, size: 24),
+                title: Text(
+                  items[i]['name'] as String,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                subtitle: Text(
+                  items[i]['reference'] as String,
+                  textDirection: TextDirection.ltr,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () =>
+                    openEquipment(Map<String, dynamic>.from(items[i] as Map)),
+              ),
+            ],
+            if (widget.canManage && items.isNotEmpty)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  key: const Key('addEquipment'),
+                  onPressed: add,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(loc.addEquipment),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading && !widget.home) {
@@ -960,6 +1082,34 @@ class _EquipmentListState extends State<EquipmentList> {
     }
     if (error != null && !widget.home) {
       return ErrorPanel(message: error!, retry: load);
+    }
+    if (widget.home) {
+      return EquipmentPageBody(
+        children: [
+          if (widget.canEquipment &&
+              widget.canManage &&
+              !loading &&
+              error == null &&
+              items.isEmpty) ...[
+            firstUseCard(),
+            const SizedBox(height: 12),
+          ],
+          DashboardSection(
+            key: const ValueKey('homeDashboard'),
+            api: widget.api,
+            canFinance: widget.canFinance,
+            canEquipment: widget.canEquipment,
+            canManage: widget.canFinanceManage,
+            canSubmitReview: widget.canSubmitReview,
+            attention: HomeDocumentAttention(
+              key: const ValueKey('homeAttention'),
+              api: widget.api,
+              showIncomplete: widget.canDocuments,
+            ),
+            equipment: widget.canEquipment ? homeEquipment() : null,
+          ),
+        ],
+      );
     }
     return EquipmentPageBody(
       children: [
@@ -972,37 +1122,6 @@ class _EquipmentListState extends State<EquipmentList> {
         const SizedBox(height: 8),
         if (widget.canEquipment) Text(l10n(context).equipmentSubtitle),
         const SizedBox(height: 24),
-        if (widget.home &&
-            widget.canEquipment &&
-            !loading &&
-            error == null &&
-            items.isEmpty &&
-            search.text.isEmpty &&
-            widget.canManage) ...[
-          firstUseCard(),
-          const SizedBox(height: 12),
-        ],
-        if (widget.home) ...[
-          EquipmentFieldRow(
-            key: const ValueKey('homeSections'),
-            breakpoint: 900,
-            firstFraction: .42,
-            first: HomeDocumentAttention(
-              key: const ValueKey('homeAttention'),
-              api: widget.api,
-              showIncomplete: widget.canDocuments,
-            ),
-            second: DashboardSection(
-              key: const ValueKey('homeDashboard'),
-              api: widget.api,
-              canFinance: widget.canFinance,
-              canEquipment: widget.canEquipment,
-              canManage: widget.canFinanceManage,
-              canSubmitReview: widget.canSubmitReview,
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
         if (widget.canEquipment && loading)
           const Center(child: CircularProgressIndicator()),
         if (widget.canEquipment && error != null)
