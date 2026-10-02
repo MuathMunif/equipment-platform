@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'documents.dart';
 import 'localization.dart';
 import 'maintenance.dart';
@@ -158,6 +159,7 @@ Future<bool> m5Confirm(
     await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
+        scrollable: true,
         title: Text(title),
         actions: [
           TextButton(
@@ -256,13 +258,14 @@ class _AccountInvitationsPageState extends State<AccountInvitationsPage> {
         ? M5Loader(error: null, retry: load)
         : error != null && items.isEmpty
         ? M5Loader(error: error, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(16),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (error != null) Text(error!),
               if (items.isEmpty) Text(l10n(context).m5NoInvitations),
               for (final item in items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -398,8 +401,8 @@ class _TeamPageState extends State<TeamPage> {
         ? M5Loader(error: null, retry: load)
         : error != null && members.isEmpty && invitations.isEmpty
         ? M5Loader(error: error, retry: load)
-        : ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (error != null) Text(error!),
               Text(
@@ -409,12 +412,19 @@ class _TeamPageState extends State<TeamPage> {
               if (members.isEmpty) Text(l10n(context).m5NoMembers),
               for (final member in members)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     key: Key('member-${member['userId']}'),
                     leading: const Icon(Icons.person_outline),
                     title: Text('${member['displayName']}'),
-                    subtitle: Text(m5Role(context, member['role'])),
-                    trailing: const Icon(Icons.chevron_right),
+                    subtitle: Text(
+                      '${m5Role(context, member['role'])}${member['active'] == false ? ' • ${l10n(context).m5AccessRevoked}' : ''}',
+                    ),
+                    trailing: Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
+                    ),
                     onTap: () => open(
                       MemberDetailPage(
                         api: widget.api,
@@ -435,10 +445,11 @@ class _TeamPageState extends State<TeamPage> {
                 Text(l10n(context).m5NoInvitations),
               for (final invitation in invitations)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text('${invitation['displayName']}'),
                     subtitle: Text(
-                      '${invitation['phone']} • ${m5Role(context, invitation['role'])} • ${m5Status(context, invitation['status'])}',
+                      '\u2066${invitation['phone']}\u2069 • ${m5Role(context, invitation['role'])} • ${m5Status(context, invitation['status'])}',
                     ),
                     trailing: invitation['status'] == 'PENDING'
                         ? PopupMenuButton<String>(
@@ -458,6 +469,7 @@ class _TeamPageState extends State<TeamPage> {
                         : null,
                   ),
                 ),
+              const SizedBox(height: 96),
             ],
           ),
   );
@@ -617,175 +629,196 @@ class _TeamEditorPageState extends State<TeamEditorPage> {
     ),
     body: loading
         ? M5Loader(error: null, retry: loadEquipment)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 800,
             children: [
-              if (widget.member == null) ...[
-                TextField(
-                  key: const Key('inviteName'),
-                  controller: name,
-                  decoration: InputDecoration(labelText: l10n(context).name),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  key: const Key('invitePhone'),
-                  controller: phone,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: l10n(context).phoneNumber,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                key: const Key('teamRole'),
-                initialValue: role,
-                decoration: InputDecoration(labelText: l10n(context).m5Role),
-                items: forRoles(context),
-                onChanged: (value) => setState(() {
-                  role = value!;
-                  scope = role == 'DRIVER'
-                      ? 'ASSIGNED_EQUIPMENT'
-                      : 'ALL_EQUIPMENT';
-                  financialMode = role == 'DRIVER' ? 'REVIEW' : 'DIRECT';
-                  capabilities
-                    ..clear()
-                    ..addAll(m5DefaultCapabilities[role]!);
-                }),
-              ),
-              const SizedBox(height: 12),
-              if (role != 'DRIVER')
-                DropdownButtonFormField<String>(
-                  key: const Key('teamScope'),
-                  initialValue: scope,
-                  decoration: InputDecoration(labelText: l10n(context).m5Scope),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'ALL_EQUIPMENT',
-                      child: Text(l10n(context).m5AllEquipment),
-                    ),
-                    DropdownMenuItem(
-                      value: 'SELECTED_EQUIPMENT',
-                      child: Text(l10n(context).m5SelectedEquipment),
-                    ),
-                    DropdownMenuItem(
-                      value: 'SELECTED_ORGANIZATIONS',
-                      child: Text(l10n(context).m6ScopeOrganizations),
-                    ),
-                  ],
-                  onChanged: (value) => setState(() => scope = value!),
-                ),
-              if (role == 'DRIVER') Text(l10n(context).m5DriverInviteHint),
-              if (scope == 'ALL_EQUIPMENT' && role != 'DRIVER')
-                Text(l10n(context).m5AllScopeHint),
-              if (scope == 'SELECTED_EQUIPMENT' && role != 'DRIVER') ...[
-                const SizedBox(height: 12),
-                Text(l10n(context).m5ChooseEquipment),
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: l10n(context).searchEquipment,
-                  ),
-                  onChanged: (value) => setState(
-                    () => equipmentSearch = value.trim().toLowerCase(),
-                  ),
-                ),
-                for (final item in equipment.where(
-                  (e) => '${e['name']} ${e['reference']}'
-                      .toLowerCase()
-                      .contains(equipmentSearch),
-                ))
-                  CheckboxListTile(
-                    title: Text('${item['name']} • ${item['reference']}'),
-                    value: equipmentIds.contains(item['id']),
-                    onChanged: (checked) => setState(() {
-                      if (checked == true) {
-                        equipmentIds.add(item['id'] as String);
-                      } else {
-                        equipmentIds.remove(item['id']);
-                      }
-                    }),
-                  ),
-              ],
-              if (scope == 'SELECTED_ORGANIZATIONS' && role != 'DRIVER') ...[
-                const SizedBox(height: 12),
-                Text(l10n(context).m6ScopeOrganizationsHint),
-                for (final org in organizations)
-                  CheckboxListTile(
-                    key: Key('memberOrganization-${org['id']}'),
-                    title: Text('${org['name']}'),
-                    value: organizationIds.contains(org['id']),
-                    onChanged: (checked) => setState(() {
-                      if (checked == true) {
-                        organizationIds.add('${org['id']}');
-                      } else {
-                        organizationIds.remove('${org['id']}');
-                      }
-                    }),
-                  ),
-              ],
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                key: const Key('financialMode'),
-                initialValue: financialMode,
-                decoration: InputDecoration(
-                  labelText: l10n(context).m5FinancialMode,
-                ),
-                items: [
-                  DropdownMenuItem(
-                    value: 'REVIEW',
-                    child: Text(l10n(context).m5ReviewMode),
-                  ),
-                  DropdownMenuItem(
-                    value: 'DIRECT',
-                    child: Text(l10n(context).m5DirectMode),
-                  ),
-                ],
-                onChanged: (value) => setState(() => financialMode = value!),
-              ),
-              const SizedBox(height: 20),
-              ExpansionTile(
-                title: Text(l10n(context).m5Capabilities),
-                subtitle: Text(l10n(context).m5CapabilitiesHint),
+              EquipmentFormSection(
                 children: [
-                  for (final group in m5CapabilityGroups.entries) ...[
-                    ListTile(
-                      title: Text(
-                        m5Group(context, group.key),
-                        style: Theme.of(context).textTheme.titleSmall,
+                  if (widget.member == null) ...[
+                    TextField(
+                      key: const Key('inviteName'),
+                      controller: name,
+                      decoration: InputDecoration(
+                        labelText: l10n(context).name,
                       ),
                     ),
-                    for (final code in group.value)
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('invitePhone'),
+                      controller: phone,
+                      textDirection: TextDirection.ltr,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: l10n(context).phoneNumber,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    itemHeight: null,
+                    key: const Key('teamRole'),
+                    initialValue: role,
+                    decoration: InputDecoration(
+                      labelText: l10n(context).m5Role,
+                    ),
+                    items: forRoles(context),
+                    onChanged: (value) => setState(() {
+                      role = value!;
+                      scope = role == 'DRIVER'
+                          ? 'ASSIGNED_EQUIPMENT'
+                          : 'ALL_EQUIPMENT';
+                      financialMode = role == 'DRIVER' ? 'REVIEW' : 'DIRECT';
+                      capabilities
+                        ..clear()
+                        ..addAll(m5DefaultCapabilities[role]!);
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  if (role != 'DRIVER')
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      itemHeight: null,
+                      key: const Key('teamScope'),
+                      initialValue: scope,
+                      decoration: InputDecoration(
+                        labelText: l10n(context).m5Scope,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'ALL_EQUIPMENT',
+                          child: Text(l10n(context).m5AllEquipment),
+                        ),
+                        DropdownMenuItem(
+                          value: 'SELECTED_EQUIPMENT',
+                          child: Text(l10n(context).m5SelectedEquipment),
+                        ),
+                        DropdownMenuItem(
+                          value: 'SELECTED_ORGANIZATIONS',
+                          child: Text(l10n(context).m6ScopeOrganizations),
+                        ),
+                      ],
+                      onChanged: (value) => setState(() => scope = value!),
+                    ),
+                  if (role == 'DRIVER') Text(l10n(context).m5DriverInviteHint),
+                  if (scope == 'ALL_EQUIPMENT' && role != 'DRIVER')
+                    Text(l10n(context).m5AllScopeHint),
+                  if (scope == 'SELECTED_EQUIPMENT' && role != 'DRIVER') ...[
+                    const SizedBox(height: 12),
+                    Text(l10n(context).m5ChooseEquipment),
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: l10n(context).searchEquipment,
+                      ),
+                      onChanged: (value) => setState(
+                        () => equipmentSearch = value.trim().toLowerCase(),
+                      ),
+                    ),
+                    for (final item in equipment.where(
+                      (e) => '${e['name']} ${e['reference']}'
+                          .toLowerCase()
+                          .contains(equipmentSearch),
+                    ))
                       CheckboxListTile(
-                        key: Key('cap-$code'),
-                        title: Text(m5Capability(context, code)),
-                        value: capabilities.contains(code),
+                        title: Text('${item['name']} • ${item['reference']}'),
+                        value: equipmentIds.contains(item['id']),
                         onChanged: (checked) => setState(() {
                           if (checked == true) {
-                            capabilities.add(code);
+                            equipmentIds.add(item['id'] as String);
                           } else {
-                            capabilities.remove(code);
+                            equipmentIds.remove(item['id']);
                           }
                         }),
                       ),
                   ],
+                  if (scope == 'SELECTED_ORGANIZATIONS' &&
+                      role != 'DRIVER') ...[
+                    const SizedBox(height: 12),
+                    Text(l10n(context).m6ScopeOrganizationsHint),
+                    for (final org in organizations)
+                      CheckboxListTile(
+                        key: Key('memberOrganization-${org['id']}'),
+                        title: Text('${org['name']}'),
+                        value: organizationIds.contains(org['id']),
+                        onChanged: (checked) => setState(() {
+                          if (checked == true) {
+                            organizationIds.add('${org['id']}');
+                          } else {
+                            organizationIds.remove('${org['id']}');
+                          }
+                        }),
+                      ),
+                  ],
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    itemHeight: null,
+                    key: const Key('financialMode'),
+                    initialValue: financialMode,
+                    decoration: InputDecoration(
+                      labelText: l10n(context).m5FinancialMode,
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'REVIEW',
+                        child: Text(l10n(context).m5ReviewMode),
+                      ),
+                      DropdownMenuItem(
+                        value: 'DIRECT',
+                        child: Text(l10n(context).m5DirectMode),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => financialMode = value!),
+                  ),
+                  const SizedBox(height: 20),
+                  ExpansionTile(
+                    title: Text(l10n(context).m5Capabilities),
+                    subtitle: Text(l10n(context).m5CapabilitiesHint),
+                    children: [
+                      for (final group in m5CapabilityGroups.entries) ...[
+                        ListTile(
+                          title: Text(
+                            m5Group(context, group.key),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                        for (final code in group.value)
+                          CheckboxListTile(
+                            key: Key('cap-$code'),
+                            title: Text(m5Capability(context, code)),
+                            value: capabilities.contains(code),
+                            onChanged: (checked) => setState(() {
+                              if (checked == true) {
+                                capabilities.add(code);
+                              } else {
+                                capabilities.remove(code);
+                              }
+                            }),
+                          ),
+                      ],
+                    ],
+                  ),
+                  if (error != null)
+                    Text(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    key: const Key('saveTeamMember'),
+                    onPressed: busy ? null : save,
+                    child: Text(
+                      widget.member == null
+                          ? l10n(context).m5SendInvitation
+                          : l10n(context).save,
+                    ),
+                  ),
+                  if (busy) const LinearProgressIndicator(),
                 ],
               ),
-              if (error != null)
-                Text(
-                  error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              const SizedBox(height: 16),
-              FilledButton(
-                key: const Key('saveTeamMember'),
-                onPressed: busy ? null : save,
-                child: Text(
-                  widget.member == null
-                      ? l10n(context).m5SendInvitation
-                      : l10n(context).save,
-                ),
-              ),
-              if (busy) const LinearProgressIndicator(),
             ],
           ),
   );
@@ -890,50 +923,59 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
     appBar: AppBar(title: Text(l10n(context).m5MemberDetails)),
     body: loading || member == null
         ? M5Loader(error: error, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
-              Text(
-                '${member!['displayName']}',
-                style: Theme.of(context).textTheme.headlineSmall,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    '${member!['displayName']}',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  Text('${member!['phone']}', textDirection: TextDirection.ltr),
+                  if (member!['active'] == false)
+                    EquipmentBadge(l10n(context).m5AccessRevoked),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: Text(l10n(context).m5Role),
+                    subtitle: Text(m5Role(context, member!['role'])),
+                  ),
+                  ListTile(
+                    title: Text(l10n(context).m5Scope),
+                    subtitle: Text(
+                      member!['scope'] == 'ALL_EQUIPMENT'
+                          ? l10n(context).m5AllEquipment
+                          : member!['scope'] == 'ASSIGNED_EQUIPMENT'
+                          ? l10n(context).m5CurrentAssignment
+                          : member!['scope'] == 'SELECTED_ORGANIZATIONS'
+                          ? l10n(context).m6ScopeOrganizations
+                          : l10n(context).m5SelectedEquipment,
+                    ),
+                  ),
+                  if (member!['scope'] == 'SELECTED_EQUIPMENT')
+                    for (final name in scopeEquipmentNames)
+                      ListTile(dense: true, title: Text(name)),
+                  ListTile(
+                    title: Text(l10n(context).m5FinancialMode),
+                    subtitle: Text(
+                      member!['financialMode'] == 'DIRECT'
+                          ? l10n(context).m5DirectMode
+                          : l10n(context).m5ReviewMode,
+                    ),
+                  ),
+                  Text(
+                    l10n(context).m5Capabilities,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  for (final code
+                      in (member!['capabilities'] as List<dynamic>? ?? []))
+                    ListTile(
+                      dense: true,
+                      title: Text(m5Capability(context, '$code')),
+                    ),
+                ],
               ),
-              Text('${member!['phone']}'),
-              const SizedBox(height: 16),
-              ListTile(
-                title: Text(l10n(context).m5Role),
-                subtitle: Text(m5Role(context, member!['role'])),
-              ),
-              ListTile(
-                title: Text(l10n(context).m5Scope),
-                subtitle: Text(
-                  member!['scope'] == 'ALL_EQUIPMENT'
-                      ? l10n(context).m5AllEquipment
-                      : member!['scope'] == 'ASSIGNED_EQUIPMENT'
-                      ? l10n(context).m5CurrentAssignment
-                      : l10n(context).m5SelectedEquipment,
-                ),
-              ),
-              if (member!['scope'] == 'SELECTED_EQUIPMENT')
-                for (final name in scopeEquipmentNames)
-                  ListTile(dense: true, title: Text(name)),
-              ListTile(
-                title: Text(l10n(context).m5FinancialMode),
-                subtitle: Text(
-                  member!['financialMode'] == 'DIRECT'
-                      ? l10n(context).m5DirectMode
-                      : l10n(context).m5ReviewMode,
-                ),
-              ),
-              Text(
-                l10n(context).m5Capabilities,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              for (final code
-                  in (member!['capabilities'] as List<dynamic>? ?? []))
-                ListTile(
-                  dense: true,
-                  title: Text(m5Capability(context, '$code')),
-                ),
+              const SizedBox(height: 20),
               if (member!['role'] == 'DRIVER' && widget.canAssign)
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -970,6 +1012,9 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
               if (widget.owner && member!['role'] != 'OWNER')
                 OutlinedButton(
                   onPressed: revoke,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: EquipmentA.danger,
+                  ),
                   child: Text(l10n(context).m5RevokeAccess),
                 ),
               if (error != null) Text(error!),
@@ -1085,6 +1130,7 @@ class _EquipmentDriverAssignmentPageState
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(
+          scrollable: true,
           title: Text(loc.m5DriverAssignment),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1139,74 +1185,80 @@ class _EquipmentDriverAssignmentPageState
     appBar: AppBar(title: Text(l10n(context).m5DriverAssignment)),
     body: loading
         ? M5Loader(error: error, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 800,
             children: [
-              Text(
-                equipmentName,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              Text(l10n(context).m5CurrentAssignment),
-              ListTile(
-                key: const Key('currentEquipmentDriver'),
-                title: Text(
-                  current?['driverName'] as String? ??
-                      l10n(context).m5NoAssignment,
-                ),
-                subtitle: current?['startedAt'] == null
-                    ? null
-                    : Text(
-                        localizedDate(
-                          context,
-                          current!['startedAt'] as String?,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    equipmentName,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(l10n(context).m5CurrentAssignment),
+                  ListTile(
+                    key: const Key('currentEquipmentDriver'),
+                    title: Text(
+                      current?['driverName'] as String? ??
+                          l10n(context).m5NoAssignment,
+                    ),
+                    subtitle: current?['startedAt'] == null
+                        ? null
+                        : Text(
+                            localizedDate(
+                              context,
+                              current!['startedAt'] as String?,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (eligible.isEmpty)
+                    Text(l10n(context).m5NoEligibleDrivers)
+                  else ...[
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      itemHeight: null,
+                      key: const Key('eligibleDriverPicker'),
+                      initialValue: selectedId,
+                      decoration: InputDecoration(
+                        labelText: l10n(context).m5ChooseDriver,
+                      ),
+                      items: [
+                        for (final driver in eligible)
+                          DropdownMenuItem(
+                            value: driver['userId'] as String,
+                            child: Text(driver['displayName'] as String),
+                          ),
+                      ],
+                      onChanged: busy
+                          ? null
+                          : (value) => setState(() => selectedId = value),
+                    ),
+                    if (selectedId != null &&
+                        eligible
+                                .where((item) => item['userId'] == selectedId)
+                                .firstOrNull?['currentEquipmentName'] !=
+                            null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n(context).m5DriverCurrentlyOnEquipment(
+                          eligible
+                                  .where((item) => item['userId'] == selectedId)
+                                  .first['currentEquipmentName']
+                              as String,
                         ),
                       ),
-              ),
-              const SizedBox(height: 12),
-              if (eligible.isEmpty)
-                Text(l10n(context).m5NoEligibleDrivers)
-              else ...[
-                DropdownButtonFormField<String>(
-                  key: const Key('eligibleDriverPicker'),
-                  initialValue: selectedId,
-                  decoration: InputDecoration(
-                    labelText: l10n(context).m5ChooseDriver,
-                  ),
-                  items: [
-                    for (final driver in eligible)
-                      DropdownMenuItem(
-                        value: driver['userId'] as String,
-                        child: Text(driver['displayName'] as String),
-                      ),
-                  ],
-                  onChanged: busy
-                      ? null
-                      : (value) => setState(() => selectedId = value),
-                ),
-                if (selectedId != null &&
-                    eligible
-                            .where((item) => item['userId'] == selectedId)
-                            .firstOrNull?['currentEquipmentName'] !=
-                        null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n(context).m5DriverCurrentlyOnEquipment(
-                      eligible
-                              .where((item) => item['userId'] == selectedId)
-                              .first['currentEquipmentName']
-                          as String,
+                    ],
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      key: const Key('assignEligibleDriver'),
+                      onPressed: busy || selectedId == null ? null : assign,
+                      child: Text(l10n(context).m5Assign),
                     ),
-                  ),
+                  ],
+                  if (error != null) Text(error!),
                 ],
-                const SizedBox(height: 16),
-                FilledButton(
-                  key: const Key('assignEligibleDriver'),
-                  onPressed: busy || selectedId == null ? null : assign,
-                  child: Text(l10n(context).m5Assign),
-                ),
-              ],
-              if (error != null) Text(error!),
+              ),
             ],
           ),
   );
@@ -1356,8 +1408,8 @@ class _DriverAssignmentPageState extends State<DriverAssignmentPage> {
       appBar: AppBar(title: Text(l10n(context).m5DriverAssignment)),
       body: loading
           ? M5Loader(error: null, retry: load)
-          : ListView(
-              padding: const EdgeInsets.all(20),
+          : EquipmentPageBody(
+              maxWidth: 960,
               children: [
                 Text(
                   '${widget.driver['displayName']}',
@@ -1371,6 +1423,7 @@ class _DriverAssignmentPageState extends State<DriverAssignmentPage> {
                 current == null
                     ? Text(l10n(context).m5NoAssignment)
                     : Card(
+                        margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           title: Text(
                             equipmentName(current['equipmentId'] as String?),
@@ -1390,6 +1443,8 @@ class _DriverAssignmentPageState extends State<DriverAssignmentPage> {
                       ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  itemHeight: null,
                   key: const Key('assignmentEquipment'),
                   initialValue: selectedId,
                   decoration: InputDecoration(
@@ -1527,8 +1582,9 @@ class _DriverHomePageState extends State<DriverHomePage> {
       ? M5Loader(error: error, retry: load)
       : RefreshIndicator(
           onRefresh: load,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+          child: EquipmentPageBody(
+            maxWidth: 800,
+            alwaysScrollable: true,
             children: [
               Text(switch (widget.section) {
                 1 => l10n(context).m5MyIssues,
@@ -1539,6 +1595,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
               const SizedBox(height: 16),
               if (widget.section == 0 && equipment == null)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(l10n(context).m5NoAssignmentDriver),
@@ -1546,6 +1603,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 ),
               if (widget.section == 0 && equipment != null) ...[
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     leading: const Icon(Icons.local_shipping_outlined),
                     title: Text('${equipment!['name']}'),
@@ -1588,14 +1646,10 @@ class _DriverHomePageState extends State<DriverHomePage> {
                 ),
               ],
               if (widget.section == 1) ...[
-                const SizedBox(height: 20),
-                Text(
-                  l10n(context).m5MyIssues,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
                 if (issues.isEmpty) Text(l10n(context).m5NoIssues),
                 for (final issue in issues)
                   Card(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
                       title: Text('${issue['description']}'),
                       subtitle: Text(
@@ -1611,14 +1665,10 @@ class _DriverHomePageState extends State<DriverHomePage> {
                   ),
               ],
               if (widget.section == 2) ...[
-                const SizedBox(height: 20),
-                Text(
-                  l10n(context).m5MySubmissions,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
                 if (submissions.isEmpty) Text(l10n(context).m5NoSubmissions),
                 for (final item in submissions)
                   Card(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
                       title: Text(
                         item['amount'] == null
@@ -1767,54 +1817,61 @@ class _SubmissionFormPageState extends State<SubmissionFormPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(l10n(context).m5SubmitExpense)),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
+    body: EquipmentPageBody(
+      maxWidth: 800,
       children: [
-        Text(
-          '${widget.equipment['name']}',
-          style: Theme.of(context).textTheme.titleLarge,
+        EquipmentFormSection(
+          children: [
+            Text(
+              '${widget.equipment['name']}',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            Text(l10n(context).m5SubmissionHint),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('submissionAmount'),
+              style: Theme.of(context).textTheme.headlineSmall,
+              controller: amount,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(labelText: l10n(context).uiAmountSar),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              title: Text(l10n(context).m5TransactionDate),
+              subtitle: Text(localizedDate(context, date)),
+              trailing: const Icon(Icons.calendar_today_outlined),
+              onTap: pickDate,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('submissionNote'),
+              controller: note,
+              maxLines: 3,
+              decoration: InputDecoration(labelText: l10n(context).m5Note),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              key: const Key('submissionReceipt'),
+              onPressed: pick,
+              icon: const Icon(Icons.attach_file),
+              label: Text(file?.name ?? l10n(context).m5AddReceipt),
+            ),
+            if (error != null)
+              Text(
+                error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            const SizedBox(height: 20),
+            FilledButton(
+              key: const Key('sendSubmission'),
+              onPressed: busy ? null : save,
+              child: Text(l10n(context).m5SendForReview),
+            ),
+            if (busy) const LinearProgressIndicator(),
+          ],
         ),
-        Text(l10n(context).m5SubmissionHint),
-        const SizedBox(height: 16),
-        TextField(
-          key: const Key('submissionAmount'),
-          controller: amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(labelText: l10n(context).uiAmountSar),
-        ),
-        const SizedBox(height: 12),
-        ListTile(
-          title: Text(l10n(context).m5TransactionDate),
-          subtitle: Text(localizedDate(context, date)),
-          trailing: const Icon(Icons.calendar_today_outlined),
-          onTap: pickDate,
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          key: const Key('submissionNote'),
-          controller: note,
-          maxLines: 3,
-          decoration: InputDecoration(labelText: l10n(context).m5Note),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          key: const Key('submissionReceipt'),
-          onPressed: pick,
-          icon: const Icon(Icons.attach_file),
-          label: Text(file?.name ?? l10n(context).m5AddReceipt),
-        ),
-        if (error != null)
-          Text(
-            error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        const SizedBox(height: 20),
-        FilledButton(
-          key: const Key('sendSubmission'),
-          onPressed: busy ? null : save,
-          child: Text(l10n(context).m5SendForReview),
-        ),
-        if (busy) const LinearProgressIndicator(),
       ],
     ),
   );
@@ -1875,12 +1932,13 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
     ),
     body: loading || error != null
         ? M5Loader(error: error, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(16),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (items.isEmpty) Text(l10n(context).m5ReviewQueueEmpty),
               for (final item in items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     key: Key('review-${item['id']}'),
                     leading: const Icon(Icons.fact_check_outlined),
@@ -1892,7 +1950,11 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                     subtitle: Text(
                       '${item['submitterName']} • ${item['equipmentName']} • ${localizedDate(context, item['transactionDate'] as String?)}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
+                    ),
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -1909,7 +1971,9 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                   ),
                 ),
               if (page > 0 || (page + 1) * 30 < total)
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     TextButton(
                       onPressed: page == 0
@@ -1985,6 +2049,7 @@ class _SubmissionDetailPageState extends State<SubmissionDetailPage> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialog) => AlertDialog(
+        scrollable: true,
         title: Text(l10n(dialog).m5RejectSubmission),
         content: TextField(
           key: const Key('rejectionReason'),
@@ -2042,44 +2107,55 @@ class _SubmissionDetailPageState extends State<SubmissionDetailPage> {
     appBar: AppBar(title: Text(l10n(context).m5SubmissionDetails)),
     body: loading || item == null
         ? M5Loader(error: error, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
-              Text(
-                '${item!['equipmentName']}',
-                style: Theme.of(context).textTheme.titleLarge,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    '${item!['equipmentName']}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  ListTile(
+                    title: Text(l10n(context).m5Status),
+                    subtitle: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: EquipmentBadge(m5Status(context, item!['status'])),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(l10n(context).m5SubmittedBy),
+                    subtitle: Text('${item!['submitterName']}'),
+                  ),
+                  if (item!['amount'] != null)
+                    ListTile(
+                      title: Text(l10n(context).uiAmountSar),
+                      subtitle: Text(localizedMoney(context, item!['amount'])),
+                    ),
+                  ListTile(
+                    title: Text(l10n(context).m5TransactionDate),
+                    subtitle: Text(
+                      localizedDate(
+                        context,
+                        item!['transactionDate'] as String?,
+                      ),
+                    ),
+                  ),
+                  if (item!['note'] != null)
+                    ListTile(
+                      title: Text(l10n(context).m5Note),
+                      subtitle: Text('${item!['note']}'),
+                    ),
+                  if (item!['rejectionReason'] != null)
+                    ListTile(
+                      title: Text(l10n(context).m5RejectionReason),
+                      subtitle: Text('${item!['rejectionReason']}'),
+                    ),
+                  if (item!['approvedFinancialEntryId'] != null)
+                    Text(l10n(context).m5ApprovedEntryCreated),
+                ],
               ),
-              ListTile(
-                title: Text(l10n(context).m5Status),
-                subtitle: Text(m5Status(context, item!['status'])),
-              ),
-              ListTile(
-                title: Text(l10n(context).m5SubmittedBy),
-                subtitle: Text('${item!['submitterName']}'),
-              ),
-              if (item!['amount'] != null)
-                ListTile(
-                  title: Text(l10n(context).uiAmountSar),
-                  subtitle: Text(localizedMoney(context, item!['amount'])),
-                ),
-              ListTile(
-                title: Text(l10n(context).m5TransactionDate),
-                subtitle: Text(
-                  localizedDate(context, item!['transactionDate'] as String?),
-                ),
-              ),
-              if (item!['note'] != null)
-                ListTile(
-                  title: Text(l10n(context).m5Note),
-                  subtitle: Text('${item!['note']}'),
-                ),
-              if (item!['rejectionReason'] != null)
-                ListTile(
-                  title: Text(l10n(context).m5RejectionReason),
-                  subtitle: Text('${item!['rejectionReason']}'),
-                ),
-              if (item!['approvedFinancialEntryId'] != null)
-                Text(l10n(context).m5ApprovedEntryCreated),
+              const SizedBox(height: 20),
               if (!widget.reviewer && item!['status'] == 'REJECTED')
                 FilledButton(
                   key: const Key('resubmitSubmission'),
@@ -2121,6 +2197,9 @@ class _SubmissionDetailPageState extends State<SubmissionDetailPage> {
                 OutlinedButton(
                   key: const Key('rejectSubmission'),
                   onPressed: reject,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: EquipmentA.danger,
+                  ),
                   child: Text(l10n(context).m5Reject),
                 ),
               ],
@@ -2264,7 +2343,7 @@ class _ApprovalPageState extends State<ApprovalPage> {
           'category': category,
           'operationDate': date,
           'paymentStatus': status,
-          'initialPaid': status == 'PARTIAL' ? paid : null,
+          if (status == 'PARTIAL') 'initialPaid': paid,
           'paidOn': status == 'UNPAID' ? null : paidOn,
           'partyName': status == 'FULL' ? null : party.text.trim(),
           'dueDate': status == 'FULL' ? null : dueDate,
@@ -2289,135 +2368,155 @@ class _ApprovalPageState extends State<ApprovalPage> {
             : l10n(context).m5ApproveExpense,
       ),
     ),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
+    body: EquipmentPageBody(
+      maxWidth: 800,
       children: [
-        Text(
-          widget.direct
-              ? l10n(context).m5DirectExpenseHint
-              : l10n(context).m5ApprovalHint,
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          key: const Key('approvalAmount'),
-          controller: amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(labelText: l10n(context).uiAmountSar),
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          initialValue: category,
-          decoration: InputDecoration(labelText: l10n(context).m5Category),
-          items: [
-            DropdownMenuItem(
-              value: 'FUEL',
-              child: Text(l10n(context).categoryFuel),
-            ),
-            DropdownMenuItem(
-              value: 'MAINTENANCE',
-              child: Text(l10n(context).categoryMaintenance),
-            ),
-            DropdownMenuItem(value: 'OTHER', child: Text(l10n(context).other)),
-          ],
-          onChanged: (value) => setState(() => category = value!),
-        ),
-        ExpansionTile(
-          title: Text(l10n(context).m6AdditionalDetails),
+        EquipmentFormSection(
           children: [
-            OutlinedButton.icon(
-              key: const Key('approvalProject'),
-              onPressed: busy ? null : chooseProject,
-              icon: const Icon(Icons.folder_outlined),
-              label: Text(projectName ?? l10n(context).m6ProjectClassification),
+            Text(
+              widget.direct
+                  ? l10n(context).m5DirectExpenseHint
+                  : l10n(context).m5ApprovalHint,
             ),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('approvalAmount'),
+              style: Theme.of(context).textTheme.headlineSmall,
+              controller: amount,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(labelText: l10n(context).uiAmountSar),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              itemHeight: null,
+              initialValue: category,
+              decoration: InputDecoration(labelText: l10n(context).m5Category),
+              items: [
+                DropdownMenuItem(
+                  value: 'FUEL',
+                  child: Text(l10n(context).categoryFuel),
+                ),
+                DropdownMenuItem(
+                  value: 'MAINTENANCE',
+                  child: Text(l10n(context).categoryMaintenance),
+                ),
+                DropdownMenuItem(
+                  value: 'OTHER',
+                  child: Text(l10n(context).other),
+                ),
+              ],
+              onChanged: (value) => setState(() => category = value!),
+            ),
+            ExpansionTile(
+              title: Text(l10n(context).m6AdditionalDetails),
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('approvalProject'),
+                  onPressed: busy ? null : chooseProject,
+                  icon: const Icon(Icons.folder_outlined),
+                  label: Text(
+                    projectName ?? l10n(context).m6ProjectClassification,
+                  ),
+                ),
+              ],
+            ),
+            ListTile(
+              title: Text(l10n(context).m5TransactionDate),
+              subtitle: Text(localizedDate(context, date)),
+              onTap: () => dateSelect(false),
+            ),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              itemHeight: null,
+              initialValue: status,
+              decoration: InputDecoration(
+                labelText: l10n(context).m5PaymentStatus,
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'FULL',
+                  child: Text(l10n(context).paidFull),
+                ),
+                DropdownMenuItem(
+                  value: 'PARTIAL',
+                  child: Text(l10n(context).paidPartial),
+                ),
+                DropdownMenuItem(
+                  value: 'UNPAID',
+                  child: Text(l10n(context).unpaid),
+                ),
+              ],
+              onChanged: (value) => setState(() => status = value!),
+            ),
+            if (status == 'PARTIAL')
+              TextField(
+                controller: initialPaid,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiInitialPayment,
+                ),
+              ),
+            if (status != 'UNPAID')
+              ListTile(
+                title: Text(l10n(context).m5PaidOn),
+                subtitle: Text(localizedDate(context, paidOn)),
+                onTap: () async {
+                  final value = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.parse(paidOn),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime(2100),
+                  );
+                  if (value != null) {
+                    setState(
+                      () => paidOn = value.toIso8601String().split('T').first,
+                    );
+                  }
+                },
+              ),
+            if (status != 'FULL') ...[
+              TextField(
+                controller: party,
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiSupplierOrPartyName,
+                ),
+              ),
+              ListTile(
+                title: Text(l10n(context).m5DueDate),
+                subtitle: Text(
+                  dueDate == null
+                      ? l10n(context).m5ChooseDate
+                      : localizedDate(context, dueDate),
+                ),
+                onTap: () => dateSelect(true),
+              ),
+            ],
+            TextField(
+              controller: note,
+              maxLines: 3,
+              decoration: InputDecoration(labelText: l10n(context).m5Note),
+            ),
+            if (error != null)
+              Text(
+                error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            const SizedBox(height: 16),
+            FilledButton(
+              key: const Key('confirmApproval'),
+              onPressed: busy ? null : approve,
+              child: Text(
+                widget.direct ? l10n(context).save : l10n(context).m5Approve,
+              ),
+            ),
+            if (busy) const LinearProgressIndicator(),
           ],
         ),
-        ListTile(
-          title: Text(l10n(context).m5TransactionDate),
-          subtitle: Text(localizedDate(context, date)),
-          onTap: () => dateSelect(false),
-        ),
-        DropdownButtonFormField<String>(
-          initialValue: status,
-          decoration: InputDecoration(labelText: l10n(context).m5PaymentStatus),
-          items: [
-            DropdownMenuItem(
-              value: 'FULL',
-              child: Text(l10n(context).paidFull),
-            ),
-            DropdownMenuItem(
-              value: 'PARTIAL',
-              child: Text(l10n(context).paidPartial),
-            ),
-            DropdownMenuItem(
-              value: 'UNPAID',
-              child: Text(l10n(context).unpaid),
-            ),
-          ],
-          onChanged: (value) => setState(() => status = value!),
-        ),
-        if (status == 'PARTIAL')
-          TextField(
-            controller: initialPaid,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: l10n(context).uiInitialPayment,
-            ),
-          ),
-        if (status != 'UNPAID')
-          ListTile(
-            title: Text(l10n(context).m5PaidOn),
-            subtitle: Text(localizedDate(context, paidOn)),
-            onTap: () async {
-              final value = await showDatePicker(
-                context: context,
-                initialDate: DateTime.parse(paidOn),
-                firstDate: DateTime(1900),
-                lastDate: DateTime(2100),
-              );
-              if (value != null) {
-                setState(
-                  () => paidOn = value.toIso8601String().split('T').first,
-                );
-              }
-            },
-          ),
-        if (status != 'FULL') ...[
-          TextField(
-            controller: party,
-            decoration: InputDecoration(
-              labelText: l10n(context).uiSupplierOrPartyName,
-            ),
-          ),
-          ListTile(
-            title: Text(l10n(context).m5DueDate),
-            subtitle: Text(
-              dueDate == null
-                  ? l10n(context).m5ChooseDate
-                  : localizedDate(context, dueDate),
-            ),
-            onTap: () => dateSelect(true),
-          ),
-        ],
-        TextField(
-          controller: note,
-          maxLines: 3,
-          decoration: InputDecoration(labelText: l10n(context).m5Note),
-        ),
-        if (error != null)
-          Text(
-            error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        const SizedBox(height: 16),
-        FilledButton(
-          key: const Key('confirmApproval'),
-          onPressed: busy ? null : approve,
-          child: Text(
-            widget.direct ? l10n(context).save : l10n(context).m5Approve,
-          ),
-        ),
-        if (busy) const LinearProgressIndicator(),
       ],
     ),
   );

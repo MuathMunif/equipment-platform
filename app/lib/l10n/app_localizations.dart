@@ -4278,6 +4278,264 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا توجد عمليات مالية حديثة بعد.'**
   String get m7NoRecentEntries;
+
+  /// No description provided for @previewSynthetic.
+  ///
+  /// In ar, this message translates to:
+  /// **'معاينة تصميم · بيانات تجريبية'**
+  String get previewSynthetic;
+
+  /// No description provided for @previewOverview.
+  ///
+  /// In ar, this message translates to:
+  /// **'نظرة على يومك'**
+  String get previewOverview;
+
+  /// No description provided for @previewAttention.
+  ///
+  /// In ar, this message translates to:
+  /// **'يحتاج انتباهك'**
+  String get previewAttention;
+
+  /// No description provided for @previewAttentionHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بما يحتاج متابعة اليوم.'**
+  String get previewAttentionHelp;
+
+  /// No description provided for @previewPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتوبر ٢٠٢٦'**
+  String get previewPeriod;
+
+  /// No description provided for @previewViewEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض المعدات'**
+  String get previewViewEquipment;
+
+  /// No description provided for @previewViewAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الكل'**
+  String get previewViewAll;
+
+  /// No description provided for @previewEquipmentRecords.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل المعدة'**
+  String get previewEquipmentRecords;
+
+  /// No description provided for @previewIssueSample.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوت غير معتاد في المحرك'**
+  String get previewIssueSample;
+
+  /// No description provided for @previewMaintenanceSample.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير زيت المحرك'**
+  String get previewMaintenanceSample;
+
+  /// No description provided for @previewIncomeSample.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة أعمال نقل'**
+  String get previewIncomeSample;
+
+  /// No description provided for @previewRelatedContext.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارتباطات اختيارية'**
+  String get previewRelatedContext;
+
+  /// No description provided for @previewNoConnection.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مرتبط'**
+  String get previewNoConnection;
+
+  /// No description provided for @previewInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة المصروف'**
+  String get previewInvoice;
+
+  /// No description provided for @previewAttachmentHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرفاق الصورة أو PDF يتم بعد حفظ السجل. يمكنك تجربة عرض المرفق هنا.'**
+  String get previewAttachmentHelp;
+
+  /// No description provided for @previewTryAttachment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجربة مرفق'**
+  String get previewTryAttachment;
+
+  /// No description provided for @previewTrySave.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار النموذج'**
+  String get previewTrySave;
+
+  /// No description provided for @previewNoWrite.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحقول صحيحة. هذه معاينة فقط؛ لم يُحفظ سجل أو مبلغ.'**
+  String get previewNoWrite;
+
+  /// No description provided for @previewDiscardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغادرة النموذج؟'**
+  String get previewDiscardTitle;
+
+  /// No description provided for @previewDiscardHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُمسح التغييرات التجريبية في هذا النموذج.'**
+  String get previewDiscardHelp;
+
+  /// No description provided for @previewKeepEditing.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة التعديل'**
+  String get previewKeepEditing;
+
+  /// No description provided for @previewLeave.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغادرة'**
+  String get previewLeave;
+
+  /// No description provided for @previewLifetime.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي السجل · جميع الدفعات والاستردادات'**
+  String get previewLifetime;
+
+  /// No description provided for @previewStates.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكونات والحالات'**
+  String get previewStates;
+
+  /// No description provided for @previewLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل السجل…'**
+  String get previewLoading;
+
+  /// No description provided for @previewNotAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ غير متاح'**
+  String get previewNotAvailable;
+
+  /// No description provided for @previewOnlyAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الإجراء خارج الشاشات الثلاث المعروضة. لا تُغيّر المعاينة أي بيانات.'**
+  String get previewOnlyAction;
+
+  /// No description provided for @previewDocumentDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي في ١٥ أكتوبر ٢٠٢٦'**
+  String get previewDocumentDate;
+
+  /// No description provided for @previewEquipmentHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم والموديل يكفيان للبدء.'**
+  String get previewEquipmentHelp;
+
+  /// No description provided for @previewScopeHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف مشترك أو عام، أو ربط بمشروع'**
+  String get previewScopeHelp;
+
+  /// No description provided for @previewCategoryDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل المصروف'**
+  String get previewCategoryDate;
+
+  /// No description provided for @previewPaymentSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة التسوية'**
+  String get previewPaymentSection;
+
+  /// No description provided for @previewCurrentEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعدة المحددة'**
+  String get previewCurrentEquipment;
+
+  /// No description provided for @previewFixtureNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم والمبالغ والمواعيد أمثلة ثابتة للمقارنة.'**
+  String get previewFixtureNotice;
+
+  /// No description provided for @previewAttachmentRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُزيل المرفق التجريبي'**
+  String get previewAttachmentRemoved;
+
+  /// No description provided for @previewRemoveAttachment.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة المرفق التجريبي'**
+  String get previewRemoveAttachment;
+
+  /// No description provided for @previewFormHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل المبلغ والتفاصيل، ثم راجع التسوية.'**
+  String get previewFormHint;
+
+  /// No description provided for @previewRecordedExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات المسجلة'**
+  String get previewRecordedExpenses;
+
+  /// No description provided for @previewRecordedIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيرادات المسجلة'**
+  String get previewRecordedIncome;
+
+  /// No description provided for @pilotEquipmentRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل المعدة'**
+  String get pilotEquipmentRecord;
+
+  /// No description provided for @pilotOptionalConnections.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارتباطات اختيارية'**
+  String get pilotOptionalConnections;
+
+  /// No description provided for @m5AccessRevoked.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصول مسحوب'**
+  String get m5AccessRevoked;
+
+  /// No description provided for @m6NoProjectSelected.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مشروع أو عقد'**
+  String get m6NoProjectSelected;
 }
 
 class _AppLocalizationsDelegate

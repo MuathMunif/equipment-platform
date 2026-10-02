@@ -90,6 +90,7 @@ String localizedErrorForLocale(Locale locale, Object error) {
     'ALREADY_MEMBER' => loc.m5AlreadyMember,
     'SUBMISSION_REVIEWED' => loc.m5SubmissionReviewed,
     'NO_DRIVER_ASSIGNMENT' => loc.m5NoDriverAssignment,
+    'ORGANIZATION_IN_USE' => loc.m6OrganizationInUse,
     'CSRF_REQUIRED' => loc.sessionExpired,
     'CROSS_WORKSPACE_ACCESS_DENIED' || 'ACCESS_DENIED' => loc.accessDenied,
     'SESSION_REQUIRED' => loc.sessionRequired,

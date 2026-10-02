@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:equipment_app/api.dart';
+import 'package:equipment_app/design_system/equipment_a.dart';
 import 'package:equipment_app/documents.dart';
 import 'package:flutter/material.dart';
 import 'package:equipment_app/l10n/app_localizations.dart';
@@ -15,6 +16,7 @@ http.Response reply(Object value, [int status = 200]) => http.Response(
   headers: {'content-type': 'application/json'},
 );
 Widget host(Widget page) => MaterialApp(
+  theme: EquipmentA.theme(),
   locale: const Locale('ar'),
   supportedLocales: AppLocalizations.supportedLocales,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -52,6 +54,8 @@ Map<String, dynamic> doc({
   'equipmentArchived': false,
 };
 Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pumpAndSettle();
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);

@@ -2296,4 +2296,139 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get m7NoRecentEntries => 'No recent financial entries yet.';
+
+  @override
+  String get previewSynthetic => 'Design preview · synthetic data';
+
+  @override
+  String get previewOverview => 'Your day, in view';
+
+  @override
+  String get previewAttention => 'Needs your attention';
+
+  @override
+  String get previewAttentionHelp => 'Start with what needs a follow-up.';
+
+  @override
+  String get previewPeriod => 'October 2026';
+
+  @override
+  String get previewViewEquipment => 'View equipment';
+
+  @override
+  String get previewViewAll => 'View all';
+
+  @override
+  String get previewEquipmentRecords => 'Equipment record';
+
+  @override
+  String get previewIssueSample => 'Unusual engine noise';
+
+  @override
+  String get previewMaintenanceSample => 'Engine oil change';
+
+  @override
+  String get previewIncomeSample => 'Transport work payment';
+
+  @override
+  String get previewRelatedContext => 'Optional connections';
+
+  @override
+  String get previewNoConnection => 'Not linked';
+
+  @override
+  String get previewInvoice => 'Expense receipt';
+
+  @override
+  String get previewAttachmentHelp =>
+      'Add an image or PDF after saving the record. Try the attachment preview here.';
+
+  @override
+  String get previewTryAttachment => 'Try attachment';
+
+  @override
+  String get previewTrySave => 'Test form';
+
+  @override
+  String get previewNoWrite =>
+      'Fields are valid. Preview only; no record or money was saved.';
+
+  @override
+  String get previewDiscardTitle => 'Leave this form?';
+
+  @override
+  String get previewDiscardHelp =>
+      'Your trial changes in this form will be cleared.';
+
+  @override
+  String get previewKeepEditing => 'Keep editing';
+
+  @override
+  String get previewLeave => 'Leave';
+
+  @override
+  String get previewLifetime => 'Record totals · all payments and refunds';
+
+  @override
+  String get previewStates => 'Components & states';
+
+  @override
+  String get previewLoading => 'Loading the record…';
+
+  @override
+  String get previewNotAvailable => 'Amount unavailable';
+
+  @override
+  String get previewOnlyAction =>
+      'This action is outside the three preview screens. The preview does not change any data.';
+
+  @override
+  String get previewDocumentDate => 'Expires on 15 October 2026';
+
+  @override
+  String get previewEquipmentHelp => 'A name and model are enough to start.';
+
+  @override
+  String get previewScopeHelp => 'Shared or general expense, or project link';
+
+  @override
+  String get previewCategoryDate => 'Expense details';
+
+  @override
+  String get previewPaymentSection => 'Settlement';
+
+  @override
+  String get previewCurrentEquipment => 'Selected equipment';
+
+  @override
+  String get previewFixtureNotice =>
+      'Names, amounts and dates are fixed comparison samples.';
+
+  @override
+  String get previewAttachmentRemoved => 'Trial attachment removed';
+
+  @override
+  String get previewRemoveAttachment => 'Remove trial attachment';
+
+  @override
+  String get previewFormHint =>
+      'Enter the amount and details, then check the settlement.';
+
+  @override
+  String get previewRecordedExpenses => 'Recorded expenses';
+
+  @override
+  String get previewRecordedIncome => 'Recorded income';
+
+  @override
+  String get pilotEquipmentRecord => 'Equipment record';
+
+  @override
+  String get pilotOptionalConnections => 'Optional connections';
+
+  @override
+  String get m5AccessRevoked => 'Access revoked';
+
+  @override
+  String get m6NoProjectSelected => 'No project or contract';
 }

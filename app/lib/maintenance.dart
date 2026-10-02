@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'documents.dart';
 import 'localization.dart';
 import 'main.dart' show ExpenseForm, EntryDetail;
@@ -37,21 +38,15 @@ String issueStatusName(BuildContext context, String? status) =>
       _ => l10n(context).m4Closed,
     };
 Color issueStatusColor(String? status, bool stopped) => status == 'CLOSED'
-    ? Colors.green
+    ? EquipmentA.success
     : stopped && status == 'OPEN'
-    ? Colors.red
+    ? EquipmentA.danger
     : status == 'IN_PROGRESS'
-    ? Colors.orange
-    : Colors.blue;
+    ? EquipmentA.warning
+    : EquipmentA.accent;
 
 Future<T?> m4Push<T>(BuildContext context, Widget page) =>
     Navigator.push<T>(context, MaterialPageRoute(builder: (_) => page));
-
-EdgeInsets m4ContentPadding(BuildContext context) {
-  final width = MediaQuery.sizeOf(context).width;
-  final inset = width > 800 ? (width - 760) / 2 : 20.0;
-  return EdgeInsets.fromLTRB(inset, 20, inset, 20);
-}
 
 class M4Picker extends StatefulWidget {
   final Api api;
@@ -164,10 +159,13 @@ class _M4PickerState extends State<M4Picker> {
             ),
           ),
           if (total > 30)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
               children: [
                 IconButton(
+                  tooltip: l10n(context).previous,
                   onPressed: page == 0
                       ? null
                       : () {
@@ -178,6 +176,7 @@ class _M4PickerState extends State<M4Picker> {
                 ),
                 Text('${page + 1} / ${(total + 29) ~/ 30}'),
                 IconButton(
+                  tooltip: l10n(context).next,
                   onPressed: (page + 1) * 30 >= total
                       ? null
                       : () {
@@ -267,6 +266,7 @@ class _EquipmentMaintenanceCardState extends State<EquipmentMaintenanceCard> {
 
   @override
   Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
     child: Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -299,8 +299,8 @@ class _EquipmentMaintenanceCardState extends State<EquipmentMaintenanceCard> {
                     ? Icon(
                         Icons.error_outline,
                         color: issue!['status'] == 'OPEN'
-                            ? Colors.red
-                            : Colors.orange,
+                            ? EquipmentA.danger
+                            : EquipmentA.warning,
                       )
                     : null,
                 onTap: () async {
@@ -509,34 +509,40 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: SegmentedButton<int>(
-                segments: [
-                  if (widget.api.can('ISSUE_VIEW'))
-                    ButtonSegment(
-                      value: 0,
-                      label: Text(l10n(context).m4Issues),
-                      icon: const Icon(Icons.report_outlined),
-                    ),
-                  if (widget.api.can('MAINTENANCE_VIEW'))
-                    ButtonSegment(
-                      value: 1,
-                      label: Text(l10n(context).m4Maintenance),
-                      icon: const Icon(Icons.build_outlined),
-                    ),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  for (final value in [0, 1])
+                    if (widget.api.can(
+                      value == 0 ? 'ISSUE_VIEW' : 'MAINTENANCE_VIEW',
+                    ))
+                      ChoiceChip(
+                        label: Text(
+                          value == 0
+                              ? l10n(context).m4Issues
+                              : l10n(context).m4Maintenance,
+                        ),
+                        avatar: Icon(
+                          value == 0
+                              ? Icons.report_outlined
+                              : Icons.build_outlined,
+                        ),
+                        selected: tab == value,
+                        onSelected: (_) {
+                          setState(() {
+                            tab = value;
+                            page = 0;
+                          });
+                          load();
+                        },
+                      ),
                 ],
-                selected: {tab},
-                onSelectionChanged: (selection) {
-                  setState(() {
-                    tab = selection.first;
-                    page = 0;
-                  });
-                  load();
-                },
               ),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
+              child: EquipmentPageBody(
+                maxWidth: 1120,
                 children: [
                   Wrap(
                     spacing: 8,
@@ -614,28 +620,35 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                     Wrap(
                       spacing: 12,
                       children: [
-                        DropdownButton<String>(
-                          value: status,
-                          items: [
-                            DropdownMenuItem(
-                              value: '',
-                              child: Text(l10n(context).m4AllStatuses),
-                            ),
-                            for (final value in [
-                              'OPEN',
-                              'IN_PROGRESS',
-                              'CLOSED',
-                            ])
+                        SizedBox(
+                          width: MediaQuery.sizeOf(context).width < 560
+                              ? MediaQuery.sizeOf(context).width - 80
+                              : 320,
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            itemHeight: null,
+                            value: status,
+                            items: [
                               DropdownMenuItem(
-                                value: value,
-                                child: Text(issueStatusName(context, value)),
+                                value: '',
+                                child: Text(l10n(context).m4AllStatuses),
                               ),
-                          ],
-                          onChanged: (value) {
-                            status = value ?? '';
-                            page = 0;
-                            load();
-                          },
+                              for (final value in [
+                                'OPEN',
+                                'IN_PROGRESS',
+                                'CLOSED',
+                              ])
+                                DropdownMenuItem(
+                                  value: value,
+                                  child: Text(issueStatusName(context, value)),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              status = value ?? '';
+                              page = 0;
+                              load();
+                            },
+                          ),
                         ),
                         FilterChip(
                           label: Text(l10n(context).m4OnlyStopped),
@@ -652,26 +665,33 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                     Wrap(
                       spacing: 12,
                       children: [
-                        DropdownButton<String>(
-                          value: type,
-                          items: [
-                            DropdownMenuItem(
-                              value: '',
-                              child: Text(l10n(context).m4AllTypes),
-                            ),
-                            for (final value in maintenanceTypes)
+                        SizedBox(
+                          width: MediaQuery.sizeOf(context).width < 560
+                              ? MediaQuery.sizeOf(context).width - 80
+                              : 320,
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            itemHeight: null,
+                            value: type,
+                            items: [
                               DropdownMenuItem(
-                                value: value,
-                                child: Text(
-                                  maintenanceTypeName(context, value),
-                                ),
+                                value: '',
+                                child: Text(l10n(context).m4AllTypes),
                               ),
-                          ],
-                          onChanged: (value) {
-                            type = value ?? '';
-                            page = 0;
-                            load();
-                          },
+                              for (final value in maintenanceTypes)
+                                DropdownMenuItem(
+                                  value: value,
+                                  child: Text(
+                                    maintenanceTypeName(context, value),
+                                  ),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              type = value ?? '';
+                              page = 0;
+                              load();
+                            },
+                          ),
                         ),
                         FilterChip(
                           label: Text(l10n(context).m4ShowCancelled),
@@ -705,6 +725,7 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                       ),
                     for (final item in items)
                       Card(
+                        margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           leading: Icon(
                             tab == 0
@@ -731,7 +752,9 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                                   item['status'] != 'CLOSED'
                               ? Text(
                                   l10n(context).m4StoppedBadge,
-                                  style: const TextStyle(color: Colors.red),
+                                  style: const TextStyle(
+                                    color: EquipmentA.danger,
+                                  ),
                                 )
                               : null,
                           onTap: () async {
@@ -752,10 +775,13 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                         ),
                       ),
                     if (total > 30)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
                         children: [
                           IconButton(
+                            tooltip: l10n(context).previous,
                             onPressed: page == 0
                                 ? null
                                 : () {
@@ -766,6 +792,7 @@ class _MaintenanceHubState extends State<MaintenanceHub> {
                           ),
                           Text('${page + 1} / ${(total + 29) ~/ 30}'),
                           IconButton(
+                            tooltip: l10n(context).next,
                             onPressed: (page + 1) * 30 >= total
                                 ? null
                                 : () {
@@ -861,66 +888,71 @@ class _IssueFormPageState extends State<IssueFormPage> {
     ),
     body: Form(
       key: form,
-      child: ListView(
-        padding: m4ContentPadding(context),
+      child: EquipmentPageBody(
+        maxWidth: 800,
         children: [
-          Text(
-            widget.equipment['name'] as String,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('m4IssueDescription'),
-            controller: description,
-            maxLines: 4,
-            maxLength: 2000,
-            decoration: InputDecoration(
-              labelText: l10n(context).m4Problem,
-              border: const OutlineInputBorder(),
-            ),
-            validator: (value) => value == null || value.trim().isEmpty
-                ? l10n(context).m4Required
-                : null,
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: type,
-            decoration: InputDecoration(labelText: l10n(context).m4IssueType),
-            items: [
-              DropdownMenuItem(
-                value: null,
-                child: Text(l10n(context).m4Unclassified),
+          EquipmentFormSection(
+            children: [
+              Text(
+                widget.equipment['name'] as String,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              for (final value in issueTypes)
-                DropdownMenuItem(
-                  value: value,
-                  child: Text(issueTypeName(context, value)),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('m4IssueDescription'),
+                controller: description,
+                maxLines: 4,
+                maxLength: 2000,
+                decoration: InputDecoration(labelText: l10n(context).m4Problem),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? l10n(context).m4Required
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                itemHeight: null,
+                initialValue: type,
+                decoration: InputDecoration(
+                  labelText: l10n(context).m4IssueType,
                 ),
+                items: [
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(l10n(context).m4Unclassified),
+                  ),
+                  for (final value in issueTypes)
+                    DropdownMenuItem(
+                      value: value,
+                      child: Text(issueTypeName(context, value)),
+                    ),
+                ],
+                onChanged: (value) => setState(() => type = value),
+              ),
+              SwitchListTile(
+                key: const Key('m4Stopped'),
+                value: stopped,
+                onChanged: (value) => setState(() => stopped = value),
+                title: Text(l10n(context).m4Stopped),
+              ),
+              if (error != null)
+                Text(
+                  error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              const SizedBox(height: 20),
+              FilledButton(
+                key: const Key('m4SaveIssue'),
+                onPressed: busy ? null : save,
+                child: Text(
+                  widget.issue == null
+                      ? l10n(context).m4CreateIssue
+                      : l10n(context).save,
+                ),
+              ),
+              if (busy) const LinearProgressIndicator(),
             ],
-            onChanged: (value) => setState(() => type = value),
           ),
-          SwitchListTile(
-            key: const Key('m4Stopped'),
-            value: stopped,
-            onChanged: (value) => setState(() => stopped = value),
-            title: Text(l10n(context).m4Stopped),
-          ),
-          if (error != null)
-            Text(
-              error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          const SizedBox(height: 20),
-          FilledButton(
-            key: const Key('m4SaveIssue'),
-            onPressed: busy ? null : save,
-            child: Text(
-              widget.issue == null
-                  ? l10n(context).m4CreateIssue
-                  : l10n(context).save,
-            ),
-          ),
-          if (busy) const LinearProgressIndicator(),
         ],
       ),
     ),
@@ -1055,97 +1087,104 @@ class _MaintenanceFormPageState extends State<MaintenanceFormPage> {
     ),
     body: Form(
       key: form,
-      child: ListView(
-        padding: m4ContentPadding(context),
+      child: EquipmentPageBody(
+        maxWidth: 800,
         children: [
-          Text(
-            widget.equipment['name'] as String,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('m4MaintenanceDescription'),
-            controller: description,
-            maxLines: 4,
-            maxLength: 2000,
-            decoration: InputDecoration(
-              labelText: l10n(context).m4Description,
-              border: const OutlineInputBorder(),
-            ),
-            validator: (value) => value == null || value.trim().isEmpty
-                ? l10n(context).m4Required
-                : null,
-          ),
-          ListTile(
-            title: Text(l10n(context).m4Date),
-            subtitle: Text(localizedDate(context, date)),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: pickDate,
-          ),
-          DropdownButtonFormField<String>(
-            initialValue: type,
-            decoration: InputDecoration(
-              labelText: l10n(context).m4MaintenanceType,
-            ),
-            items: [
-              DropdownMenuItem(
-                value: null,
-                child: Text(l10n(context).m4Unclassified),
+          EquipmentFormSection(
+            children: [
+              Text(
+                widget.equipment['name'] as String,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              for (final value in maintenanceTypes)
-                DropdownMenuItem(
-                  value: value,
-                  child: Text(maintenanceTypeName(context, value)),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('m4MaintenanceDescription'),
+                controller: description,
+                maxLines: 4,
+                maxLength: 2000,
+                decoration: InputDecoration(
+                  labelText: l10n(context).m4Description,
                 ),
-            ],
-            onChanged: (value) => setState(() => type = value),
-          ),
-          TextFormField(
-            controller: workshop,
-            maxLength: 200,
-            decoration: InputDecoration(labelText: l10n(context).m4Workshop),
-          ),
-          ListTile(
-            title: Text(l10n(context).m4LinkedIssue),
-            subtitle: Text(
-              selectedIssue == null
-                  ? l10n(context).m4NoLinkedIssue
-                  : '${selectedIssue!['reference']} • ${selectedIssue!['description']}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: l10n(context).m4SelectIssue,
-                  onPressed: chooseIssue,
-                  icon: const Icon(Icons.search),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? l10n(context).m4Required
+                    : null,
+              ),
+              ListTile(
+                title: Text(l10n(context).m4Date),
+                subtitle: Text(localizedDate(context, date)),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: pickDate,
+              ),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                itemHeight: null,
+                initialValue: type,
+                decoration: InputDecoration(
+                  labelText: l10n(context).m4MaintenanceType,
                 ),
-                if (issueId != null)
-                  IconButton(
-                    tooltip: l10n(context).m4ClearIssue,
-                    onPressed: () => setState(() {
-                      issueId = null;
-                      selectedIssue = null;
-                    }),
-                    icon: const Icon(Icons.clear),
+                items: [
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(l10n(context).m4Unclassified),
                   ),
-              ],
-            ),
+                  for (final value in maintenanceTypes)
+                    DropdownMenuItem(
+                      value: value,
+                      child: Text(maintenanceTypeName(context, value)),
+                    ),
+                ],
+                onChanged: (value) => setState(() => type = value),
+              ),
+              TextFormField(
+                controller: workshop,
+                maxLength: 200,
+                decoration: InputDecoration(
+                  labelText: l10n(context).m4Workshop,
+                ),
+              ),
+              ListTile(
+                title: Text(l10n(context).m4LinkedIssue),
+                subtitle: Text(
+                  selectedIssue == null
+                      ? l10n(context).m4NoLinkedIssue
+                      : '${selectedIssue!['reference']} • ${selectedIssue!['description']}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: l10n(context).m4SelectIssue,
+                      onPressed: chooseIssue,
+                      icon: const Icon(Icons.search),
+                    ),
+                    if (issueId != null)
+                      IconButton(
+                        tooltip: l10n(context).m4ClearIssue,
+                        onPressed: () => setState(() {
+                          issueId = null;
+                          selectedIssue = null;
+                        }),
+                        icon: const Icon(Icons.clear),
+                      ),
+                  ],
+                ),
+              ),
+              if (error != null)
+                Text(
+                  error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              const SizedBox(height: 20),
+              FilledButton(
+                key: const Key('m4SaveMaintenance'),
+                onPressed: busy ? null : save,
+                child: Text(l10n(context).m4SaveMaintenance),
+              ),
+              if (busy) const LinearProgressIndicator(),
+            ],
           ),
-          if (error != null)
-            Text(
-              error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          const SizedBox(height: 20),
-          FilledButton(
-            key: const Key('m4SaveMaintenance'),
-            onPressed: busy ? null : save,
-            child: Text(l10n(context).m4SaveMaintenance),
-          ),
-          if (busy) const LinearProgressIndicator(),
         ],
       ),
     ),
@@ -1266,8 +1305,7 @@ class _OperationalAttachmentsState extends State<OperationalAttachments> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => EquipmentFormSection(
     children: [
       Text(
         l10n(context).attachments,
@@ -1389,6 +1427,7 @@ class _IssueDetailPageState extends State<IssueDetailPage> {
     final result = await showDialog<String>(
       context: context,
       builder: (dialog) => AlertDialog(
+        scrollable: true,
         title: Text(l10n(dialog).m4Close),
         content: TextField(
           key: const Key('m4Resolution'),
@@ -1444,65 +1483,72 @@ class _IssueDetailPageState extends State<IssueDetailPage> {
             )
           : d == null
           ? const SizedBox.shrink()
-          : ListView(
-              padding: m4ContentPadding(context),
+          : EquipmentPageBody(
+              maxWidth: 960,
               children: [
-                Row(
+                EquipmentFormSection(
                   children: [
-                    Expanded(
-                      child: Text(
-                        d['reference'] as String,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                        textDirection: TextDirection.ltr,
-                      ),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          d['reference'] as String,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                          textDirection: TextDirection.ltr,
+                        ),
+                        Chip(
+                          label: Text(
+                            issueStatusName(context, d['status'] as String?),
+                          ),
+                          backgroundColor: issueStatusColor(
+                            d['status'] as String?,
+                            d['equipmentStopped'] == true,
+                          ).withValues(alpha: .12),
+                        ),
+                      ],
                     ),
-                    Chip(
-                      label: Text(
-                        issueStatusName(context, d['status'] as String?),
-                      ),
-                      backgroundColor: issueStatusColor(
-                        d['status'] as String?,
-                        d['equipmentStopped'] == true,
-                      ).withValues(alpha: .12),
+                    Text(
+                      d['equipmentName'] as String,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
+                    const SizedBox(height: 8),
+                    if (d['equipmentStopped'] == true &&
+                        d['status'] != 'CLOSED')
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        color: d['status'] == 'OPEN'
+                            ? EquipmentA.danger.withValues(alpha: .08)
+                            : EquipmentA.warning.withValues(alpha: .08),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.error_outline,
+                            color: d['status'] == 'OPEN'
+                                ? EquipmentA.danger
+                                : EquipmentA.warning,
+                          ),
+                          title: Text(l10n(context).m4StoppedBadge),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    Text(
+                      d['description'] as String,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(issueTypeName(context, d['type'] as String?)),
+                    Text(localizedDate(context, d['createdAt'] as String?)),
+                    if (d['status'] == 'CLOSED' && d['resolution'] != null) ...[
+                      const Divider(),
+                      Text(
+                        l10n(context).m4Resolution,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(d['resolution'] as String),
+                    ],
                   ],
                 ),
-                Text(
-                  d['equipmentName'] as String,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                if (d['equipmentStopped'] == true && d['status'] != 'CLOSED')
-                  Card(
-                    color: d['status'] == 'OPEN'
-                        ? Colors.red.shade50
-                        : Colors.orange.shade50,
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.error_outline,
-                        color: d['status'] == 'OPEN'
-                            ? Colors.red
-                            : Colors.orange,
-                      ),
-                      title: Text(l10n(context).m4StoppedBadge),
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                Text(
-                  d['description'] as String,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(issueTypeName(context, d['type'] as String?)),
-                Text(localizedDate(context, d['createdAt'] as String?)),
-                if (d['status'] == 'CLOSED' && d['resolution'] != null) ...[
-                  const Divider(),
-                  Text(
-                    l10n(context).m4Resolution,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(d['resolution'] as String),
-                ],
                 if (error != null)
                   Text(
                     error!,
@@ -1682,9 +1728,11 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
     final reason = await showDialog<String>(
       context: context,
       builder: (dialog) => AlertDialog(
+        scrollable: true,
         title: Text(l10n(dialog).m4CancelMaintenance),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(l10n(dialog).m4CancelWarning),
             TextField(
@@ -1782,31 +1830,38 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
             )
           : d == null
           ? const SizedBox.shrink()
-          : ListView(
-              padding: m4ContentPadding(context),
+          : EquipmentPageBody(
+              maxWidth: 960,
               children: [
-                Text(
-                  d['description'] as String,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(d['equipmentName'] as String),
-                Text(
-                  '${l10n(context).m4Date}: ${localizedDate(context, d['maintenanceDate'] as String?)}',
-                ),
-                Text(
-                  '${l10n(context).m4MaintenanceType}: ${maintenanceTypeName(context, d['type'] as String?)}',
-                ),
-                if (d['workshop'] != null)
-                  Text('${l10n(context).m4Workshop}: ${d['workshop']}'),
-                if (d['cancelledAt'] != null)
-                  Card(
-                    color: Colors.orange.shade50,
-                    child: ListTile(
-                      title: Text(l10n(context).m4Cancelled),
-                      subtitle: Text(d['cancellationReason'] as String? ?? ''),
+                EquipmentFormSection(
+                  children: [
+                    Text(
+                      d['description'] as String,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Text(d['equipmentName'] as String),
+                    Text(
+                      '${l10n(context).m4Date}: ${localizedDate(context, d['maintenanceDate'] as String?)}',
+                    ),
+                    Text(
+                      '${l10n(context).m4MaintenanceType}: ${maintenanceTypeName(context, d['type'] as String?)}',
+                    ),
+                    if (d['workshop'] != null)
+                      Text('${l10n(context).m4Workshop}: ${d['workshop']}'),
+                    if (d['cancelledAt'] != null)
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        color: EquipmentA.warning.withValues(alpha: .08),
+                        child: ListTile(
+                          title: Text(l10n(context).m4Cancelled),
+                          subtitle: Text(
+                            d['cancellationReason'] as String? ?? '',
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 if (error != null)
                   Text(
                     error!,
@@ -1852,6 +1907,9 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                       ),
                       TextButton.icon(
                         onPressed: busy ? null : cancel,
+                        style: TextButton.styleFrom(
+                          foregroundColor: EquipmentA.danger,
+                        ),
                         icon: const Icon(Icons.cancel_outlined),
                         label: Text(l10n(context).m4CancelMaintenance),
                       ),
@@ -1878,6 +1936,7 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                       final summary =
                           d['financialSummary'] as Map<String, dynamic>;
                       return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -1886,14 +1945,26 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                               Text(
                                 '${l10n(context).m4LinkedCount}: ${summary['linkedExpenseCount']}',
                               ),
-                              Text(
-                                '${l10n(context).m4ExpenseTotal}: ${localizedMoney(context, summary['totalActiveExpenseAmount'])}',
+                              EquipmentValue(
+                                label: l10n(context).m4ExpenseTotal,
+                                value: localizedMoney(
+                                  context,
+                                  summary['totalActiveExpenseAmount'],
+                                ),
                               ),
-                              Text(
-                                '${l10n(context).m4NetPaid}: ${localizedMoney(context, summary['netPaid'])}',
+                              EquipmentValue(
+                                label: l10n(context).m4NetPaid,
+                                value: localizedMoney(
+                                  context,
+                                  summary['netPaid'],
+                                ),
                               ),
-                              Text(
-                                '${l10n(context).m4Remaining}: ${localizedMoney(context, summary['remaining'])}',
+                              EquipmentValue(
+                                label: l10n(context).m4Remaining,
+                                value: localizedMoney(
+                                  context,
+                                  summary['remaining'],
+                                ),
                               ),
                             ],
                           ),
@@ -2022,14 +2093,15 @@ class _EligibleExpensePageState extends State<EligibleExpensePage> {
     appBar: AppBar(title: Text(l10n(context).m4LinkExpense)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            padding: m4ContentPadding(context),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (error != null)
                 TextButton(onPressed: load, child: Text(error!)),
               if (items.isEmpty) Text(l10n(context).m4NoEligible),
               for (final item in items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text(item['note'] as String? ?? ''),
                     subtitle: Text(localizedMoney(context, item['amount'])),

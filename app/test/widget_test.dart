@@ -1,3 +1,4 @@
+import 'package:equipment_app/design_system/equipment_a.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -18,6 +19,7 @@ http.Response json(Object body, [int status = 200]) => http.Response(
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
 Widget host(Widget child) => MaterialApp(
+  theme: EquipmentA.theme(),
   locale: const Locale('ar'),
   supportedLocales: AppLocalizations.supportedLocales,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -334,12 +336,16 @@ void main() {
       await tester.tap(find.byKey(const Key('removeAllocation2')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('saveExpense')));
       await tester.pumpAndSettle();
       expect(find.textContaining('مجموع مبالغها يساوي'), findsOneWidget);
       expect(posted, isNull);
       await tester.enterText(find.byKey(const Key('allocationAmount1')), '30');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('saveExpense')));
       await tester.pumpAndSettle();
       expect(posted!['expenseScope'], 'SHARED');

@@ -1,3 +1,87 @@
+# تحقق مركز قبل دمج PR #9 — initialPaid — 2026-10-02
+
+- الفرع الفعلي `feat/ui-a-almarai-rollout`؛ أساس الفحص النظيف `d9e5b69ddd82d41187416e0ac114a89be767fa40`، وهو رأس PR #9 عند البداية. CI السابق [36958122171](https://github.com/MuathMunif/equipment-platform/actions/runs/36958122171) ناجح على هذا الأساس: Backend وFlutter. لا إعادة تعميم أو مراجعة شاملة، ولا تعديل main أو دمج.
+- فُحص تغيير `ApprovalPage` في `app/lib/team.dart` مقابل `EntryCreate` في `contracts/openapi.yaml` و`SubmissionService` و`FinanceService`. العقد القائم لإجمالي `1000.00`: `FULL` يحذف `initialPaid` وينتج مدفوع1000/متبقي0؛ `PARTIAL` يرسل `initialPaid: "600.00"` وينتج600/400؛ `UNPAID` صريح يحذف `initialPaid` ويترك `paidOn` فارغًا وينتج0/1000. الصفر ممثل بـUNPAID، وليس PARTIAL بقيمة صفر. إرسال JSON null ليس كحذف حقل JsonNode عند الخادم؛ التغيير الموجود صحيح ولا يحتاج تصحيحًا إنتاجيًا.
+- كانت تغطية اعتماد Flutter السابقة FULL فقط: `pending submission opens approval and posts one full expense without initialPaid`. أضيفت في `app/test/team_test.dart` ثلاثة اختبارات `approval serializes 1000 {FULL|PARTIAL|UNPAID} using the existing payment contract`. تمر عبر نموذج الاعتماد وتأكيده وتفحص الطلب المسلسل فعليًا؛ حالة UNPAID تبدأ بإدخال دفعة جزئية600 ثم تتحول إلى غير مدفوع، وتثبت عدم تسرب الدفعة وعدم الرجوع إلى FULL. الاختبارات تستخدم HTTP double؛ لا تدعي رحلة خادم حية جديدة بقيمة1000. نتائج المدفوع/المتبقي تستند إلى منطق الخادم القائم وتغطيته السابقة.
+- **منفذ فعليًا من `app/`:** `flutter test test/team_test.dart --plain-name 'approval serializes 1000' --reporter expanded` ناجح3/3؛ `flutter analyze --no-pub test/team_test.dart` بلا ملاحظات؛ `git diff --check` ناجح. محاولة بناء الاختبار الأولى فشلت بسبب finder يستخدم getter غير متاح، وصُحح كود الاختبار ثم نجح التشغيل. لم تُعد محليًا الحزم الكاملة أو Android أو حملات القبول القديمة.
+- **الحفظ غير المؤكد:** أُعيد استخدام أدلة CI السابق لاختباري `uncertain expense save preserves exact payload and same idempotency key` في `app/test/widget_test.dart` و`uncertain shared save freezes allocations and project and retries identical request` في `app/test/almarai_rollout_test.dart`: قفل البيانات وإعادة الطلب نفسه بالمفتاح نفسه. أدلة الخادم القائمة `fullyPaidExpenseIsAtomicExactAndConcurrentReplayDoesNotDuplicate` و`partialAndUnpaidExpensesKeepOneOriginalAndDatedSettlements` في `OwnerSliceTest` تثبت عدم إنشاء قيد/تسوية إضافية عند الإعادة، و`concurrentDoubleApprovalCreatesOneEntry` في `TeamM5Test` يثبت اعتمادًا واحدًا. تعدد محاولات HTTP لا يعني إنشاء عمليات مالية جديدة.
+- الملفات المعدلة في هذا التحقق: الاختبار أعلاه وهذا التسليم فقط؛ لا تعديل Flutter إنتاجي أو Backend أو migrations أو API أو قواعد مالية. الرئيسي وحده؛ صفر وكلاء فرعيين، ولا تغيير إعدادات النموذج.
+- **حدود التحقق باقية صراحةً:** بناء وتشغيل Android النهائيان غير مكتملين بسبب سعة القرص؛ اختبار جهاز فعلي معلق؛ اختبار قارئ شاشة تفاعلي معلق؛ مراجعة الأردية لغويًا من متحدث أصلي معلقة. لم تُعد تهيئة Android ولم تُحذف ملفات المستخدم.
+- التالي ضمن هذه المهمة فقط: حفظ الاختبارات ودفعها إلى الفرع نفسه والتحقق من CI عند الرأس المحدث؛ النتيجة النهائية وSHA في رد التسليم وPR، بلا commit لمجرد تسجيل نجاح CI. بعدها التوقف لمراجعة المالك للدمج؛ لا دمج ولا مهمة جديدة. الأقسام أدناه سجل التسليم السابق.
+
+---
+
+# التسليم السابق — تعميم A + F3 Almarai مكتمل
+
+اكتملت الدفعات الست على `feat/ui-a-almarai-rollout` من `6f61d3b`، مع حفظ ancestry التصميم والتجربة والخطوط. main وorigin/main عند `8aae24f` دون تعديل. commits الدفعات: `30ff1c0`، `1d6b36e`، `3c5590c`، `fd5326a`، `6345219`، `25a65bf`، ثم commit الإغلاق وتصحيح المراجعة. لا مرحلة منتج جديدة ولا دمج أو نشر.
+
+**التحقق:** 211/211 Flutter ناجحة مرة واحدة، ثم57/57 مركزة بعد تصحيح لون زر المغادرة؛ analyze نظيف؛ بناء الإنتاج والمعاينتين للويب ناجح، وiOS simulator ناجح بعد التصحيح. بناء Android APK نجح قبل تصحيح اللون؛ إعادة البناء النهائية وتشغيل المحاكي تعذرا بنقص القرص. محاولة اختبار مركزة أولى فشلت أيضًا بنقص القرص قبل التنفيذ، ثم نجحت بعد إزالة ملفات Android وسيطة خاصة بهذه المهمة فقط؛ بقي APK والمصادر وبيانات المحاكيات وPostgreSQL محفوظة. تشغيل iOS متصل مع الجلسة الموجودة ونموذج أردي ولوحة مفاتيح وتأكيد خروج دون حفظ مثبت بالصور؛ ليس اختبار كل الأجهزة.
+
+مراجعتان مستقلتان متتاليتان للقراءة فقط بطلب Astra/High: مالية ساكنة بلا ملاحظات، وبصرية نهائية بلا P0–P2 مع ملاحظة P3 واحدة عن لون المغادرة، صُححت وفُحصت ذاتيًا. الرئيسي الكاتب الوحيد. إعداد المشروع Sol/Low لم يتغير؛ Astra/High اختيار جلسة أبلغ به المالك وأجاز استثناءه، وهوية التشغيل غير مكشوفة.
+
+الرحلاتA–F عبر التطبيق الحقيقي موثقة: أصل1000/دفعة600/استرداد200/صافي400/متبقي600 مع ملف محمي؛ تقارير ومشروع وأصل وعودة تحفظ الفلاتر؛ مستند مجدد ونسخة سابقة؛ بلاغ وصيانة مرتبطة بالأصل؛ طلب سائق250 واعتماد وقيد واحد؛ تبديل مساحة دون بقايا. لا تكرر fixtures. أضيف مشروع اختياري `مشروع التحقق A-F3` علىEQ37 بلا مؤسسة، ومؤسسة `مؤسسة التحقق A-F3` علىEQ38 مع منع أرشفة مثبت، ومسودة واحدة غير محتسبة `A-F3 rollout — draft receipt`. كل البيانات اصطناعية محلية.
+
+لا تعديل Backend/API/schema أو حسابات وصلاحيات. الاستثناءات التقنية المعلنة: قفل حقول الحفظ غير المؤكد، وإرسال initialPaid فقط عندPARTIAL للاعتماد وفق العقد الحالي، وترجمة الحالات/الأخطاء. القيود: Android، لا جهاز فعلي أو قارئ شاشة تفاعلي أو اعتماد لغوي أردي؛ ملخص الاعتماد يحتاج تحديثًا عاديًا سابقًا، وتظهر250 بعد إعادة الدخول. ليست هذه المهمة اكتمال كلV1.
+
+[التسليم والأوامر والنتائج](design/ui-refresh/ALMARAI_ROLLOUT_DELIVERY.md)، [التغطية](design/ui-refresh/COVERAGE.md)، [الصور](design/ui-refresh/ALMARAI_ROLLOUT_SCREENSHOTS.md)، [الملفات](design/ui-refresh/ALMARAI_ROLLOUT_FILES.md)، [نقطة الاستئناف](design/ui-refresh/STATUS.md). [PR #9](https://github.com/MuathMunif/equipment-platform/pull/9) مفتوح ومربوط بالمهمة. CI الأول عند0c5ee08: Backend ناجح، Flutter210 ناجحة واختبار تباين واحد فشل في نص تنقل المعرض القديم علىLinux. عولج بحجم12 ووزن600 دون حذف الاختبار؛62 اختبار معاينة محليًا ناجحة وanalyze نظيف. يجب التحقق منCI على رأس هذا الإصلاح؛ النتيجة النهائية في رد التسليم/PR، ولا commit لمجرد نجاحCI. التالي الوحيد بعدهما مراجعة المالك للـPR؛ لا بدء عمل جديد تلقائيًا.
+
+التشغيل المجرب من `app/`: `flutter build web --release -t lib/main.dart --output=../.local/almarai-rollout/web-production`؛ من الجذر: `python3 -m http.server 8081 --bind 127.0.0.1 --directory .local/almarai-rollout/web-production`. API8080 والخادم8081 موجودان، وحساب0802 أعيد للعربية. الأقسام التالية تاريخية ولا تستأنفها.
+
+---
+
+# التسليم الحالي — تطبيق A + F3 Almarai على المعدة — 2026-10-02
+
+- **A + F3 Almarai معتمد من المالك وطُبق على شاشة EquipmentDetail الحقيقية.** قرار الخط محسوم؛ لا إعادة مقارنة. بقية التطبيق لم تُرحّل، والتعميم ينتظر تعليمات جديدة.
+- الفرع `feat/ui-a-typography` من baseline نظيف`7f328d1` يحتوي تجربة`ca6201d` وإصلاح التاريخ. أحدث commit يحمل هذا التسليم والدمج هو أساس أي تعميم لاحق؛ لا العودة للفرع الأقدم ذيNoto. لا reset/stash/main/دمج/PR/نشر.
+- المكوّن المركزي `app/lib/design_system/equipment_typography.dart` يطبق F3 على `EquipmentA.theme()` محليًا. Almarai400/700 مسجل صراحةً من الأصول الموجودة؛ Plex400/700 للحروف غير المدعومة فقط كما في F3، لكلar/en/ur. الجسم والثانوي400، التأكيد700 وفق التعريف المعتمد؛ الأحجام/الارتفاعات/التكبير باقية. `referenceTheme()` يحفظ المقارنة التاريخية. لا font selector إنتاجي أو imports للمعاينة.
+- تحقق فعلي: **93/93 مركزة،182/182 كاملة مرة واحدة** لتسجيل الخطوط المشترك، analyze نظيف، بناء Web للإنتاج والمعاينة ناجح، diff check ناجح. تحميل الملفات الأربعةHTTP200 وManifest400/700؛12/12 بصمة مصدر/ترخيص بلا تغيير. لا Backend/API/schema أو منطق مال/صلاحيات/تاريخ/ملاحة تغير.
+- **4 صور فعلية للتطبيق** في `docs/design/ui-refresh/screenshots/almarai-pilot/`: ar390/ar1440/en390/ur390. نفس حساب/معدة الاختبارEQ-000037 والجلسة الموجودة؛ صفر OTP وصفر سجلات جديدة. عادت العربية بعد التصوير. الرئيسية غير المرحّلة تطابقت صورتها قبل/بعد byte-for-byte، وستة اختبارات تمنع تسرب theme للمسارات الأخرى.
+- التشغيل جُرّب من `app/`: `flutter build web --release -t lib/main.dart --output=../.local/almarai-pilot/web-production`؛ ومن الجذر: `python3 -m http.server 8081 --bind 127.0.0.1 --directory .local/almarai-pilot/web-production`. البناء القديم والمعرض محفوظان؛ API/Docker لم يعاد تشغيلهما. التفاصيل: [ALMARAI_PILOT.md](design/ui-refresh/ALMARAI_PILOT.md).
+- الكاتب/المراجع الذاتي الرئيسي وحده،0 subagents، ضمن استثناءAstra/High حسب اختيار المالك المبلّغ؛ لا تغيير إعدادات أو تحقيق هوية جديد. لا ادعاء مراجعة مستقلة.
+- الحدود: لا native/Android/جهاز فعلي/قارئ شاشة أو حملة Backend لهذه المهمة؛ لا مراجعة أرديةnative أو اعتماد لغوي. لا per-glyph attribution. تحذيرCupertino الموجود بقي مع نجاح البناء؛ لا إضافةfont binaries جديدة.
+- **انتهت المهمة الحالية. توقف حتى تعليمات التعميم المحدّثة**، وابدأ حينها من آخر commit متحقق على الفرع نفسه المحتوي A + Almarai. نقطة الاستئناف [STATUS.md](design/ui-refresh/STATUS.md). الأقسام التالية تاريخية ولا تتغلب على قرارF3 الحالي.
+
+---
+
+# نقطة تسليم مقارنة خط Direction A — 2026-10-02
+
+- **تخطيط A معتمد، خط Noto الحالي مرفوض، F1/F2/F3 جاهزة للاختيار، تعميم الواجهة متوقف.** خط الإنتاج لم يتغير. المهمة الحالية مقارنة خطوط فقط؛ أقسام التجربة/المراحل أدناه تاريخية وليست طلبًا لاستئنافها.
+- الفرع `feat/ui-a-typography` من تجربة نظيفة `ca6201d`، مع حفظ عمل التجربة والمعرض وإصلاح التاريخ. HEAD الفرع يحمل هذا التسليم؛ لا main/دمج/PR/نشر. الملفات: entry ومعاينة typography، وزن emphasis قابل للتمرير في المعرض القديم، أصول خطوط/تراخيص، اختبار وأداة تدقيق، صور وتوثيق. لا Backend أو منطق مال أو صلاحيات أو تاريخ جديد.
+- F1 IBM Plex Sans Arabic، F2 Tajawal، F3 Almarai؛ وجها400/700 فعليان لكل منها. F2 يستخدم Plex لكل واجهة الأردية بعد إثبات نقص10 حروف في Tajawal. Noto المرفوض أساس معلَّم فقط. اختيار الخط النهائي لم يُحسم؛ توصية الكاتب F3 رأي بصري.
+- تحقق فعلي:80/80 مركزة أولًا، ثم25/25 typography بعد إضافة اختبار حفظ تكبير الجهاز؛ analyze نظيف؛ بناء preview/production web release وiOS simulator debug ناجح. الـ80 تتداخل مع الـ25 وليستا105 اختبارات مختلفة. تحميل الملفات الستةHTTP200؛ اختلاف pixels للعائلات والأوزان؛ hashes الأصول/التراخيص موثقة؛ شجرة إنتاج19 ملفًا لا تستورد المعاينة.
+- **20 لقطة Flutter فعلية** فُحصت ذاتيًا:12 عربية (3 خطوط×شاشتين×390/1440)،7 لغة/حروف/تكبير على الويب،1 F3/ar على محاكي iPhone الموجود. المسار `docs/design/ui-refresh/screenshots/typography/`. لا OTP/API/قاعدة بيانات أو قبول متصل جديد.
+- شُغّل من `app/`: `flutter build web --release -t lib/main_typography_preview.dart --output=../.local/typography/web`؛ ومن الجذر: `python3 -m http.server 8085 --bind 127.0.0.1 --directory .local/typography/web`. رابط البداية `http://127.0.0.1:8085/?font=f1&screen=equipment&locale=ar`؛ زر الشرائح للتبديل الفوري. أوامر الاختبارات والمحاكي والأدلة التفصيلية في [TYPOGRAPHY.md](design/ui-refresh/TYPOGRAPHY.md).
+- الكاتب/المراجع الذاتي الرئيسي وحده، **لا وكلاء فرعيين**. استثناء Astra/High حسب اختيار المالك المبلّغ؛ لا تحقيق جديد عن الهوية ولا تغيير إعدادات. لا مراجعة مستقلة لهذه المهمة.
+- الحدود: لا حملة full-suite/backend أو Android/جهاز فعلي/مصفوفة native كاملة؛ لا اعتماد لغوي أردي أو نسبة كل glyph إلى ملف. ملفات الخط تضيف912,764 بايت غير مضغوطة لحزمة assets المشتركة، لكن الإنتاج لا يستخدم عائلات المقارنة. تحذيرات Cupertino/open_filex الموجودة باقية. محاولة إنهاء تطبيق غير مشغّل بالمحاكي فشلت ثم install/launch نجح؛ لا اختبارات Flutter فاشلة.
+- **التوقف الآن لاختيار F1/F2/F3.** المهمة التالية المقترحة بعد الاختيار: تطبيق الخط المختار في تجربة المعدة فقط والتحقق منه؛ لا يبدأ تعميم التطبيق أو ترحيل المصروف تلقائيًا. نقطة الاستئناف [STATUS.md](design/ui-refresh/STATUS.md).
+
+---
+
+# نقطة تسليم تجربة A — تفاصيل المعدة الإنتاجية — 2026-10-02
+
+- اعتمد المالك **A «واضح وهادئ»**. نُقلت شاشة `EquipmentDetail` الحقيقية وحدها إلى A عبر مسارات التطبيق المعتادة؛ B/C والمعرض محفوظة كمراجع غير مختارة. لا يبدأ ترحيل بقية التطبيق تلقائيًا.
+- الفرع `feat/ui-a-equipment-pilot` من تصميم نظيف عند `1f8ac5dc2d3f04eb409315ae774f520831d9dec4`؛ HEAD الذي يحمل هذا التسليم هو commit التجربة. لم يحدث reset/stash/دمج أو تغيير main. الدفع لفرع التجربة فقط، دون نشر.
+- مكوّنات A المعزولة في `app/lib/design_system/equipment_a.dart`؛ theme محلي وNoto عربي، تخطيط جوال/ويب، حالات تحميل/فشل/فراغ. الأفعال الحالية ومساراتها وقيود الوصول والتنسيق الدقيق والتواريخ باقية. لا backend/API/schema أو منطق أموال جديد، وشجرة الإنتاج لا تستورد المعرض.
+- تحقق فعلي: اختبارات التجربة19 ثم اختبار تباين إضافي ضمن المجموعة النهائية؛ اختبارات مرتبطة76؛ **المجموعة الكاملة156/156 مرة واحدة**، `flutter analyze` نظيف، Web release من `main.dart` وiOS simulator debug ناجحان، و`git diff --check` ناجح. تجاوز الأرشفة والنص الأردي المكبر وتباين البحث أُصلحت قبل التسليم.
+- 10 صور فعلية قبل/بعد وفي ar/en/ur وحالة فارغة وسجل المال وiOS: `docs/design/ui-refresh/screenshots/pilot/`. تشغيل متصل بمصادقة التطوير العادية وPostgreSQL؛ معدتا اختبار EQ-000037/EQ-000038 تحت المالك الاصطناعي0500000802. لا بيانات حقيقية أو تجاوز مصادقة. Docker استعاد العمل بعد إعادة تشغيل وافق عليها المالك؛ volumes محفوظة وschema21 بلا ترحيل.
+- الرئيسي الكاتب الوحيد، واستثناء Astra/High مؤقت بتصريح المالك؛ runtime غير مكشوف بصورة موثوقة، إعداد المشروع والعام لم يتغير. مراجع بصري مستقل واحد `pilot_visual_review` مطلوب Astra/High بعد الصور، بلا تعديل/تفريع؛ لا ملاحظات قابلة للتنفيذ. المراجع لم يختبر التفاعل/قارئ الشاشة، وفحص التطبيق والاختبارات من الكاتب.
+- تشغيل جُرّب: `docker compose -f infra/compose.yaml up -d --wait postgres` ثم `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/backend-dev.sh`. من `app/`: `flutter build web --release -t lib/main.dart --output=../.local/ui-refresh/web-pilot`. من الجذر: `python3 -m http.server 8081 --bind 127.0.0.1 --directory .local/ui-refresh/web-pilot`. افتح8081، رقم التطوير0500000802، رمز123456، ثم المعدات وUI-A. المعرض8084 منفصل.
+- الحدود: لا Android/جهاز فعلي/حملة native كاملة أو قارئ شاشة تفاعلي؛ حالات التقييد والفشل والتكبير مثبتة في widget tests وليست كلها صورًا متصلة. الأردية تحتاج مراجعة لغوية بشرية. لم تُعد حملة Backend لتعديل العرض وحده؛ قيود تكاملات الإنتاج السابقة باقية.
+- **توقف لمراجعة تجربة صفحة المعدة.** التالي المقترح بعد موافقة منفصلة: نموذج إضافة المصروف، ثم تفاصيل العملية، ثم القائمة/الرئيسية. الدليل الكامل والأوامر: `docs/design/ui-refresh/PILOT.md`؛ نقطة الاستئناف الحالية: `docs/design/ui-refresh/STATUS.md`.
+
+---
+
+# Current UI task checkpoint — 2026-10-01
+
+Three isolated runnable Flutter design directions are ready on `feat/ui-design-directions`, based on merged main `8aae24f`; implementation/evidence base commit `eeadef0` plus a narrow-width alignment follow-up are pushed to the existing origin feature branch. Production restyling awaits owner selection. The date-only serialization fix and tests are already merged. No backend/API/auth/finance/config changes.
+
+- Run instructions, actual results, limitations and next step: [ui-refresh/STATUS.md](design/ui-refresh/STATUS.md).
+- Individual screenshots: [SCREENSHOTS.md](design/ui-refresh/SCREENSHOTS.md); comparison and independent review: [DIRECTIONS.md](design/ui-refresh/DIRECTIONS.md).
+- Verification: full Flutter suite133 passed once; final focused preview suite36 passed; analyze, preview/production web builds and iOS simulator build passed. Native A/Arabic keyboard and no-write result inspected.
+- Main wrote the preview; one explicitly requested Astra/high visual reviewer reviewed rendered prototypes. Project defaults unchanged. Next action is owner visual choice (recommend B), then a separately authorized bounded production migration. Do not resume old milestones automatically.
+
+---
+
 # حالة التسليم — M0–M6 مدمجة في main؛ M7 على فرع ميزة
 
 ## قبول M7 النهائي الجاري — 2026-09-26

@@ -1,0 +1,86 @@
+{
+  "google_fonts_commit": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+  "files": [
+    {
+      "path": "app/assets/typography_fonts/IBMPlexSansArabic-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/ibmplexsansarabic/IBMPlexSansArabic-Regular.ttf",
+      "sha256": "6f611412270a132bbac838da9259d4c68569b4175f3b3b8fa3fa36a30b56dab9",
+      "bytes": 235924
+    },
+    {
+      "path": "app/assets/typography_fonts/IBMPlexSansArabic-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/ibmplexsansarabic/IBMPlexSansArabic-Bold.ttf",
+      "sha256": "691e0c891a38637ae6bbdb69700f8042cb0724a137bee615068ffdb92244f61f",
+      "bytes": 246992
+    },
+    {
+      "path": "app/assets/typography_fonts/ibmplexsansarabic-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/ibmplexsansarabic/OFL.txt",
+      "sha256": "d741e57d5f865e294df801f96b7b5161a88b211df65887e4358d271c9fc5fb4f",
+      "bytes": 4362,
+      "upstream_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "upstream_bytes": 4456,
+      "normalization": "Trailing whitespace removed; license wording and copyright notice unchanged."
+    },
+    {
+      "path": "app/assets/typography_fonts/ibmplexsansarabic-METADATA.pb",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/ibmplexsansarabic/METADATA.pb",
+      "sha256": "9c9130e70b6ed0b36ac1f4fd2e7a33c96fbad4d45ed38dfd2ce4d034fb676502",
+      "bytes": 3704
+    },
+    {
+      "path": "app/assets/typography_fonts/Tajawal-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/tajawal/Tajawal-Regular.ttf",
+      "sha256": "6882892da3e03527d5db2bbab3b48bde6ef2e878a43f522d1a4eebda90010a19",
+      "bytes": 60364
+    },
+    {
+      "path": "app/assets/typography_fonts/Tajawal-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/tajawal/Tajawal-Bold.ttf",
+      "sha256": "0342ab6b74b6bd1b4b5bf7beda45a9734a2b3147a31e8a3a45b6a3417a52d9d7",
+      "bytes": 59988
+    },
+    {
+      "path": "app/assets/typography_fonts/tajawal-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/tajawal/OFL.txt",
+      "sha256": "c504e4e70d0e8048c69bc5330c8ca3d388533758c747f28f79b4de640210e630",
+      "bytes": 4370,
+      "upstream_sha256": "9b584984f9db0ee30347391a76eff9c0a6b03dc450c3c6afe3757a2cb3a4db87",
+      "upstream_bytes": 4464,
+      "normalization": "Trailing whitespace removed; license wording and copyright notice unchanged."
+    },
+    {
+      "path": "app/assets/typography_fonts/tajawal-METADATA.pb",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/tajawal/METADATA.pb",
+      "sha256": "3d3fd314884c894a85e91476faf1067f52d6d0ae59e92ab2269ac34f01bff2ef",
+      "bytes": 1956
+    },
+    {
+      "path": "app/assets/typography_fonts/Almarai-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/almarai/Almarai-Regular.ttf",
+      "sha256": "5b5cad33c8e5922083728d271cdcda91f96ba291f1307eccc4f4ef732dc19622",
+      "bytes": 152824
+    },
+    {
+      "path": "app/assets/typography_fonts/Almarai-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/almarai/Almarai-Bold.ttf",
+      "sha256": "06401391b5b39fbcf2bc0c6a6e03faf992435e7b011183a1861737e913af8613",
+      "bytes": 156672
+    },
+    {
+      "path": "app/assets/typography_fonts/almarai-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/almarai/OFL.txt",
+      "sha256": "ea63ce17a49f392a14b09a7cc6f4a69bb70ac0af8bfb9311d1ddb5d469310ca7",
+      "bytes": 4390,
+      "upstream_sha256": "142e053c374dd465a92bd7378116b517e344dbc662361308130fc2566db30c2a",
+      "upstream_bytes": 4391,
+      "normalization": "Trailing whitespace removed; license wording and copyright notice unchanged."
+    },
+    {
+      "path": "app/assets/typography_fonts/almarai-METADATA.pb",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/almarai/METADATA.pb",
+      "sha256": "fb7bddd8f770903b5a145b239432814c5a3df3754793ce926f34e380613ece00",
+      "bytes": 1225
+    }
+  ]
+}

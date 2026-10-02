@@ -42,6 +42,7 @@ void main() {
         'IMMUTABLE_ATTACHMENT',
         'UNSUPPORTED_LOCALE',
         'FINANCIAL_TOTAL_LOCKED',
+        'ORGANIZATION_IN_USE',
       ]) {
         final rendered = localizedErrorForLocale(
           locale,

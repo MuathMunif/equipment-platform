@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:equipment_app/api.dart';
+import 'package:equipment_app/design_system/equipment_a.dart';
 import 'package:equipment_app/documents.dart' show DocumentUpload;
 import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:equipment_app/maintenance.dart';
@@ -18,6 +19,7 @@ http.Response answer(Object body, [int status = 200]) => http.Response(
 Api fake(Future<http.Response> Function(http.Request) handler) =>
     Api(client: MockClient(handler), persistNative: false)..workspace = 'w';
 Widget host(Widget child, {String locale = 'ar'}) => MaterialApp(
+  theme: EquipmentA.theme(),
   locale: Locale(locale),
   supportedLocales: AppLocalizations.supportedLocales,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -182,6 +184,10 @@ void main() {
       find.byKey(const Key('m4MaintenanceDescription')),
       'تغيير زيت وفلاتر',
     );
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('m4SaveMaintenance')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('m4SaveMaintenance')));
     await tester.pumpAndSettle();
     expect(sent?['description'], 'تغيير زيت وفلاتر');

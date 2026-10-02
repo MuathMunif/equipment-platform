@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:file_selector/file_selector.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'file_export.dart';
 import 'documents.dart';
 import 'maintenance.dart';
@@ -17,7 +18,7 @@ void main() {
   runApp(EquipmentApp(api: Api()));
 }
 
-const brand = Color(0xff176c66);
+const brand = EquipmentA.accent;
 const categoryCodes = ['FUEL', 'MAINTENANCE', 'OTHER'];
 
 String localizedCategory(BuildContext context, Object? code) => switch (code) {
@@ -150,37 +151,7 @@ class _EquipmentAppState extends State<EquipmentApp> {
     locale: locale,
     supportedLocales: AppLocalizations.supportedLocales,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
-    theme: ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: brand),
-      scaffoldBackgroundColor: const Color(0xfff4f7f7),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Color(0xff173c3b),
-        centerTitle: false,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(48, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xffe1e9e8)),
-        ),
-      ),
-    ),
+    theme: EquipmentA.theme(),
     home: loading
         ? const Scaffold(body: Center(child: CircularProgressIndicator()))
         : startupError != null
@@ -258,13 +229,18 @@ class InlineError extends StatelessWidget {
 
 class FormBody extends StatelessWidget {
   final List<Widget> children;
-  const FormBody({super.key, required this.children});
+  final bool panel;
+  final double maxWidth;
+  const FormBody({
+    super.key,
+    required this.children,
+    this.panel = true,
+    this.maxWidth = 800,
+  });
   @override
-  Widget build(BuildContext context) => Center(
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 620),
-      child: ListView(padding: const EdgeInsets.all(24), children: children),
-    ),
+  Widget build(BuildContext context) => EquipmentPageBody(
+    maxWidth: maxWidth,
+    children: panel ? [EquipmentFormSection(children: children)] : children,
   );
 }
 
@@ -484,7 +460,9 @@ class _WorkspacePageState extends State<WorkspacePage> {
   );
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 850;
+    final wide =
+        MediaQuery.sizeOf(context).width >= 850 &&
+        MediaQuery.textScalerOf(context).scale(14) <= 21;
     final spaces = (widget.user['workspaces'] as List<dynamic>? ?? []);
     final active = spaces
         .where((space) => space['id'] == widget.api.workspace)
@@ -802,14 +780,17 @@ class _WorkspacePageState extends State<WorkspacePage> {
                         ),
                     ],
                   ),
-                Expanded(child: content),
+                Expanded(
+                  key: const ValueKey('workspaceContent'),
+                  child: content,
+                ),
               ],
             ),
           ),
         ],
       ),
       bottomNavigationBar: isDriver
-          ? NavigationBar(
+          ? EquipmentNavigationBar(
               selectedIndex: driverSelected,
               onDestinationSelected: (i) => setState(() => driverSelected = i),
               destinations: [
@@ -833,7 +814,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
             )
           : wide
           ? null
-          : NavigationBar(
+          : EquipmentNavigationBar(
               selectedIndex: current,
               onDestinationSelected: (i) => setState(() => selected = i),
               destinations: [
@@ -980,8 +961,7 @@ class _EquipmentListState extends State<EquipmentList> {
     if (error != null && !widget.home) {
       return ErrorPanel(message: error!, retry: load);
     }
-    return ListView(
-      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width > 850 ? 32 : 20),
+    return EquipmentPageBody(
       children: [
         Text(
           widget.home
@@ -1003,16 +983,23 @@ class _EquipmentListState extends State<EquipmentList> {
           const SizedBox(height: 12),
         ],
         if (widget.home) ...[
-          HomeDocumentAttention(
-            api: widget.api,
-            showIncomplete: widget.canDocuments,
-          ),
-          DashboardSection(
-            api: widget.api,
-            canFinance: widget.canFinance,
-            canEquipment: widget.canEquipment,
-            canManage: widget.canFinanceManage,
-            canSubmitReview: widget.canSubmitReview,
+          EquipmentFieldRow(
+            key: const ValueKey('homeSections'),
+            breakpoint: 900,
+            firstFraction: .42,
+            first: HomeDocumentAttention(
+              key: const ValueKey('homeAttention'),
+              api: widget.api,
+              showIncomplete: widget.canDocuments,
+            ),
+            second: DashboardSection(
+              key: const ValueKey('homeDashboard'),
+              api: widget.api,
+              canFinance: widget.canFinance,
+              canEquipment: widget.canEquipment,
+              canManage: widget.canFinanceManage,
+              canSubmitReview: widget.canSubmitReview,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -1092,7 +1079,9 @@ class _EquipmentListState extends State<EquipmentList> {
                       child: Card(
                         margin: EdgeInsets.zero,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            EquipmentA.radius,
+                          ),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => EquipmentDetail(
@@ -1132,7 +1121,7 @@ class _EquipmentListState extends State<EquipmentList> {
                                   item['reference'],
                                   textDirection: TextDirection.ltr,
                                   style: const TextStyle(
-                                    color: Colors.blueGrey,
+                                    color: EquipmentA.muted,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -1206,6 +1195,9 @@ Future<bool> confirmLeave(BuildContext context) async =>
             child: Text(l10n(context).uiContinueEntry),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n(context).uiLeave),
           ),
@@ -1408,77 +1400,85 @@ class _EquipmentDetailState extends State<EquipmentDetail> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(equipment['name']),
-      actions: [
-        if (widget.canAssignDrivers && equipment['archivedAt'] == null)
-          IconButton(
-            key: const Key('openEquipmentDriverAssignment'),
-            tooltip: l10n(context).m5DriverAssignment,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => EquipmentDriverAssignmentPage(
-                  api: widget.api,
-                  equipment: equipment,
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.person_pin_outlined),
-          ),
-        if (widget.canManage)
-          TextButton(
-            key: const Key('toggleEquipmentArchive'),
-            onPressed: busy ? null : toggleArchive,
-            child: Text(
-              equipment['archivedAt'] == null
-                  ? l10n(context).uiArchiveEquipment
-                  : l10n(context).uiRestoreEquipment,
-            ),
-          ),
-      ],
-    ),
-    body: widget.canFinance
-        ? LedgerPage(
-            api: widget.api,
-            equipment: equipment,
-            canManage: widget.canFinanceManage,
-            canSubmitReview: widget.canSubmitReview,
-            canDocuments: widget.canDocuments,
-            canMaintenance: widget.canMaintenance,
-          )
-        : ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              Text(
-                '${equipment['name']}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              Text(l10n(context).modelValue('${equipment['model']}')),
-              Text('${equipment['reference']}'),
-              EquipmentM6Context(
-                api: widget.api,
-                equipment: equipment,
-                canManage: widget.canManage,
-                canProjects:
-                    widget.api.capabilities?.contains('PROJECT_VIEW') ?? false,
-                canFinance: widget.canFinance,
-              ),
-              if (widget.canSubmitReview)
-                FilledButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SubmissionFormPage(
-                        api: widget.api,
-                        equipment: equipment,
-                      ),
+  Widget build(BuildContext context) => Theme(
+    data: EquipmentA.theme(),
+    child: Builder(
+      builder: (context) => Scaffold(
+        appBar: AppBar(
+          title: Text(l10n(context).equipment),
+          actions: [
+            if (widget.canAssignDrivers && equipment['archivedAt'] == null)
+              IconButton(
+                key: const Key('openEquipmentDriverAssignment'),
+                tooltip: l10n(context).m5DriverAssignment,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EquipmentDriverAssignmentPage(
+                      api: widget.api,
+                      equipment: equipment,
                     ),
                   ),
-                  child: Text(l10n(context).m5SubmitExpense),
                 ),
-            ],
-          ),
+                icon: const Icon(Icons.person_pin_outlined),
+              ),
+            if (widget.canManage)
+              IconButton(
+                key: const Key('toggleEquipmentArchive'),
+                onPressed: busy ? null : toggleArchive,
+                tooltip: equipment['archivedAt'] == null
+                    ? l10n(context).uiArchiveEquipment
+                    : l10n(context).uiRestoreEquipment,
+                icon: Icon(
+                  equipment['archivedAt'] == null
+                      ? Icons.archive_outlined
+                      : Icons.unarchive_outlined,
+                ),
+              ),
+          ],
+        ),
+        body: widget.canFinance
+            ? LedgerPage(
+                api: widget.api,
+                equipment: equipment,
+                equipmentPilot: true,
+                canManage: widget.canFinanceManage,
+                canSubmitReview: widget.canSubmitReview,
+                canDocuments: widget.canDocuments,
+                canMaintenance: widget.canMaintenance,
+              )
+            : EquipmentCanvas(
+                children: [
+                  EquipmentIdentity(equipment),
+                  const SizedBox(height: EquipmentA.gap),
+                  EquipmentPanel(
+                    child: EquipmentM6Context(
+                      api: widget.api,
+                      equipment: equipment,
+                      canManage: widget.canManage,
+                      canProjects:
+                          widget.api.capabilities?.contains('PROJECT_VIEW') ??
+                          false,
+                      canFinance: widget.canFinance,
+                      showLoadState: true,
+                    ),
+                  ),
+                  if (widget.canSubmitReview)
+                    FilledButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SubmissionFormPage(
+                            api: widget.api,
+                            equipment: equipment,
+                          ),
+                        ),
+                      ),
+                      child: Text(l10n(context).m5SubmitExpense),
+                    ),
+                ],
+              ),
+      ),
+    ),
   );
 }
 
@@ -1488,6 +1488,7 @@ class LedgerPage extends StatefulWidget {
   final bool canManage;
   final bool canSubmitReview;
   final bool canDocuments, canMaintenance;
+  final bool equipmentPilot;
   final String? initialEntryType, initialFromDate, initialToDate;
   const LedgerPage({
     super.key,
@@ -1497,6 +1498,7 @@ class LedgerPage extends StatefulWidget {
     this.canSubmitReview = false,
     this.canDocuments = true,
     this.canMaintenance = true,
+    this.equipmentPilot = false,
     this.initialEntryType,
     this.initialFromDate,
     this.initialToDate,
@@ -1712,6 +1714,7 @@ class _LedgerPageState extends State<LedgerPage> {
     initialValue: value,
     decoration: InputDecoration(labelText: label),
     isExpanded: true,
+    itemHeight: null,
     items: [
       DropdownMenuItem(value: '', child: Text(l10n(context).uiAll)),
       ...choices.entries.map(
@@ -1877,10 +1880,10 @@ class _LedgerPageState extends State<LedgerPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.equipmentPilot) return equipmentPresentation();
     if (loading) return const Center(child: CircularProgressIndicator());
     if (error != null) return ErrorPanel(message: error!, retry: load);
-    return ListView(
-      padding: const EdgeInsets.all(24),
+    return EquipmentPageBody(
       children: [
         if (widget.equipment == null) ...[
           if (widget.canManage)
@@ -1933,56 +1936,7 @@ class _LedgerPageState extends State<LedgerPage> {
                         false,
                   ),
                   const SizedBox(height: 24),
-                  if (widget.canManage)
-                    FilledButton.icon(
-                      key: const Key('addExpense'),
-                      onPressed: () => add(),
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n(context).addExpense),
-                    ),
-                  const SizedBox(height: 12),
-                  if (widget.canManage)
-                    OutlinedButton.icon(
-                      key: const Key('addIncome'),
-                      onPressed: () => add(income: true),
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n(context).addIncome),
-                    ),
-                  const SizedBox(height: 12),
-                  if (widget.canManage)
-                    OutlinedButton.icon(
-                      key: const Key('quickCapture'),
-                      onPressed: captureDraft,
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      label: Text(
-                        l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater,
-                      ),
-                    ),
-                  if (widget.canSubmitReview)
-                    FilledButton.icon(
-                      key: const Key('submitExpenseForReview'),
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SubmissionFormPage(
-                              api: widget.api,
-                              equipment: widget.equipment!,
-                            ),
-                          ),
-                        );
-                        if (mounted) load();
-                      },
-                      icon: const Icon(Icons.send_outlined),
-                      label: Text(l10n(context).m5SubmitExpense),
-                    ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    key: const Key('openEquipmentDrafts'),
-                    onPressed: showDrafts,
-                    icon: const Icon(Icons.pending_actions_outlined),
-                    label: Text(l10n(context).uiAwaitingCompletion),
-                  ),
+                  ...equipmentActions(),
                 ],
               ),
             ),
@@ -2001,94 +1955,189 @@ class _LedgerPageState extends State<LedgerPage> {
             ),
         ],
         const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.equipment == null
-                    ? l10n(context).uiGeneralRecords
-                    : l10n(context).uiEquipmentHistory,
-                style: Theme.of(context).textTheme.titleLarge,
+        ...historyContent(),
+      ],
+    );
+  }
+
+  List<Widget> equipmentActions() => [
+    if (widget.canManage)
+      FilledButton.icon(
+        key: const Key('addExpense'),
+        onPressed: () => add(),
+        icon: const Icon(Icons.add),
+        label: Text(l10n(context).addExpense),
+      ),
+    const SizedBox(height: 12),
+    if (widget.canManage)
+      OutlinedButton.icon(
+        key: const Key('addIncome'),
+        onPressed: () => add(income: true),
+        icon: const Icon(Icons.add),
+        label: Text(l10n(context).addIncome),
+      ),
+    const SizedBox(height: 12),
+    if (widget.canManage)
+      OutlinedButton.icon(
+        key: const Key('quickCapture'),
+        onPressed: captureDraft,
+        icon: const Icon(Icons.photo_camera_outlined),
+        label: Text(l10n(context).uiSaveInvoiceNowAndCompleteDetailsLater),
+      ),
+    if (widget.canSubmitReview)
+      FilledButton.icon(
+        key: const Key('submitExpenseForReview'),
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SubmissionFormPage(
+                api: widget.api,
+                equipment: widget.equipment!,
               ),
             ),
-            IconButton(
-              tooltip: l10n(context).uiRefreshRecords,
-              onPressed: load,
-              icon: const Icon(Icons.refresh),
+          );
+          if (mounted) load();
+        },
+        icon: const Icon(Icons.send_outlined),
+        label: Text(l10n(context).m5SubmitExpense),
+      ),
+    const SizedBox(height: 12),
+    TextButton.icon(
+      key: const Key('openEquipmentDrafts'),
+      onPressed: showDrafts,
+      icon: const Icon(Icons.pending_actions_outlined),
+      label: Text(l10n(context).uiAwaitingCompletion),
+    ),
+  ];
+
+  List<Widget> historyContent() => [
+    Row(
+      children: [
+        Expanded(
+          child: Text(
+            widget.equipment == null
+                ? l10n(context).uiGeneralRecords
+                : l10n(context).uiEquipmentHistory,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        IconButton(
+          tooltip: l10n(context).uiRefreshRecords,
+          onPressed: load,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
+    const SizedBox(height: 8),
+    Text(l10n(context).uiEachEntryItsPaymentsAndAttachmentsIn),
+    const SizedBox(height: 12),
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: const Key('historySearch'),
+                controller: searchController,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  labelText: l10n(context).searchLedger,
+                  hintText: l10n(context).uiEquipmentNameReferencePartyOrNote,
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onSubmitted: (_) {
+                  setState(() => search = searchController.text.trim());
+                  applyFilter();
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              key: const Key('applyHistorySearch'),
+              tooltip: l10n(context).uiSearch,
+              onPressed: () {
+                setState(() => search = searchController.text.trim());
+                applyFilter();
+              },
+              icon: const Icon(Icons.search),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(l10n(context).uiEachEntryItsPaymentsAndAttachmentsIn),
-        const SizedBox(height: 12),
+      ),
+    ),
+    const SizedBox(height: 8),
+    historyFilters(),
+    const SizedBox(height: 12),
+    if (items.isEmpty)
+      if (widget.equipmentPilot)
+        EquipmentEmpty(
+          hasFilters
+              ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
+              : l10n(context).noEntries,
+        )
+      else
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    key: const Key('historySearch'),
-                    controller: searchController,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      labelText: l10n(context).searchLedger,
-                      hintText: l10n(context)
-                          .uiEquipmentNameReferencePartyOrNote,
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onSubmitted: (_) {
-                      setState(() => search = searchController.text.trim());
-                      applyFilter();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  key: const Key('applyHistorySearch'),
-                  tooltip: l10n(context).uiSearch,
-                  onPressed: () {
-                    setState(() => search = searchController.text.trim());
-                    applyFilter();
-                  },
-                  icon: const Icon(Icons.search),
-                ),
-              ],
+            padding: const EdgeInsets.all(28),
+            child: Text(
+              hasFilters
+                  ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
+                  : l10n(context).noEntries,
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        historyFilters(),
-        const SizedBox(height: 12),
-        if (items.isEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Text(
-                hasFilters
-                    ? l10n(context).uiNoEntriesMatchYourSearchOrFilters
-                    : l10n(context).noEntries,
-              ),
-            ),
+    ...items.map(entryCard),
+    Pager(
+      page: page,
+      total: total,
+      change: (value) {
+        page = value;
+        load();
+      },
+    ),
+  ];
+  Widget entryCard(dynamic entry) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(EquipmentA.radius),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EntryDetail(api: widget.api, id: entry['id']),
           ),
-        ...items.map(
-          (entry) => Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsetsDirectional.only(end: 12),
+                    child: Icon(
+                      Icons.receipt_long_outlined,
+                      color: EquipmentA.accent,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
+                          ? l10n(context).generalExpense
+                          : entry['expenseScope'] == 'SHARED'
+                          ? l10n(context).uiMultipleEquipment
+                          : entry['equipmentName']}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, size: 18),
+                ],
               ),
-              leading: const CircleAvatar(
-                child: Icon(Icons.receipt_long_outlined),
-              ),
-              title: Text(
-                '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
-                    ? l10n(context).generalExpense
-                    : entry['expenseScope'] == 'SHARED'
-                    ? l10n(context).uiMultipleEquipment
-                    : entry['equipmentName']}',
-              ),
-              subtitle: Text(
+              const SizedBox(height: 10),
+              Text(
                 l10n(context).entryDateStatus(
                   localizedDate(context, entry['operationDate'] as String),
                   entry['lifecycle'] == 'CANCELLED'
@@ -2099,35 +2148,94 @@ class _LedgerPageState extends State<LedgerPage> {
                           entry['settlementStatus'],
                         ),
                 ),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-              isThreeLine: true,
-              trailing: Text(
+              const SizedBox(height: 10),
+              Text(
                 localizedMoney(context, entry['amount']),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: brand,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => EntryDetail(api: widget.api, id: entry['id']),
-                ),
-              ),
-            ),
+            ],
           ),
         ),
-        Pager(
-          page: page,
-          total: total,
-          change: (value) {
-            page = value;
-            load();
-          },
+      ),
+    ),
+  );
+
+  Widget equipmentPresentation() => EquipmentCanvas(
+    children: [
+      EquipmentIdentity(widget.equipment!),
+      const SizedBox(height: EquipmentA.gap),
+      Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: equipmentActions()
+            .where((child) => child is! SizedBox)
+            .toList(),
+      ),
+      const SizedBox(height: EquipmentA.gap),
+      EquipmentColumns(
+        main: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.canDocuments) ...[
+              EquipmentDocumentsCard(
+                api: widget.api,
+                equipment: widget.equipment!,
+              ),
+              const SizedBox(height: EquipmentA.gap),
+            ],
+            if (widget.canMaintenance) ...[
+              EquipmentMaintenanceCard(
+                api: widget.api,
+                equipment: widget.equipment!,
+              ),
+              const SizedBox(height: EquipmentA.gap),
+            ],
+            EquipmentPanel(
+              child: ExpansionTile(
+                key: const Key('pilotOptionalConnections'),
+                tilePadding: EdgeInsets.zero,
+                title: Text(
+                  l10n(context).pilotOptionalConnections,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                children: [
+                  EquipmentM6Context(
+                    api: widget.api,
+                    equipment: widget.equipment!,
+                    canManage:
+                        widget.api.capabilities?.contains('EQUIPMENT_MANAGE') ??
+                        false,
+                    canProjects:
+                        widget.api.capabilities?.contains('PROJECT_VIEW') ??
+                        false,
+                    canFinance:
+                        widget.api.capabilities?.contains('FINANCE_VIEW') ??
+                        false,
+                    showLoadState: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
-    );
-  }
+        secondary: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (loading) ...[
+              EquipmentHeading(l10n(context).uiEquipmentHistory),
+              const EquipmentLoading(),
+            ] else if (error != null) ...[
+              EquipmentHeading(l10n(context).uiEquipmentHistory),
+              EquipmentError(message: error!, retry: load),
+            ] else
+              ...historyContent(),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class HistoryEquipmentPicker extends StatefulWidget {
@@ -2496,8 +2604,7 @@ class _DraftListPageState extends State<DraftListPage> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? ErrorPanel(message: error!, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(24),
+        : EquipmentPageBody(
             children: [
               if (items.isEmpty)
                 Card(
@@ -2508,6 +2615,7 @@ class _DraftListPageState extends State<DraftListPage> {
                 ),
               ...items.map(
                 (draft) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text(draft['equipmentName'] as String),
                     subtitle: Text(
@@ -2775,54 +2883,64 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
         : error != null
         ? ErrorPanel(message: error!, retry: load)
         : FormBody(
+            panel: false,
             children: [
-              Text(
-                draft!['equipmentName'] as String,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(l10n(context).uiThisInvoiceIsSavedForLaterCompletion),
-              if ((draft!['note'] as String).isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(l10n(context).noteValue('${draft!['note']}')),
-                ),
-              const SizedBox(height: 24),
-              Text(
-                l10n(context).attachments,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              if (attachments.isEmpty) Text(l10n(context).noAttachments),
-              ...attachments.map(
-                (file) => ListTile(
-                  title: Text(file['filename'] as String),
-                  subtitle: Text(
-                    file['state'] == 'READY'
-                        ? l10n(context).uiReadyToView
-                        : file['state'] == 'FAILED'
-                        ? l10n(context).uiUploadFailedTryAgain
-                        : l10n(context).uiUploadIncomplete,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    draft!['equipmentName'] as String,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  onTap: file['state'] == 'READY'
-                      ? () => openAttachment(Map<String, dynamic>.from(file))
-                      : null,
-                ),
+                  const SizedBox(height: 8),
+                  Text(l10n(context).uiThisInvoiceIsSavedForLaterCompletion),
+                  if ((draft!['note'] as String).isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(l10n(context).noteValue('${draft!['note']}')),
+                    ),
+                ],
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const Key('addDraftAttachment'),
-                onPressed: busy ? null : addAttachment,
-                icon: const Icon(Icons.attach_file),
-                label: Text(l10n(context).uiAddAttachment),
+              const SizedBox(height: 24),
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    l10n(context).attachments,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (attachments.isEmpty) Text(l10n(context).noAttachments),
+                  ...attachments.map(
+                    (file) => ListTile(
+                      title: Text(file['filename'] as String),
+                      subtitle: Text(
+                        file['state'] == 'READY'
+                            ? l10n(context).uiReadyToView
+                            : file['state'] == 'FAILED'
+                            ? l10n(context).uiUploadFailedTryAgain
+                            : l10n(context).uiUploadIncomplete,
+                      ),
+                      onTap: file['state'] == 'READY'
+                          ? () =>
+                                openAttachment(Map<String, dynamic>.from(file))
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('addDraftAttachment'),
+                    onPressed: busy ? null : addAttachment,
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(l10n(context).uiAddAttachment),
+                  ),
+                  if (bytes != null && uploadError != null)
+                    TextButton(
+                      key: const Key('retryDraftAttachment'),
+                      onPressed: busy ? null : upload,
+                      child: Text(l10n(context).uiRetryFileUpload),
+                    ),
+                  InlineError(uploadError),
+                ],
               ),
-              if (bytes != null && uploadError != null)
-                TextButton(
-                  key: const Key('retryDraftAttachment'),
-                  onPressed: busy ? null : upload,
-                  child: Text(l10n(context).uiRetryFileUpload),
-                ),
-              InlineError(uploadError),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               FilledButton(
                 key: const Key('completeDraftExpense'),
                 onPressed: busy ? null : () => complete(),
@@ -2837,6 +2955,9 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
               const SizedBox(height: 12),
               TextButton(
                 key: const Key('discardDraft'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
                 onPressed: busy ? null : discard,
                 child: Text(l10n(context).uiDiscardDraft),
               ),
@@ -3124,342 +3245,381 @@ class _ExpenseFormState extends State<ExpenseForm> {
       body: Form(
         key: form,
         child: FormBody(
+          panel: false,
+          maxWidth: 1120,
           children: [
-            Text(
-              widget.equipment['name'],
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            if (widget.income)
-              Text(l10n(context).uiThisIncomeIsRecordedUnderThisEquipment)
-            else if (widget.draftId != null)
-              Text(l10n(context).uiCompleteTheSavedInvoiceDetailsItsAttachments)
-            else if (widget.equipment['id'] == null)
-              Text(l10n(context).uiAWorkspaceExpenseItIsNotAssigned)
-            else ...[
-              Text(l10n(context).uiSelectTheEquipmentThisExpenseBelongsTo),
-              const SizedBox(height: 12),
-              if (widget.maintenanceId == null)
-                DropdownButtonFormField<String>(
-                  key: const Key('expenseScope'),
-                  initialValue: expenseScope,
-                  decoration: InputDecoration(
-                    labelText: l10n(context).uiExpenseAppliesTo276,
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'SINGLE',
-                      child: Text(l10n(context).uiOneEquipment),
-                    ),
-                    DropdownMenuItem(
-                      value: 'SHARED',
-                      child: Text(l10n(context).uiMultipleEquipment),
-                    ),
-                    DropdownMenuItem(
-                      value: 'GENERAL',
-                      child: Text(l10n(context).generalExpense),
-                    ),
-                  ],
-                  onChanged: busy || uncertain
-                      ? null
-                      : (value) {
-                          if (value != null) changeScope(value);
-                        },
+            EquipmentFormSection(
+              children: [
+                Text(
+                  widget.equipment['name'],
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-            ],
+                const SizedBox(height: 8),
+                if (widget.income)
+                  Text(l10n(context).uiThisIncomeIsRecordedUnderThisEquipment)
+                else if (widget.draftId != null)
+                  Text(
+                    l10n(context)
+                        .uiCompleteTheSavedInvoiceDetailsItsAttachments,
+                  )
+                else if (widget.equipment['id'] == null)
+                  Text(l10n(context).uiAWorkspaceExpenseItIsNotAssigned)
+                else ...[
+                  Text(l10n(context).uiSelectTheEquipmentThisExpenseBelongsTo),
+                  const SizedBox(height: 12),
+                  if (widget.maintenanceId == null)
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      itemHeight: null,
+                      key: const Key('expenseScope'),
+                      initialValue: expenseScope,
+                      decoration: InputDecoration(
+                        labelText: l10n(context).uiExpenseAppliesTo276,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'SINGLE',
+                          child: Text(l10n(context).uiOneEquipment),
+                        ),
+                        DropdownMenuItem(
+                          value: 'SHARED',
+                          child: Text(l10n(context).uiMultipleEquipment),
+                        ),
+                        DropdownMenuItem(
+                          value: 'GENERAL',
+                          child: Text(l10n(context).generalExpense),
+                        ),
+                      ],
+                      onChanged: busy || uncertain
+                          ? null
+                          : (value) {
+                              if (value != null) changeScope(value);
+                            },
+                    ),
+                ],
+              ],
+            ),
             const SizedBox(height: 24),
-            TextFormField(
-              key: const Key('expenseAmount'),
-              controller: amount,
-              enabled: !busy && !uncertain,
-              textDirection: TextDirection.ltr,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                labelText: l10n(context).uiAmountSar,
-                hintText: '350.00',
-              ),
-              validator: (v) => exactMoney(v ?? '') == null
-                  ? l10n(context).uiEnterAnAmountAboveZeroUpTo
-                  : null,
-              onChanged: (_) => setState(() {}),
-            ),
-            if (!widget.income && expenseScope == 'SHARED') ...[
-              const SizedBox(height: 16),
-              Text(
-                l10n(context).uiAmountPerEquipment,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (loadingEquipment) const LinearProgressIndicator(),
-              ...parts.asMap().entries.map(
-                (item) => Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        key: Key('allocationEquipment${item.key}'),
-                        initialValue: item.value.equipmentId,
-                        decoration: InputDecoration(
-                          labelText: l10n(context).uiEquipment,
-                        ),
-                        items: [
-                          if (!equipmentChoices.any(
-                            (e) => e['id'] == widget.equipment['id'],
-                          ))
-                            DropdownMenuItem(
-                              value: widget.equipment['id'] as String,
-                              child: Text(widget.equipment['name'] as String),
-                            ),
-                          ...equipmentChoices.map(
-                            (e) => DropdownMenuItem(
-                              value: e['id'] as String,
-                              child: Text(e['name'] as String),
-                            ),
-                          ),
-                        ],
-                        onChanged: busy || uncertain
-                            ? null
-                            : (value) => setState(
-                                () => item.value.equipmentId = value,
-                              ),
-                        validator: (value) => value == null
-                            ? l10n(context).uiSelectEquipment051
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextFormField(
-                        key: Key('allocationAmount${item.key}'),
-                        controller: item.value.amount,
-                        textDirection: TextDirection.ltr,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: l10n(context).uiAmount,
-                        ),
-                        validator: (value) => exactMoney(value ?? '') == null
-                            ? l10n(context).uiEnterAValidAmount
-                            : null,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    if (parts.length > 2)
-                      IconButton(
-                        key: Key('removeAllocation${item.key}'),
-                        tooltip: l10n(context).uiRemoveEquipment,
-                        onPressed: busy || uncertain
-                            ? null
-                            : () => setState(() {
-                                final removed = parts.removeAt(item.key);
-                                removed.dispose();
-                              }),
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                  ],
-                ),
-              ),
-              TextButton.icon(
-                key: const Key('addAllocation'),
-                onPressed: busy || uncertain
-                    ? null
-                    : () => setState(() => parts.add(_ExpensePart(null))),
-                icon: const Icon(Icons.add),
-                label: Text(l10n(context).addEquipment),
-              ),
-              Text(
-                l10n(context).allocationRemaining(
-                  localizedMoney(
-                    context,
-                    (() {
-                      final total = exactMoney(amount.text);
-                      if (total == null) return '—';
-                      final assigned = parts
-                          .map((p) => exactMoney(p.amount.text))
-                          .whereType<String>()
-                          .fold<BigInt>(
-                            BigInt.zero,
-                            (s, v) => s + BigInt.parse(v.replaceAll('.', '')),
-                          );
-                      final difference =
-                          BigInt.parse(total.replaceAll('.', '')) - assigned;
-                      final absolute = difference.abs().toString().padLeft(
-                        3,
-                        '0',
-                      );
-                      return '${difference.isNegative ? '-' : ''}${absolute.substring(0, absolute.length - 2)}.${absolute.substring(absolute.length - 2)}';
-                    })(),
-                  ),
-                ),
-                key: const Key('allocationRemaining'),
-              ),
-            ],
-            const SizedBox(height: 20),
-            if (!widget.income)
-              DropdownButtonFormField<String>(
-                initialValue: category,
-                decoration: InputDecoration(
-                  labelText: l10n(context).uiExpenseType,
-                ),
-                items: categoryCodes
-                    .map(
-                      (code) => DropdownMenuItem(
-                        value: code,
-                        child: Text(localizedCategory(context, code)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: busy || uncertain
-                    ? null
-                    : (v) => setState(() => category = v!),
-              ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: busy || uncertain ? null : () => pickDate(false),
-              icon: const Icon(Icons.calendar_month_outlined),
-              label: Text(
-                l10n(context).operationDate(localizedDate(context, date)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              key: const Key('paymentStatus'),
-              initialValue: paymentStatus,
-              decoration: InputDecoration(
-                labelText: widget.income
-                    ? l10n(context).uiReceiptStatus
-                    : l10n(context).uiPaymentStatus,
-              ),
-              items: widget.income
-                  ? [
-                      DropdownMenuItem(
-                        value: 'FULL',
-                        child: Text(l10n(context).uiReceivedInFull),
-                      ),
-                      DropdownMenuItem(
-                        value: 'PARTIAL',
-                        child: Text(l10n(context).uiPartiallyReceived),
-                      ),
-                      DropdownMenuItem(
-                        value: 'UNPAID',
-                        child: Text(l10n(context).uiNotReceived),
-                      ),
-                    ]
-                  : [
-                      DropdownMenuItem(
-                        value: 'FULL',
-                        child: Text(l10n(context).uiPaidInFull),
-                      ),
-                      DropdownMenuItem(
-                        value: 'PARTIAL',
-                        child: Text(l10n(context).uiPaidPartOfIt),
-                      ),
-                      DropdownMenuItem(
-                        value: 'UNPAID',
-                        child: Text(l10n(context).uiNotPaid),
-                      ),
-                    ],
-              onChanged: busy || uncertain
-                  ? null
-                  : (v) => setState(() => paymentStatus = v!),
-            ),
-            if (paymentStatus == 'PARTIAL') ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                key: const Key('initialPaid'),
-                controller: initialPaid,
-                enabled: !busy && !uncertain,
-                textDirection: TextDirection.ltr,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: widget.income
-                      ? l10n(context).uiInitialReceipt
-                      : l10n(context).uiInitialPayment,
-                ),
-                validator: (v) {
-                  final first = exactMoney(v ?? '');
-                  final total = exactMoney(amount.text);
-                  if (first == null ||
-                      total == null ||
-                      BigInt.parse(first.replaceAll('.', '')) >=
-                          BigInt.parse(total.replaceAll('.', ''))) {
-                    return l10n(context).uiEnterAnAmountAboveZeroAndBelow;
-                  }
-                  return null;
-                },
-              ),
-            ],
-            if (paymentStatus != 'UNPAID') ...[
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: busy || uncertain ? null : () => pickDate(true),
-                icon: const Icon(Icons.calendar_today_outlined),
-                label: Text(
-                  widget.income
-                      ? l10n(context)
-                            .receiptDate(localizedDate(context, paidOn))
-                      : l10n(context)
-                            .paymentDate(localizedDate(context, paidOn)),
-                ),
-              ),
-            ],
-            if (paymentStatus != 'FULL') ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                key: const Key('partyName'),
-                controller: party,
-                enabled: !busy && !uncertain,
-                maxLength: 100,
-                decoration: InputDecoration(
-                  labelText: widget.income
-                      ? l10n(context).uiNameOfThePartyWhoWillPay
-                      : l10n(context).uiNameOfThePartyOwed,
-                ),
-                validator: (v) => v == null || v.trim().isEmpty
-                    ? l10n(context).uiEnterPartyName
-                    : null,
-              ),
-              OutlinedButton.icon(
-                onPressed: busy || uncertain ? null : pickDueDate,
-                icon: const Icon(Icons.event_outlined),
-                label: Text(
-                  dueDate == null
-                      ? l10n(context).uiDueDateOptional
-                      : l10n(context)
-                            .dueDateValue(localizedDate(context, dueDate)),
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const Key('expenseNote'),
-              controller: note,
-              enabled: !busy && !uncertain,
-              maxLength: 1000,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: l10n(context).uiNoteOptional,
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            if (widget.maintenanceId == null)
-              ExpansionTile(
-                title: Text(l10n(context).m6AdditionalDetails),
+            EquipmentFieldRow(
+              first: EquipmentFormSection(
+                title: widget.income
+                    ? l10n(context).uiIncomeDetails
+                    : l10n(context).uiExpenseDetails,
                 children: [
+                  TextFormField(
+                    key: const Key('expenseAmount'),
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    controller: amount,
+                    enabled: !busy && !uncertain,
+                    textDirection: TextDirection.ltr,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: l10n(context).uiAmountSar,
+                      hintText: '350.00',
+                    ),
+                    validator: (v) => exactMoney(v ?? '') == null
+                        ? l10n(context).uiEnterAnAmountAboveZeroUpTo
+                        : null,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  if (!widget.income && expenseScope == 'SHARED') ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n(context).uiAmountPerEquipment,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (loadingEquipment) const LinearProgressIndicator(),
+                    ...parts.asMap().entries.map(
+                      (item) => EquipmentFieldRow(
+                        first: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          itemHeight: null,
+                          key: Key('allocationEquipment${item.key}'),
+                          initialValue: item.value.equipmentId,
+                          decoration: InputDecoration(
+                            labelText: l10n(context).uiEquipment,
+                          ),
+                          items: [
+                            if (!equipmentChoices.any(
+                              (e) => e['id'] == widget.equipment['id'],
+                            ))
+                              DropdownMenuItem(
+                                value: widget.equipment['id'] as String,
+                                child: Text(widget.equipment['name'] as String),
+                              ),
+                            ...equipmentChoices.map(
+                              (e) => DropdownMenuItem(
+                                value: e['id'] as String,
+                                child: Text(e['name'] as String),
+                              ),
+                            ),
+                          ],
+                          onChanged: busy || uncertain
+                              ? null
+                              : (value) => setState(
+                                  () => item.value.equipmentId = value,
+                                ),
+                          validator: (value) => value == null
+                              ? l10n(context).uiSelectEquipment051
+                              : null,
+                        ),
+                        second: TextFormField(
+                          key: Key('allocationAmount${item.key}'),
+                          controller: item.value.amount,
+                          enabled: !busy && !uncertain,
+                          textDirection: TextDirection.ltr,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: l10n(context).uiAmount,
+                          ),
+                          validator: (value) => exactMoney(value ?? '') == null
+                              ? l10n(context).uiEnterAValidAmount
+                              : null,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                        action: parts.length > 2
+                            ? IconButton(
+                                key: Key('removeAllocation${item.key}'),
+                                tooltip: l10n(context).uiRemoveEquipment,
+                                onPressed: busy || uncertain
+                                    ? null
+                                    : () => setState(() {
+                                        final removed = parts.removeAt(
+                                          item.key,
+                                        );
+                                        removed.dispose();
+                                      }),
+                                icon: const Icon(Icons.remove_circle_outline),
+                              )
+                            : null,
+                      ),
+                    ),
+                    TextButton.icon(
+                      key: const Key('addAllocation'),
+                      onPressed: busy || uncertain
+                          ? null
+                          : () => setState(() => parts.add(_ExpensePart(null))),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n(context).addEquipment),
+                    ),
+                    Text(
+                      l10n(context).allocationRemaining(
+                        localizedMoney(
+                          context,
+                          (() {
+                            final total = exactMoney(amount.text);
+                            if (total == null) return '—';
+                            final assigned = parts
+                                .map((p) => exactMoney(p.amount.text))
+                                .whereType<String>()
+                                .fold<BigInt>(
+                                  BigInt.zero,
+                                  (s, v) =>
+                                      s + BigInt.parse(v.replaceAll('.', '')),
+                                );
+                            final difference =
+                                BigInt.parse(total.replaceAll('.', '')) -
+                                assigned;
+                            final absolute = difference
+                                .abs()
+                                .toString()
+                                .padLeft(3, '0');
+                            return '${difference.isNegative ? '-' : ''}${absolute.substring(0, absolute.length - 2)}.${absolute.substring(absolute.length - 2)}';
+                          })(),
+                        ),
+                      ),
+                      key: const Key('allocationRemaining'),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  if (!widget.income)
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      itemHeight: null,
+                      initialValue: category,
+                      decoration: InputDecoration(
+                        labelText: l10n(context).uiExpenseType,
+                      ),
+                      items: categoryCodes
+                          .map(
+                            (code) => DropdownMenuItem(
+                              value: code,
+                              child: Text(localizedCategory(context, code)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: busy || uncertain
+                          ? null
+                          : (v) => setState(() => category = v!),
+                    ),
+                  const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    key: const Key('financeProject'),
-                    onPressed: busy ? null : chooseProject,
-                    icon: const Icon(Icons.folder_outlined),
+                    onPressed: busy || uncertain ? null : () => pickDate(false),
+                    icon: const Icon(Icons.calendar_month_outlined),
                     label: Text(
-                      projectName ?? l10n(context).m6ProjectClassification,
+                      l10n(context).operationDate(localizedDate(context, date)),
                     ),
                   ),
                 ],
               ),
-            const SizedBox(height: 8),
+              second: EquipmentFormSection(
+                title: widget.income
+                    ? l10n(context).uiReceipts
+                    : l10n(context).uiPayments,
+                children: [
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    itemHeight: null,
+                    key: const Key('paymentStatus'),
+                    initialValue: paymentStatus,
+                    decoration: InputDecoration(
+                      labelText: widget.income
+                          ? l10n(context).uiReceiptStatus
+                          : l10n(context).uiPaymentStatus,
+                    ),
+                    items: widget.income
+                        ? [
+                            DropdownMenuItem(
+                              value: 'FULL',
+                              child: Text(l10n(context).uiReceivedInFull),
+                            ),
+                            DropdownMenuItem(
+                              value: 'PARTIAL',
+                              child: Text(l10n(context).uiPartiallyReceived),
+                            ),
+                            DropdownMenuItem(
+                              value: 'UNPAID',
+                              child: Text(l10n(context).uiNotReceived),
+                            ),
+                          ]
+                        : [
+                            DropdownMenuItem(
+                              value: 'FULL',
+                              child: Text(l10n(context).uiPaidInFull),
+                            ),
+                            DropdownMenuItem(
+                              value: 'PARTIAL',
+                              child: Text(l10n(context).uiPaidPartOfIt),
+                            ),
+                            DropdownMenuItem(
+                              value: 'UNPAID',
+                              child: Text(l10n(context).uiNotPaid),
+                            ),
+                          ],
+                    onChanged: busy || uncertain
+                        ? null
+                        : (v) => setState(() => paymentStatus = v!),
+                  ),
+                  if (paymentStatus == 'PARTIAL') ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: const Key('initialPaid'),
+                      controller: initialPaid,
+                      enabled: !busy && !uncertain,
+                      textDirection: TextDirection.ltr,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: widget.income
+                            ? l10n(context).uiInitialReceipt
+                            : l10n(context).uiInitialPayment,
+                      ),
+                      validator: (v) {
+                        final first = exactMoney(v ?? '');
+                        final total = exactMoney(amount.text);
+                        if (first == null ||
+                            total == null ||
+                            BigInt.parse(first.replaceAll('.', '')) >=
+                                BigInt.parse(total.replaceAll('.', ''))) {
+                          return l10n(context).uiEnterAnAmountAboveZeroAndBelow;
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                  if (paymentStatus != 'UNPAID') ...[
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: busy || uncertain
+                          ? null
+                          : () => pickDate(true),
+                      icon: const Icon(Icons.calendar_today_outlined),
+                      label: Text(
+                        widget.income
+                            ? l10n(context)
+                                  .receiptDate(localizedDate(context, paidOn))
+                            : l10n(context)
+                                  .paymentDate(localizedDate(context, paidOn)),
+                      ),
+                    ),
+                  ],
+                  if (paymentStatus != 'FULL') ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: const Key('partyName'),
+                      controller: party,
+                      enabled: !busy && !uncertain,
+                      maxLength: 100,
+                      decoration: InputDecoration(
+                        labelText: widget.income
+                            ? l10n(context).uiNameOfThePartyWhoWillPay
+                            : l10n(context).uiNameOfThePartyOwed,
+                      ),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? l10n(context).uiEnterPartyName
+                          : null,
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: busy || uncertain ? null : pickDueDate,
+                      icon: const Icon(Icons.event_outlined),
+                      label: Text(
+                        dueDate == null
+                            ? l10n(context).uiDueDateOptional
+                            : l10n(
+                                context,
+                              ).dueDateValue(localizedDate(context, dueDate)),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            EquipmentFormSection(
+              children: [
+                TextFormField(
+                  key: const Key('expenseNote'),
+                  controller: note,
+                  enabled: !busy && !uncertain,
+                  maxLength: 1000,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiNoteOptional,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                if (widget.maintenanceId == null)
+                  ExpansionTile(
+                    title: Text(l10n(context).m6AdditionalDetails),
+                    children: [
+                      OutlinedButton.icon(
+                        key: const Key('financeProject'),
+                        onPressed: busy || uncertain ? null : chooseProject,
+                        icon: const Icon(Icons.folder_outlined),
+                        label: Text(
+                          projectName ?? l10n(context).m6ProjectClassification,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
             Text(
               l10n(context).attachmentAfterSave(
                 widget.income ? l10n(context).income : l10n(context).expense,
@@ -3672,101 +3832,119 @@ class _EntryEditFormState extends State<EntryEditForm> {
     body: Form(
       key: form,
       child: FormBody(
+        panel: false,
         children: [
-          Text(
-            l10n(context).uiPreviousPaymentsAreKeptAndDoNot,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('editAmount'),
-            controller: amount,
-            enabled: !busy && !hasCash,
-            textDirection: TextDirection.ltr,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: l10n(context).uiTotalSar),
-            validator: (v) => exactMoney(v ?? '') == null
-                ? l10n(context).uiEnterAValidAmount
-                : null,
-          ),
-          if (hasCash)
-            Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(l10n(context).uiTheTotalCannotChangeBecauseAPayment),
-            ),
-          if (!income) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: const Key('editExpenseScope'),
-              initialValue: expenseScope,
-              decoration: InputDecoration(
-                labelText: l10n(context).uiExpenseAppliesTo,
+          EquipmentFormSection(
+            children: [
+              Text(
+                l10n(context).uiPreviousPaymentsAreKeptAndDoNot,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              items: [
-                DropdownMenuItem(
-                  value: 'SINGLE',
-                  child: Text(l10n(context).uiOneEquipment),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('editAmount'),
+                style: Theme.of(context).textTheme.headlineSmall,
+                controller: amount,
+                enabled: !busy && !hasCash,
+                textDirection: TextDirection.ltr,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                DropdownMenuItem(
-                  value: 'SHARED',
-                  child: Text(l10n(context).uiSeveralEquipment),
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiTotalSar,
                 ),
-                DropdownMenuItem(
-                  value: 'GENERAL',
-                  child: Text(l10n(context).generalExpense),
+                validator: (v) => exactMoney(v ?? '') == null
+                    ? l10n(context).uiEnterAValidAmount
+                    : null,
+              ),
+              if (hasCash)
+                Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    l10n(context).uiTheTotalCannotChangeBecauseAPayment,
+                  ),
                 ),
-              ],
-              onChanged: busy
-                  ? null
-                  : (value) => setState(() {
-                      expenseScope = value!;
-                      if (value == 'SHARED' && parts.isEmpty) {
-                        parts.addAll([
-                          _ExpensePart(selectedEquipment),
-                          _ExpensePart(null),
-                        ]);
-                      }
-                    }),
-            ),
-          ],
-          if (!income && expenseScope == 'SINGLE') ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: const Key('editSingleEquipment'),
-              initialValue: selectedEquipment,
-              decoration: InputDecoration(labelText: l10n(context).uiEquipment),
-              items: [
-                if (selectedEquipment != null &&
-                    !equipmentChoices.any((e) => e['id'] == selectedEquipment))
-                  DropdownMenuItem(
-                    value: selectedEquipment,
-                    child: Text(
-                      widget.entry['equipmentName'] ??
-                          l10n(context).uiEquipment,
+              if (!income) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  key: const Key('editExpenseScope'),
+                  initialValue: expenseScope,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiExpenseAppliesTo,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'SINGLE',
+                      child: Text(l10n(context).uiOneEquipment),
                     ),
-                  ),
-                ...equipmentChoices.map(
-                  (e) => DropdownMenuItem(
-                    value: e['id'] as String,
-                    child: Text(e['name'] as String),
-                  ),
+                    DropdownMenuItem(
+                      value: 'SHARED',
+                      child: Text(l10n(context).uiSeveralEquipment),
+                    ),
+                    DropdownMenuItem(
+                      value: 'GENERAL',
+                      child: Text(l10n(context).generalExpense),
+                    ),
+                  ],
+                  onChanged: busy
+                      ? null
+                      : (value) => setState(() {
+                          expenseScope = value!;
+                          if (value == 'SHARED' && parts.isEmpty) {
+                            parts.addAll([
+                              _ExpensePart(selectedEquipment),
+                              _ExpensePart(null),
+                            ]);
+                          }
+                        }),
                 ),
               ],
-              onChanged: busy
-                  ? null
-                  : (value) => setState(() => selectedEquipment = value),
-            ),
-          ],
-          if (shared) ...[
-            const SizedBox(height: 12),
-            Text(l10n(context).uiAdjustEachEquipmentAmountToMatchThe),
-            ...parts.asMap().entries.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
+              if (!income && expenseScope == 'SINGLE') ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  key: const Key('editSingleEquipment'),
+                  initialValue: selectedEquipment,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiEquipment,
+                  ),
+                  items: [
+                    if (selectedEquipment != null &&
+                        !equipmentChoices.any(
+                          (e) => e['id'] == selectedEquipment,
+                        ))
+                      DropdownMenuItem(
+                        value: selectedEquipment,
+                        child: Text(
+                          widget.entry['equipmentName'] ??
+                              l10n(context).uiEquipment,
+                        ),
+                      ),
+                    ...equipmentChoices.map(
+                      (e) => DropdownMenuItem(
+                        value: e['id'] as String,
+                        child: Text(e['name'] as String),
+                      ),
+                    ),
+                  ],
+                  onChanged: busy
+                      ? null
+                      : (value) => setState(() => selectedEquipment = value),
+                ),
+              ],
+              if (shared) ...[
+                const SizedBox(height: 12),
+                Text(l10n(context).uiAdjustEachEquipmentAmountToMatchThe),
+                ...parts.asMap().entries.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: EquipmentFieldRow(
+                      first: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        itemHeight: null,
                         key: Key('editAllocationEquipment${item.key}'),
                         initialValue: item.value.equipmentId,
                         decoration: InputDecoration(
@@ -3802,10 +3980,7 @@ class _EntryEditFormState extends State<EntryEditForm> {
                                 () => item.value.equipmentId = value,
                               ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextFormField(
+                      second: TextFormField(
                         key: Key('editAllocationAmount${item.key}'),
                         controller: item.value.amount,
                         enabled: !busy,
@@ -3820,104 +3995,113 @@ class _EntryEditFormState extends State<EntryEditForm> {
                             ? l10n(context).uiEnterAValidAmount
                             : null,
                       ),
+                      action: parts.length > 2
+                          ? IconButton(
+                              key: Key('removeEditAllocation${item.key}'),
+                              tooltip: l10n(context).uiRemoveEquipment,
+                              onPressed: busy
+                                  ? null
+                                  : () => setState(() {
+                                      final removed = parts.removeAt(item.key);
+                                      removed.dispose();
+                                    }),
+                              icon: const Icon(Icons.remove_circle_outline),
+                            )
+                          : null,
                     ),
-                    if (parts.length > 2)
-                      IconButton(
-                        key: Key('removeEditAllocation${item.key}'),
-                        onPressed: busy
-                            ? null
-                            : () => setState(() {
-                                final removed = parts.removeAt(item.key);
-                                removed.dispose();
-                              }),
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                  ],
+                  ),
+                ),
+                TextButton.icon(
+                  key: const Key('addEditAllocation'),
+                  onPressed: busy
+                      ? null
+                      : () => setState(() => parts.add(_ExpensePart(null))),
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n(context).addEquipment),
+                ),
+              ],
+              if (!income) ...[
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  initialValue: category,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiExpenseType,
+                  ),
+                  items: categoryCodes
+                      .map(
+                        (code) => DropdownMenuItem(
+                          value: code,
+                          child: Text(localizedCategory(context, code)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: busy ? null : (v) => setState(() => category = v!),
+                ),
+              ],
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: busy ? null : () => pickDate(),
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text(
+                  l10n(context).operationDate(localizedDate(context, date)),
                 ),
               ),
-            ),
-            TextButton.icon(
-              key: const Key('addEditAllocation'),
-              onPressed: busy
-                  ? null
-                  : () => setState(() => parts.add(_ExpensePart(null))),
-              icon: const Icon(Icons.add),
-              label: Text(l10n(context).addEquipment),
-            ),
-          ],
-          if (!income) ...[
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: category,
-              decoration: InputDecoration(
-                labelText: l10n(context).uiExpenseType,
+            ],
+          ),
+          const SizedBox(height: 24),
+          EquipmentFormSection(
+            children: [
+              TextFormField(
+                key: const Key('editParty'),
+                controller: party,
+                enabled: !busy,
+                maxLength: 100,
+                decoration: InputDecoration(
+                  labelText: income
+                      ? l10n(context).uiNameOfThePartyWhoWillPay
+                      : l10n(context).uiNameOfThePartyOwed,
+                ),
+                validator: (v) {
+                  final total = exactMoney(amount.text);
+                  if (total == null) return null;
+                  final settled = BigInt.parse(
+                    (widget.entry['netPaid'] as String).replaceAll('.', ''),
+                  );
+                  return BigInt.parse(total.replaceAll('.', '')) > settled &&
+                          (v == null || v.trim().isEmpty)
+                      ? l10n(context).uiEnterPartyNameWhenABalanceRemains
+                      : null;
+                },
               ),
-              items: categoryCodes
-                  .map(
-                    (code) => DropdownMenuItem(
-                      value: code,
-                      child: Text(localizedCategory(context, code)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: busy ? null : (v) => setState(() => category = v!),
-            ),
-          ],
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: busy ? null : () => pickDate(),
-            icon: const Icon(Icons.calendar_today_outlined),
-            label: Text(
-              l10n(context).operationDate(localizedDate(context, date)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('editParty'),
-            controller: party,
-            enabled: !busy,
-            maxLength: 100,
-            decoration: InputDecoration(
-              labelText: income
-                  ? l10n(context).uiNameOfThePartyWhoWillPay
-                  : l10n(context).uiNameOfThePartyOwed,
-            ),
-            validator: (v) {
-              final total = exactMoney(amount.text);
-              if (total == null) return null;
-              final settled = BigInt.parse(
-                (widget.entry['netPaid'] as String).replaceAll('.', ''),
-              );
-              return BigInt.parse(total.replaceAll('.', '')) > settled &&
-                      (v == null || v.trim().isEmpty)
-                  ? l10n(context).uiEnterPartyNameWhenABalanceRemains
-                  : null;
-            },
-          ),
-          OutlinedButton.icon(
-            onPressed: busy ? null : () => pickDate(due: true),
-            icon: const Icon(Icons.event_outlined),
-            label: Text(
-              dueDate == null
-                  ? l10n(context).uiDueDateOptional
-                  : l10n(context).dueDateValue(localizedDate(context, dueDate)),
-            ),
-          ),
-          if (dueDate != null)
-            TextButton(
-              onPressed: busy ? null : () => setState(() => dueDate = null),
-              child: Text(l10n(context).uiRemoveDueDate),
-            ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('editNote'),
-            controller: note,
-            enabled: !busy,
-            maxLength: 1000,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: l10n(context).uiNoteOptional,
-            ),
+              OutlinedButton.icon(
+                onPressed: busy ? null : () => pickDate(due: true),
+                icon: const Icon(Icons.event_outlined),
+                label: Text(
+                  dueDate == null
+                      ? l10n(context).uiDueDateOptional
+                      : l10n(context)
+                            .dueDateValue(localizedDate(context, dueDate)),
+                ),
+              ),
+              if (dueDate != null)
+                TextButton(
+                  onPressed: busy ? null : () => setState(() => dueDate = null),
+                  child: Text(l10n(context).uiRemoveDueDate),
+                ),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('editNote'),
+                controller: note,
+                enabled: !busy,
+                maxLength: 1000,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: l10n(context).uiNoteOptional,
+                ),
+              ),
+            ],
           ),
           InlineError(error),
           const SizedBox(height: 16),
@@ -3987,8 +4171,10 @@ class _EntryDetailState extends State<EntryDetail> {
           title: Text(l10n(context).uiCancelEntry),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(l10n(context).uiPaymentsAndAttachmentsWillRemainInThe),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('cancellationReason'),
                 onChanged: (value) => reason = value,
@@ -4009,6 +4195,10 @@ class _EntryDetailState extends State<EntryDetail> {
             ),
             FilledButton(
               key: const Key('confirmCancellation'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
               onPressed: saving
                   ? null
                   : () async {
@@ -4070,6 +4260,7 @@ class _EntryDetailState extends State<EntryDetail> {
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 l10n(context).remainingValue(
@@ -4079,6 +4270,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   localizedMoney(context, entry!['remaining']),
                 ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 onChanged: (value) => paymentAmount = value,
                 enabled: !saving,
@@ -4092,6 +4284,7 @@ class _EntryDetailState extends State<EntryDetail> {
                       : l10n(context).uiInitialPayment,
                 ),
               ),
+              const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: saving
                     ? null
@@ -4193,6 +4386,7 @@ class _EntryDetailState extends State<EntryDetail> {
           title: Text(l10n(context).uiRecordRefund),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 income
@@ -4203,6 +4397,7 @@ class _EntryDetailState extends State<EntryDetail> {
                         localizedMoney(context, entry!['refundable']),
                       ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('refundAmount'),
                 onChanged: (value) => refundAmount = value,
@@ -4215,6 +4410,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   labelText: l10n(context).uiRefundAmount,
                 ),
               ),
+              const SizedBox(height: 16),
               OutlinedButton(
                 key: const Key('refundDate'),
                 onPressed: saving
@@ -4239,6 +4435,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   l10n(context).refundDate(localizedDate(context, refundedOn)),
                 ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('refundReason'),
                 onChanged: (value) => reason = value,
@@ -4251,6 +4448,7 @@ class _EntryDetailState extends State<EntryDetail> {
               ),
               if (needsParty) ...[
                 Text(l10n(context).uiABalanceWillRemainAfterTheRefund),
+                const SizedBox(height: 16),
                 TextField(
                   key: const Key('refundPartyName'),
                   onChanged: (value) => partyName = value,
@@ -4565,70 +4763,82 @@ class _EntryDetailState extends State<EntryDetail> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? ErrorPanel(message: error!, retry: load)
-        : FormBody(
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
-              Text(
-                '${income ? l10n(context).income : localizedCategory(context, entry!['category'])} • ${entry!['expenseScope'] == 'GENERAL'
-                    ? l10n(context).generalExpense
-                    : entry!['expenseScope'] == 'SHARED'
-                    ? l10n(context).uiMultipleEquipment
-                    : entry!['equipmentName']}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(localizedDate(context, entry!['operationDate'] as String)),
-              if (cancelled) ...[
-                const SizedBox(height: 12),
-                Card(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n(context).cancelledEntry,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          l10n(context).cancelReasonValue(
-                            '${entry!['cancellationReason']}',
-                          ),
-                        ),
-                        Text(
-                          l10n(context).cancelDateValue(
-                            localizedRiyadhDateTime(
-                              context,
-                              entry!['cancelledAt'] as String,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    '${income ? l10n(context).income : localizedCategory(context, entry!['category'])} • ${entry!['expenseScope'] == 'GENERAL'
+                        ? l10n(context).generalExpense
+                        : entry!['expenseScope'] == 'SHARED'
+                        ? l10n(context).uiMultipleEquipment
+                        : entry!['equipmentName']}',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localizedDate(context, entry!['operationDate'] as String),
+                  ),
+                  if (cancelled) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n(context).cancelledEntry,
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                          ),
+                            Text(
+                              l10n(context).cancelReasonValue(
+                                '${entry!['cancellationReason']}',
+                              ),
+                            ),
+                            Text(
+                              l10n(context).cancelDateValue(
+                                localizedRiyadhDateTime(
+                                  context,
+                                  entry!['cancelledAt'] as String,
+                                ),
+                              ),
+                            ),
+                            Text(l10n(context).cancelledAmountsHistory),
+                          ],
                         ),
-                        Text(l10n(context).cancelledAmountsHistory),
+                      ),
+                    ),
+                  ] else if (widget.api.canPostFinance) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          key: const Key('editEntry'),
+                          onPressed: editEntry,
+                          icon: const Icon(Icons.edit_outlined),
+                          label: Text(l10n(context).edit),
+                        ),
+                        TextButton.icon(
+                          key: const Key('cancelEntry'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .error,
+                          ),
+                          onPressed: cancelEntry,
+                          icon: const Icon(Icons.cancel_outlined),
+                          label: Text(l10n(context).uiCancelEntry),
+                        ),
                       ],
                     ),
-                  ),
-                ),
-              ] else if (widget.api.canPostFinance) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      key: const Key('editEntry'),
-                      onPressed: editEntry,
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(l10n(context).edit),
-                    ),
-                    TextButton.icon(
-                      key: const Key('cancelEntry'),
-                      onPressed: cancelEntry,
-                      icon: const Icon(Icons.cancel_outlined),
-                      label: Text(l10n(context).uiCancelEntry),
-                    ),
                   ],
-                ),
-              ],
-              const SizedBox(height: 20),
+                ],
+              ),
+              const SizedBox(height: 24),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -4719,249 +4929,265 @@ class _EntryDetailState extends State<EntryDetail> {
                 )),
                 const SizedBox(height: 16),
               ],
-              if (entry!['projectId'] != null ||
-                  (!cancelled && widget.api.canPostFinance)) ...[
-                const SizedBox(height: 12),
-                ListTile(
-                  title: Text(l10n(context).m6ProjectClassification),
-                  subtitle: Text(
-                    projectName ??
-                        (entry!['projectId'] == null
-                            ? l10n(context).m6NoProjects
-                            : l10n(context).m6ProjectsContracts),
-                  ),
-                  trailing: cancelled || !widget.api.canPostFinance
-                      ? null
-                      : const Icon(Icons.edit_outlined),
-                  onTap: cancelled || !widget.api.canPostFinance
-                      ? null
-                      : () async {
-                          final selected =
-                              await showDialog<Map<String, dynamic>>(
-                                context: context,
-                                builder: (_) => ProjectSearchPicker(
-                                  api: widget.api,
-                                  includeArchived: false,
-                                  allowNone: true,
-                                  selectedId: entry!['projectId'] as String?,
-                                  selectedName: projectName,
-                                ),
-                              );
-                          if (selected == null || !mounted) return;
-                          try {
-                            await widget.api.json(
-                              'PUT',
-                              widget.api.scoped(
-                                '/entries/${widget.id}/project',
-                              ),
-                              body: {'projectId': selected['id']},
-                            );
-                            await load();
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(localizedError(context, e)),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                ),
-              ],
-              if (entry!['partyName'] != null)
-                Text(l10n(context).partyValue('${entry!['partyName']}')),
-              if (entry!['dueDate'] != null)
-                Text(
-                  l10n(context).dueDateValue(
-                    localizedDate(context, entry!['dueDate'] as String),
-                  ),
-                ),
-              if (widget.api.canPostFinance &&
-                  !cancelled &&
-                  entry!['settlementStatus'] != 'PAID') ...[
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: addPayment,
-                  icon: const Icon(Icons.add),
-                  label: Text(
-                    income
-                        ? l10n(context).uiAddReceipt
-                        : l10n(context).uiAddPayment,
-                  ),
-                ),
-              ],
-              if (widget.api.canPostFinance && canRefund) ...[
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  key: const Key('addRefund'),
-                  onPressed: addRefund,
-                  icon: const Icon(Icons.undo_outlined),
-                  label: Text(l10n(context).uiRecordRefund),
-                ),
-              ],
-              const SizedBox(height: 24),
-              Text(
-                income ? l10n(context).uiReceipts : l10n(context).uiPayments,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              ...((entry!['settlements'] as List).map(
-                (s) => ListTile(
-                  leading: const Icon(Icons.payments_outlined),
-                  title: Text(localizedMoney(context, s['amount'])),
-                  subtitle: Text(
-                    income
-                        ? l10n(context).receivedOn(
-                            localizedDate(context, s['paidOn'] as String),
-                          )
-                        : l10n(context).paidOn(
-                            localizedDate(context, s['paidOn'] as String),
-                          ),
-                  ),
-                ),
-              )),
-              if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 24),
-                Text(
-                  l10n(context).uiRefunds,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                ...((entry!['refunds'] as List).map(
-                  (r) => ListTile(
-                    leading: const Icon(Icons.undo_outlined),
-                    title: Text(localizedMoney(context, r['amount'])),
-                    subtitle: Text(
-                      l10n(context).refundRecord(
+              EquipmentFormSection(
+                children: [
+                  if (entry!['projectId'] != null ||
+                      (!cancelled && widget.api.canPostFinance)) ...[
+                    const SizedBox(height: 12),
+                    ListTile(
+                      title: Text(l10n(context).m6ProjectClassification),
+                      subtitle: Text(
+                        projectName ??
+                            (entry!['projectId'] == null
+                                ? l10n(context).m6NoProjectSelected
+                                : l10n(context).m6ProjectsContracts),
+                      ),
+                      trailing: cancelled || !widget.api.canPostFinance
+                          ? null
+                          : const Icon(Icons.edit_outlined),
+                      onTap: cancelled || !widget.api.canPostFinance
+                          ? null
+                          : () async {
+                              final selected =
+                                  await showDialog<Map<String, dynamic>>(
+                                    context: context,
+                                    builder: (_) => ProjectSearchPicker(
+                                      api: widget.api,
+                                      includeArchived: false,
+                                      allowNone: true,
+                                      selectedId:
+                                          entry!['projectId'] as String?,
+                                      selectedName: projectName,
+                                    ),
+                                  );
+                              if (selected == null || !mounted) return;
+                              try {
+                                await widget.api.json(
+                                  'PUT',
+                                  widget.api.scoped(
+                                    '/entries/${widget.id}/project',
+                                  ),
+                                  body: {'projectId': selected['id']},
+                                );
+                                await load();
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(localizedError(context, e)),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                    ),
+                  ],
+                  if (entry!['partyName'] != null)
+                    Text(l10n(context).partyValue('${entry!['partyName']}')),
+                  if (entry!['dueDate'] != null)
+                    Text(
+                      l10n(context).dueDateValue(
+                        localizedDate(context, entry!['dueDate'] as String),
+                      ),
+                    ),
+                  if (widget.api.canPostFinance &&
+                      !cancelled &&
+                      entry!['settlementStatus'] != 'PAID') ...[
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: addPayment,
+                      icon: const Icon(Icons.add),
+                      label: Text(
                         income
-                            ? l10n(context).uiReturnedToTheCustomerOrOtherParty
-                            : l10n(context).uiReturnedToYouByTheOtherParty,
-                        localizedDate(context, r['refundedOn'] as String),
-                        '${r['reason']}',
+                            ? l10n(context).uiAddReceipt
+                            : l10n(context).uiAddPayment,
+                      ),
+                    ),
+                  ],
+                  if (widget.api.canPostFinance && canRefund) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      key: const Key('addRefund'),
+                      onPressed: addRefund,
+                      icon: const Icon(Icons.undo_outlined),
+                      label: Text(l10n(context).uiRecordRefund),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 24),
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    income
+                        ? l10n(context).uiReceipts
+                        : l10n(context).uiPayments,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  ...((entry!['settlements'] as List).map(
+                    (s) => ListTile(
+                      leading: const Icon(Icons.payments_outlined),
+                      title: Text(localizedMoney(context, s['amount'])),
+                      subtitle: Text(
+                        income
+                            ? l10n(context).receivedOn(
+                                localizedDate(context, s['paidOn'] as String),
+                              )
+                            : l10n(context).paidOn(
+                                localizedDate(context, s['paidOn'] as String),
+                              ),
+                      ),
+                    ),
+                  )),
+                  if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n(context).uiRefunds,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    ...((entry!['refunds'] as List).map(
+                      (r) => ListTile(
+                        leading: const Icon(Icons.undo_outlined),
+                        title: Text(localizedMoney(context, r['amount'])),
+                        subtitle: Text(
+                          l10n(context).refundRecord(
+                            income
+                                ? l10n(context)
+                                      .uiReturnedToTheCustomerOrOtherParty
+                                : l10n(context).uiReturnedToYouByTheOtherParty,
+                            localizedDate(context, r['refundedOn'] as String),
+                            '${r['reason']}',
+                          ),
+                        ),
+                      ),
+                    )),
+                  ],
+                  if (entry!['note'] != '') ...[
+                    const Divider(),
+                    Text(l10n(context).noteValue('${entry!['note']}')),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 24),
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    l10n(context).attachments,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(l10n(context).filesHelp),
+                  const SizedBox(height: 12),
+                  if (attachments.isEmpty)
+                    Text(l10n(context).noEntryAttachments),
+                  ...attachments.map(
+                    (file) => Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              file['filename'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              file['state'] == 'READY'
+                                  ? l10n(context).uiReadyToView
+                                  : file['state'] == 'FAILED'
+                                  ? l10n(context).uiAttachmentUploadFailed
+                                  : l10n(context).uiUploadIncomplete,
+                            ),
+                            if (file['state'] == 'READY')
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: uploading
+                                        ? null
+                                        : () => open(file),
+                                    icon: const Icon(Icons.visibility_outlined),
+                                    label: Text(
+                                      file['mediaType'] == 'application/pdf'
+                                          ? (kIsWeb
+                                                ? l10n(context).uiDownloadPdf
+                                                : l10n(context).uiOpenPdf)
+                                          : l10n(context).uiViewAttachment,
+                                    ),
+                                  ),
+                                  if (kIsWeb &&
+                                      file['mediaType'] != 'application/pdf')
+                                    TextButton.icon(
+                                      onPressed: uploading
+                                          ? null
+                                          : () => open(file, download: true),
+                                      icon: const Icon(Icons.download_outlined),
+                                      label: Text(
+                                        l10n(context).uiDownloadAttachment,
+                                      ),
+                                    ),
+                                ],
+                              )
+                            else
+                              TextButton(
+                                onPressed: uploading
+                                    ? null
+                                    : () => select(
+                                        retry: Map<String, dynamic>.from(file),
+                                      ),
+                                child: Text(
+                                  l10n(context).uiUploadAttachmentAgain,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                )),
-              ],
-              if (entry!['note'] != '') ...[
-                const Divider(),
-                Text(l10n(context).noteValue('${entry!['note']}')),
-              ],
-              const SizedBox(height: 24),
-              Text(
-                l10n(context).attachments,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(l10n(context).filesHelp),
-              const SizedBox(height: 12),
-              if (attachments.isEmpty) Text(l10n(context).noEntryAttachments),
-              ...attachments.map(
-                (file) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  InlineError(uploadError),
+                  if (uploading) ...[
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 12),
+                    Text(l10n(context).uiUploadingAndCheckingAttachment),
+                  ] else if (pendingBytes != null)
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
-                        Text(
-                          file['filename'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        FilledButton.icon(
+                          onPressed: upload,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(l10n(context).uiUploadAttachmentAgain),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          file['state'] == 'READY'
-                              ? l10n(context).uiReadyToView
-                              : file['state'] == 'FAILED'
-                              ? l10n(context).uiAttachmentUploadFailed
-                              : l10n(context).uiUploadIncomplete,
+                        OutlinedButton(
+                          onPressed: () => select(),
+                          child: Text(l10n(context).uiChooseAnotherFile),
                         ),
-                        if (file['state'] == 'READY')
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              TextButton.icon(
-                                onPressed: uploading ? null : () => open(file),
-                                icon: const Icon(Icons.visibility_outlined),
-                                label: Text(
-                                  file['mediaType'] == 'application/pdf'
-                                      ? (kIsWeb
-                                            ? l10n(context).uiDownloadPdf
-                                            : l10n(context).uiOpenPdf)
-                                      : l10n(context).uiViewAttachment,
-                                ),
-                              ),
-                              if (kIsWeb &&
-                                  file['mediaType'] != 'application/pdf')
-                                TextButton.icon(
-                                  onPressed: uploading
-                                      ? null
-                                      : () => open(file, download: true),
-                                  icon: const Icon(Icons.download_outlined),
-                                  label: Text(
-                                    l10n(context).uiDownloadAttachment,
-                                  ),
-                                ),
-                            ],
-                          )
-                        else
-                          TextButton(
-                            onPressed: uploading
-                                ? null
-                                : () => select(
-                                    retry: Map<String, dynamic>.from(file),
-                                  ),
-                            child: Text(l10n(context).uiUploadAttachmentAgain),
-                          ),
                       ],
-                    ),
-                  ),
-                ),
-              ),
-              InlineError(uploadError),
-              if (uploading) ...[
-                const LinearProgressIndicator(),
-                const SizedBox(height: 12),
-                Text(l10n(context).uiUploadingAndCheckingAttachment),
-              ] else if (pendingBytes != null)
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: upload,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(l10n(context).uiUploadAttachmentAgain),
-                    ),
-                    OutlinedButton(
+                    )
+                  else if (widget.api.canPostFinance)
+                    OutlinedButton.icon(
+                      key: const Key('addAttachment'),
                       onPressed: () => select(),
-                      child: Text(l10n(context).uiChooseAnotherFile),
+                      icon: const Icon(Icons.attach_file),
+                      label: Text(l10n(context).uiAddAttachment),
                     ),
-                  ],
-                )
-              else if (widget.api.canPostFinance)
-                OutlinedButton.icon(
-                  key: const Key('addAttachment'),
-                  onPressed: () => select(),
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(l10n(context).uiAddAttachment),
-                ),
-              const SizedBox(height: 16),
-              Text(
-                l10n(context).uiLocalDevelopmentStorageMalwareScanningIsNot,
-                style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n(context).uiLocalDevelopmentStorageMalwareScanningIsNot,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             ],
           ),
   );
-  Widget moneyRow(String label, String amount) => Row(
-    children: [
-      Expanded(child: Text(label)),
-      Text(
-        localizedMoney(context, amount),
-        textDirection: Directionality.of(context),
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-      ),
-    ],
-  );
+  Widget moneyRow(String label, String amount) =>
+      EquipmentValue(label: label, value: localizedMoney(context, amount));
 }
 
 class _MoreMenu extends StatelessWidget {
@@ -4997,63 +5223,72 @@ class _MoreMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     void open(Widget page) =>
         Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return EquipmentPageBody(
+      maxWidth: 880,
       children: [
         Text(
           l10n(context).m7More,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
-        if (canReports)
-          ListTile(
-            leading: const Icon(Icons.analytics_outlined),
-            title: Text(l10n(context).m7Reports),
-            onTap: () => open(ReportsPage(api: api, canProjects: canProjects)),
-          ),
-        if (canMaintain)
-          ListTile(
-            leading: const Icon(Icons.build_outlined),
-            title: Text(l10n(context).m4Hub),
-            onTap: () => open(MaintenanceHub(api: api)),
-          ),
-        if (canOrganizations)
-          ListTile(
-            leading: const Icon(Icons.business_outlined),
-            title: Text(l10n(context).m6Organizations),
-            onTap: () => open(
-              OrganizationsPage(api: api, canManage: canManageOrganizations),
-            ),
-          ),
-        if (canProjects)
-          ListTile(
-            leading: const Icon(Icons.folder_copy_outlined),
-            title: Text(l10n(context).m6ProjectsContracts),
-            onTap: () => open(
-              ProjectsPage(
-                api: api,
-                canManage: canManageProjects,
-                canFinance: canFinance,
+        const SizedBox(height: 24),
+        EquipmentFormSection(
+          children: [
+            if (canReports)
+              ListTile(
+                leading: const Icon(Icons.analytics_outlined),
+                title: Text(l10n(context).m7Reports),
+                onTap: () =>
+                    open(ReportsPage(api: api, canProjects: canProjects)),
               ),
+            if (canMaintain)
+              ListTile(
+                leading: const Icon(Icons.build_outlined),
+                title: Text(l10n(context).m4Hub),
+                onTap: () => open(MaintenanceHub(api: api)),
+              ),
+            if (canOrganizations)
+              ListTile(
+                leading: const Icon(Icons.business_outlined),
+                title: Text(l10n(context).m6Organizations),
+                onTap: () => open(
+                  OrganizationsPage(
+                    api: api,
+                    canManage: canManageOrganizations,
+                  ),
+                ),
+              ),
+            if (canProjects)
+              ListTile(
+                leading: const Icon(Icons.folder_copy_outlined),
+                title: Text(l10n(context).m6ProjectsContracts),
+                onTap: () => open(
+                  ProjectsPage(
+                    api: api,
+                    canManage: canManageProjects,
+                    canFinance: canFinance,
+                  ),
+                ),
+              ),
+            if (canTeam)
+              ListTile(
+                leading: const Icon(Icons.group_outlined),
+                title: Text(l10n(context).m5Team),
+                onTap: () => open(
+                  TeamPage(api: api, owner: owner, canAssign: canAssignDrivers),
+                ),
+              ),
+            if (canReview)
+              ListTile(
+                leading: const Icon(Icons.fact_check_outlined),
+                title: Text(l10n(context).m5ReviewQueue),
+                onTap: () => open(ReviewQueuePage(api: api)),
+              ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: Text(l10n(context).settings),
+              onTap: onSettings,
             ),
-          ),
-        if (canTeam)
-          ListTile(
-            leading: const Icon(Icons.group_outlined),
-            title: Text(l10n(context).m5Team),
-            onTap: () => open(
-              TeamPage(api: api, owner: owner, canAssign: canAssignDrivers),
-            ),
-          ),
-        if (canReview)
-          ListTile(
-            leading: const Icon(Icons.fact_check_outlined),
-            title: Text(l10n(context).m5ReviewQueue),
-            onTap: () => open(ReviewQueuePage(api: api)),
-          ),
-        ListTile(
-          leading: const Icon(Icons.settings_outlined),
-          title: Text(l10n(context).settings),
-          onTap: onSettings,
+          ],
         ),
       ],
     );
@@ -5082,104 +5317,118 @@ class _SettingsPageState extends State<_SettingsPage> {
     final spaces = widget.user['workspaces'] as List<dynamic>? ?? [];
     return Scaffold(
       appBar: AppBar(title: Text(l10n(context).settings)),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: EquipmentPageBody(
+        maxWidth: 800,
         children: [
-          Text(
-            l10n(context).m7AccountInfo,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          ListTile(
-            title: Text('${widget.user['name'] ?? ''}'),
-            subtitle: widget.user['phone'] == null
-                ? null
-                : Text('${widget.user['phone']}'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(l10n(context).language),
-            onTap: busy
-                ? null
-                : () async {
-                    final selected = await showDialog<String>(
-                      context: context,
-                      builder: (dialog) => SimpleDialog(
-                        title: Text(l10n(dialog).language),
-                        children: [
-                          for (final (code, name) in [
-                            ('ar', l10n(context).uiText102),
-                            ('en', 'English'),
-                            ('ur', l10n(context).uiText054),
-                          ])
-                            SimpleDialogOption(
-                              onPressed: () => Navigator.pop(dialog, code),
-                              child: Text(name),
-                            ),
-                        ],
+          EquipmentFormSection(
+            children: [
+              Text(
+                l10n(context).m7AccountInfo,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ListTile(
+                title: Text('${widget.user['name'] ?? ''}'),
+                subtitle: widget.user['phone'] == null
+                    ? null
+                    : Text(
+                        '${widget.user['phone']}',
+                        textDirection: TextDirection.ltr,
                       ),
-                    );
-                    if (selected == null || !mounted) return;
-                    setState(() {
-                      busy = true;
-                      error = null;
-                    });
-                    try {
-                      await widget.changeLocale?.call(selected);
-                    } catch (e) {
-                      if (mounted) {
-                        setState(() => error = localizedError(context, e));
-                      }
-                    } finally {
-                      if (mounted) setState(() => busy = false);
-                    }
-                  },
+              ),
+            ],
           ),
-          if (spaces.length > 1)
-            ListTile(
-              leading: const Icon(Icons.swap_horiz),
-              title: Text(l10n(context).m5SwitchWorkspace),
-              onTap: busy
-                  ? null
-                  : () async {
-                      final selected = await showDialog<String>(
-                        context: context,
-                        builder: (dialog) => SimpleDialog(
-                          title: Text(l10n(dialog).m5SwitchWorkspace),
-                          children: [
-                            for (final space in spaces)
-                              SimpleDialogOption(
-                                onPressed: () => Navigator.pop(
-                                  dialog,
-                                  space['id'] as String,
+          const SizedBox(height: 24),
+          EquipmentFormSection(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(l10n(context).language),
+                onTap: busy
+                    ? null
+                    : () async {
+                        final selected = await showDialog<String>(
+                          context: context,
+                          builder: (dialog) => SimpleDialog(
+                            title: Text(l10n(dialog).language),
+                            children: [
+                              for (final (code, name) in [
+                                ('ar', l10n(context).uiText102),
+                                ('en', 'English'),
+                                ('ur', l10n(context).uiText054),
+                              ])
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(dialog, code),
+                                  child: Text(name),
                                 ),
-                                child: Text('${space['name']}'),
-                              ),
-                          ],
-                        ),
-                      );
-                      if (selected == null ||
-                          selected == widget.api.workspace ||
-                          !mounted) {
-                        return;
-                      }
-                      setState(() {
-                        busy = true;
-                        error = null;
-                      });
-                      try {
-                        await widget.selectWorkspace?.call(selected);
-                        if (context.mounted) Navigator.pop(context);
-                      } catch (e) {
-                        if (mounted) {
-                          setState(() => error = localizedError(context, e));
+                            ],
+                          ),
+                        );
+                        if (selected == null || !mounted) return;
+                        setState(() {
+                          busy = true;
+                          error = null;
+                        });
+                        try {
+                          await widget.changeLocale?.call(selected);
+                        } catch (e) {
+                          if (mounted) {
+                            setState(() => error = localizedError(context, e));
+                          }
+                        } finally {
+                          if (mounted) setState(() => busy = false);
                         }
-                      } finally {
-                        if (mounted) setState(() => busy = false);
-                      }
-                    },
-            ),
+                      },
+              ),
+              if (spaces.length > 1)
+                ListTile(
+                  leading: const Icon(Icons.swap_horiz),
+                  title: Text(l10n(context).m5SwitchWorkspace),
+                  onTap: busy
+                      ? null
+                      : () async {
+                          final selected = await showDialog<String>(
+                            context: context,
+                            builder: (dialog) => SimpleDialog(
+                              title: Text(l10n(dialog).m5SwitchWorkspace),
+                              children: [
+                                for (final space in spaces)
+                                  SimpleDialogOption(
+                                    onPressed: () => Navigator.pop(
+                                      dialog,
+                                      space['id'] as String,
+                                    ),
+                                    child: Text('${space['name']}'),
+                                  ),
+                              ],
+                            ),
+                          );
+                          if (selected == null ||
+                              selected == widget.api.workspace ||
+                              !mounted) {
+                            return;
+                          }
+                          setState(() {
+                            busy = true;
+                            error = null;
+                          });
+                          try {
+                            await widget.selectWorkspace?.call(selected);
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (e) {
+                            if (mounted) {
+                              setState(
+                                () => error = localizedError(context, e),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => busy = false);
+                          }
+                        },
+                ),
+            ],
+          ),
           if (busy) const LinearProgressIndicator(),
-          if (error != null) Text(error!),
+          InlineError(error),
         ],
       ),
     );

@@ -99,3 +99,6 @@ At every meaningful checkpoint update `docs/HANDOFF.md`: branch/commit if availa
 checks/evidence, known defects, blockers, next task and tested run commands.
 Do not imply work continues after the active agent run ends. Report a resumable state instead.
 User-facing explanations and UI copy: Arabic. Code identifiers and technical contracts: English.
+
+## Active UI task — 2026-10-02
+Full existing-app **A + F3 Almarai rollout** is authorized. Read `docs/design/ui-refresh/STATUS.md`, `ALMARAI_ROLLOUT.md`, and `COVERAGE.md` in that directory. Historical pilot/font-choice stop instructions are superseded; product/safety rules remain. The owner-approved task specifies main-writer Astra/High and bounded sequential read-only reviews for this UI task only; do not change configuration.

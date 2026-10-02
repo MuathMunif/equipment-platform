@@ -2293,4 +2293,138 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get m7NoRecentEntries => 'ابھی کوئی حالیہ مالی اندراج نہیں۔';
+
+  @override
+  String get previewSynthetic => 'ڈیزائن پیش منظر · فرضی ڈیٹا';
+
+  @override
+  String get previewOverview => 'آپ کے دن کا جائزہ';
+
+  @override
+  String get previewAttention => 'آپ کی توجہ درکار ہے';
+
+  @override
+  String get previewAttentionHelp => 'جہاں پیروی ضروری ہے وہاں سے شروع کریں۔';
+
+  @override
+  String get previewPeriod => 'اکتوبر ۲۰۲۶';
+
+  @override
+  String get previewViewEquipment => 'آلات دیکھیں';
+
+  @override
+  String get previewViewAll => 'سب دیکھیں';
+
+  @override
+  String get previewEquipmentRecords => 'آلے کا ریکارڈ';
+
+  @override
+  String get previewIssueSample => 'انجن سے غیر معمولی آواز';
+
+  @override
+  String get previewMaintenanceSample => 'انجن کا تیل تبدیل کرنا';
+
+  @override
+  String get previewIncomeSample => 'نقل و حمل کے کام کی ادائیگی';
+
+  @override
+  String get previewRelatedContext => 'اختیاری روابط';
+
+  @override
+  String get previewNoConnection => 'منسلک نہیں';
+
+  @override
+  String get previewInvoice => 'خرچ کی رسید';
+
+  @override
+  String get previewAttachmentHelp =>
+      'ریکارڈ محفوظ کرنے کے بعد تصویر یا PDF شامل کریں۔ یہاں منسلکہ دیکھنے کی آزمائش کریں۔';
+
+  @override
+  String get previewTryAttachment => 'منسلکہ آزمائیں';
+
+  @override
+  String get previewTrySave => 'فارم آزمائیں';
+
+  @override
+  String get previewNoWrite =>
+      'خانے درست ہیں۔ یہ صرف پیش منظر ہے؛ کوئی ریکارڈ یا رقم محفوظ نہیں ہوئی۔';
+
+  @override
+  String get previewDiscardTitle => 'یہ فارم چھوڑ دیں؟';
+
+  @override
+  String get previewDiscardHelp => 'اس فارم میں آزمائشی تبدیلیاں مٹ جائیں گی۔';
+
+  @override
+  String get previewKeepEditing => 'ترمیم جاری رکھیں';
+
+  @override
+  String get previewLeave => 'چھوڑ دیں';
+
+  @override
+  String get previewLifetime => 'ریکارڈ کا مجموعہ · تمام ادائیگیاں اور واپسی';
+
+  @override
+  String get previewStates => 'اجزاء اور حالتیں';
+
+  @override
+  String get previewLoading => 'ریکارڈ لوڈ ہو رہا ہے…';
+
+  @override
+  String get previewNotAvailable => 'رقم دستیاب نہیں';
+
+  @override
+  String get previewOnlyAction =>
+      'یہ عمل پیش منظر کی تین اسکرینوں میں شامل نہیں۔ پیش منظر کسی ڈیٹا کو تبدیل نہیں کرتا۔';
+
+  @override
+  String get previewDocumentDate => '۱۵ اکتوبر ۲۰۲۶ کو میعاد ختم ہوگی';
+
+  @override
+  String get previewEquipmentHelp => 'شروع کرنے کے لیے نام اور ماڈل کافی ہیں۔';
+
+  @override
+  String get previewScopeHelp => 'مشترک یا عمومی خرچ، یا منصوبے سے ربط';
+
+  @override
+  String get previewCategoryDate => 'خرچ کی تفصیلات';
+
+  @override
+  String get previewPaymentSection => 'ادائیگی کی تفصیل';
+
+  @override
+  String get previewCurrentEquipment => 'منتخب آلہ';
+
+  @override
+  String get previewFixtureNotice =>
+      'نام، رقمیں اور تاریخیں موازنے کے لیے مقررہ مثالیں ہیں۔';
+
+  @override
+  String get previewAttachmentRemoved => 'آزمائشی منسلکہ ہٹا دیا گیا';
+
+  @override
+  String get previewRemoveAttachment => 'آزمائشی منسلکہ ہٹائیں';
+
+  @override
+  String get previewFormHint =>
+      'رقم اور تفصیلات درج کریں، پھر ادائیگی کا جائزہ لیں۔';
+
+  @override
+  String get previewRecordedExpenses => 'درج شدہ اخراجات';
+
+  @override
+  String get previewRecordedIncome => 'درج شدہ آمدنی';
+
+  @override
+  String get pilotEquipmentRecord => 'مشین کا ریکارڈ';
+
+  @override
+  String get pilotOptionalConnections => 'اختیاری روابط';
+
+  @override
+  String get m5AccessRevoked => 'رسائی واپس لے لی گئی';
+
+  @override
+  String get m6NoProjectSelected => 'کوئی منصوبہ یا معاہدہ نہیں';
 }

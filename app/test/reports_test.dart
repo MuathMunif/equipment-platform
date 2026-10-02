@@ -1,3 +1,4 @@
+import 'package:equipment_app/design_system/equipment_a.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -13,7 +14,7 @@ import 'package:http/testing.dart';
 
 http.Response answer(Object value,[int code=200])=>http.Response(jsonEncode(value),code,
   headers:{'content-type':'application/json; charset=utf-8'});
-Widget host(Widget page,{String locale='ar'})=>MaterialApp(locale:Locale(locale),
+Widget host(Widget page,{String locale='ar'})=>MaterialApp(theme:EquipmentA.theme(),locale:Locale(locale),
   supportedLocales:AppLocalizations.supportedLocales,
   localizationsDelegates:AppLocalizations.localizationsDelegates,
   home:Scaffold(body:page));

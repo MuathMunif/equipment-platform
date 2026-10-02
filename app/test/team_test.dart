@@ -1,3 +1,5 @@
+import 'package:equipment_app/design_system/equipment_a.dart';
+
 import 'dart:convert';
 
 import 'package:equipment_app/api.dart';
@@ -19,6 +21,7 @@ http.Response reply(Object value) => http.Response(
 );
 
 Widget host(Widget page) => MaterialApp(
+  theme: EquipmentA.theme(),
   locale: const Locale('ar'),
   supportedLocales: AppLocalizations.supportedLocales,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -26,6 +29,34 @@ Widget host(Widget page) => MaterialApp(
 );
 
 void main() {
+  testWidgets(
+    'revoked membership is visibly distinct without changing access',
+    (tester) async {
+      final api = Api(
+        persistNative: false,
+        client: MockClient(
+          (request) async => reply(
+            request.url.path.endsWith('/members')
+                ? [
+                    {
+                      'userId': 'driver',
+                      'displayName': 'سائق اختبار',
+                      'role': 'DRIVER',
+                      'active': false,
+                    },
+                  ]
+                : [],
+          ),
+        ),
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(TeamPage(api: api, owner: true, canAssign: true)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('وصول مسحوب'), findsOneWidget);
+      expect(find.byKey(const Key('member-driver')), findsOneWidget);
+    },
+  );
   test('auth profile restores the selected workspace and selection uses its endpoint', () async {
     final paths = <String>[];
     final api = Api(
@@ -117,6 +148,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('approveSubmission')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('approveSubmission')));
       await tester.pumpAndSettle();
       expect(find.byType(ApprovalPage), findsOneWidget);
@@ -135,8 +167,131 @@ void main() {
       expect(approved?['expenseScope'], 'SINGLE');
       expect(approved?['paymentStatus'], 'FULL');
       expect(approved?['initialPaid'], isNull);
+      expect(approved!.containsKey('initialPaid'), isFalse);
     },
   );
+
+  for (final status in ['FULL', 'PARTIAL', 'UNPAID']) {
+    testWidgets(
+      'approval serializes 1000 $status using the existing payment contract',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final loc = lookupAppLocalizations(const Locale('ar'));
+        final posts = <http.Request>[];
+        final submission = {
+          'id': 'submission',
+          'equipmentId': 'equipment',
+          'equipmentName': 'Test equipment',
+          'amount': '1000.00',
+          'transactionDate': '2026-09-25',
+          'status': 'PENDING_REVIEW',
+          'attachments': <Object>[],
+        };
+        final api = Api(
+          base: 'http://localhost/api/v1',
+          persistNative: false,
+          client: MockClient((request) async {
+            if (request.method == 'GET') return reply(submission);
+            posts.add(request);
+            return reply({...submission, 'status': 'APPROVED'});
+          }),
+        )..workspace = 'workspace';
+        await tester.pumpWidget(
+          host(SubmissionDetailPage(api: api, id: 'submission', reviewer: true)),
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('approveSubmission')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('approveSubmission')));
+        await tester.pumpAndSettle();
+
+        final paymentStatus = find.ancestor(
+          of: find.text(loc.m5PaymentStatus),
+          matching: find.byType(DropdownButtonFormField<String>),
+        );
+        final initialPayment = find.byWidgetPredicate(
+          (w) => w is TextField &&
+              w.decoration?.labelText == loc.uiInitialPayment,
+        );
+        if (status != 'FULL') {
+          await tester.ensureVisible(paymentStatus);
+          await tester.pumpAndSettle();
+          await tester.tap(paymentStatus);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(loc.paidPartial).last);
+          await tester.pumpAndSettle();
+          await tester.enterText(initialPayment, '600');
+          FocusManager.instance.primaryFocus?.unfocus();
+          await tester.pumpAndSettle();
+          if (status == 'UNPAID') {
+            // Zero payment is UNPAID, not PARTIAL with initialPaid="0.00".
+            // A previous partial amount must not leak or restore the FULL default.
+            await tester.tap(paymentStatus);
+            await tester.pumpAndSettle();
+            await tester.tap(find.text(loc.unpaid).last);
+            await tester.pumpAndSettle();
+            expect(initialPayment, findsNothing);
+          }
+          await tester.enterText(
+            find.byWidgetPredicate(
+              (w) => w is TextField &&
+                  w.decoration?.labelText == loc.uiSupplierOrPartyName,
+            ),
+            'Test supplier',
+          );
+          FocusManager.instance.primaryFocus?.unfocus();
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text(loc.m5DueDate));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(loc.m5DueDate));
+          await tester.pumpAndSettle();
+          final dialog = tester.element(find.byType(DatePickerDialog));
+          await tester.tap(
+            find.text(MaterialLocalizations.of(dialog).okButtonLabel).last,
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await tester.ensureVisible(find.byKey(const Key('confirmApproval')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirmApproval')));
+        await tester.pumpAndSettle();
+        expect(posts, isEmpty); // Confirmation remains required.
+        await tester.tap(find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text(loc.m5Approve),
+        ));
+        await tester.pumpAndSettle();
+
+        expect(posts, hasLength(1));
+        expect(posts.single.url.path,
+            '/api/v1/workspaces/workspace/financial-submissions/submission/approve');
+        final body = jsonDecode(posts.single.body) as Map<String, dynamic>;
+        expect(body['amount'], '1000.00');
+        expect(body['paymentStatus'], status);
+        expect(body['expenseScope'], 'SINGLE');
+        expect(body['entryType'], 'EXPENSE');
+        if (status == 'PARTIAL') {
+          expect(body['initialPaid'], '600.00');
+        } else {
+          // JSON null is not an omitted JsonNode in the existing backend DTO.
+          expect(body.containsKey('initialPaid'), isFalse);
+        }
+        if (status == 'UNPAID') {
+          expect(body['paidOn'], isNull);
+        } else {
+          expect(body['paidOn'], matches(r'^\d{4}-\d{2}-\d{2}$'));
+        }
+        if (status != 'FULL') {
+          expect(body['partyName'], 'Test supplier');
+          expect(body['dueDate'], '2026-09-25');
+        }
+      },
+    );
+  }
 
   testWidgets('driver gets simple home without ledger navigation', (
     tester,
@@ -183,7 +338,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('لا توجد معدة معيّنة لك حاليًا.'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(EquipmentNavigationBar), findsOneWidget);
     expect(find.text('التقارير'), findsNothing);
     expect(find.byKey(const Key('openTeam')), findsNothing);
     expect(tester.takeException(), isNull);
@@ -327,7 +482,12 @@ void main() {
         if (request.url.path.endsWith('/assignments')) return reply([]);
         return reply({
           'items': [
-            {'id': 'equipment', 'name': 'قلاب', 'reference': 'EQ-000001', 'archivedAt': null},
+            {
+              'id': 'equipment',
+              'name': 'قلاب',
+              'reference': 'EQ-000001',
+              'archivedAt': null,
+            },
           ],
           'total': 1,
         });
