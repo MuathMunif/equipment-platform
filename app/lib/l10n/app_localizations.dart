@@ -4536,6 +4536,54 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'بدون مشروع أو عقد'**
   String get m6NoProjectSelected;
+
+  /// No description provided for @homeGreeting.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرحبًا، {name}'**
+  String homeGreeting(String name);
+
+  /// No description provided for @homeWelcome.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرحبًا'**
+  String get homeWelcome;
+
+  /// No description provided for @homeFinancialSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملخص المالي'**
+  String get homeFinancialSummary;
+
+  /// No description provided for @homeCurrentEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعدات النشطة حاليًا'**
+  String get homeCurrentEquipment;
+
+  /// No description provided for @homeRecordedExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات المسجلة'**
+  String get homeRecordedExpenses;
+
+  /// No description provided for @homeRecordedIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيرادات المسجلة'**
+  String get homeRecordedIncome;
+
+  /// No description provided for @homeViewJournal.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض السجل'**
+  String get homeViewJournal;
+
+  /// No description provided for @homeMyEquipment.
+  ///
+  /// In ar, this message translates to:
+  /// **'معداتي'**
+  String get homeMyEquipment;
 }
 
 class _AppLocalizationsDelegate

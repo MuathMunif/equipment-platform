@@ -2405,4 +2405,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get m6NoProjectSelected => 'بدون مشروع أو عقد';
+
+  @override
+  String homeGreeting(String name) {
+    return 'مرحبًا، $name';
+  }
+
+  @override
+  String get homeWelcome => 'مرحبًا';
+
+  @override
+  String get homeFinancialSummary => 'الملخص المالي';
+
+  @override
+  String get homeCurrentEquipment => 'المعدات النشطة حاليًا';
+
+  @override
+  String get homeRecordedExpenses => 'المصروفات المسجلة';
+
+  @override
+  String get homeRecordedIncome => 'الإيرادات المسجلة';
+
+  @override
+  String get homeViewJournal => 'عرض السجل';
+
+  @override
+  String get homeMyEquipment => 'معداتي';
 }

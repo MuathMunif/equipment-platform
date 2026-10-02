@@ -1133,5 +1133,14 @@
   "pilotEquipmentRecord": "سجل المعدة",
   "pilotOptionalConnections": "ارتباطات اختيارية",
   "m5AccessRevoked": "وصول مسحوب",
-  "m6NoProjectSelected": "بدون مشروع أو عقد"
+  "m6NoProjectSelected": "بدون مشروع أو عقد",
+  "homeGreeting": "مرحبًا، {name}",
+  "homeWelcome": "مرحبًا",
+  "homeFinancialSummary": "الملخص المالي",
+  "homeCurrentEquipment": "المعدات النشطة حاليًا",
+  "homeRecordedExpenses": "المصروفات المسجلة",
+  "homeRecordedIncome": "الإيرادات المسجلة",
+  "homeViewJournal": "عرض السجل",
+  "homeMyEquipment": "معداتي",
+  "@homeGreeting": {"placeholders": {"name": {"type": "String"}}}
 }

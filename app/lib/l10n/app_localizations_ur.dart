@@ -2427,4 +2427,30 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get m6NoProjectSelected => 'کوئی منصوبہ یا معاہدہ نہیں';
+
+  @override
+  String homeGreeting(String name) {
+    return 'السلام علیکم، $name';
+  }
+
+  @override
+  String get homeWelcome => 'السلام علیکم';
+
+  @override
+  String get homeFinancialSummary => 'مالی خلاصہ';
+
+  @override
+  String get homeCurrentEquipment => 'فی الحال فعال آلات';
+
+  @override
+  String get homeRecordedExpenses => 'درج شدہ اخراجات';
+
+  @override
+  String get homeRecordedIncome => 'درج شدہ آمدنی';
+
+  @override
+  String get homeViewJournal => 'ریکارڈ دیکھیں';
+
+  @override
+  String get homeMyEquipment => 'میرے آلات';
 }
