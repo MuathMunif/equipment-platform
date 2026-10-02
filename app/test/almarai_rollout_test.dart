@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:equipment_app/api.dart';
+import 'package:equipment_app/documents.dart';
 import 'package:equipment_app/design_system/equipment_a.dart';
 import 'package:equipment_app/design_system/equipment_typography.dart';
 import 'package:equipment_app/l10n/app_localizations.dart';
@@ -57,6 +58,56 @@ void main() {
       await loader.load();
     }
   });
+
+  for (final locale in ['ar', 'en', 'ur']) {
+    testWidgets(
+      'document renewal keeps date and validation at320/200% $locale',
+      (tester) async {
+        viewport(tester, 320, 800);
+        final api = Api(
+          persistNative: false,
+          client: MockClient((_) async => response([])),
+        )..workspace = 'w';
+        await tester.pumpWidget(
+          host(
+            DocumentFormPage(
+              api: api,
+              equipment: equipment,
+              renewal: true,
+              document: {
+                'id': 'd',
+                'type': 'INSURANCE',
+                'currentVersionId': 'v1',
+                'documentNumber': 'POL-1',
+                'expiryDate': '2026-10-15',
+              },
+            ),
+            locale: locale,
+            scale: 2,
+          ),
+        );
+        await tester.pumpAndSettle();
+        final expiry = find.byKey(const Key('documentExpiryDate'));
+        await tester.ensureVisible(expiry);
+        await tester.enterText(expiry, '2027-10-15');
+        tester.view.physicalSize = const Size(900, 800);
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<TextFormField>(expiry).controller!.text,
+          '2027-10-15',
+        );
+        tester.view.physicalSize = const Size(320, 800);
+        tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pumpAndSettle();
+        final save = find.byKey(const Key('saveDocument'));
+        await tester.ensureVisible(save);
+        await tester.pumpAndSettle();
+        expect(tester.getRect(save).bottom, lessThanOrEqualTo(520));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   for (final locale in ['ar', 'en', 'ur']) {
     testWidgets(

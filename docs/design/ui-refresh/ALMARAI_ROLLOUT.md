@@ -8,13 +8,13 @@ Owner instruction: [ALMARAI_ROLLOUT_TASK.md](ALMARAI_ROLLOUT_TASK.md). Branch `f
 |---|---|---|
 | 1 | Expense/edit proving ground; A root/overlays; login, workspace, home/dashboard, equipment list/form/detail, More/settings | IMPLEMENTED / affected83 PASS; later focused11 and24 PASS (overlap); analyze + actual web PASS; commit `30ff1c0` |
 | 2 | Ledger, entry detail, settlements/refunds/cancellation, allocations, drafts/attachments, reports/drill-down | IMPLEMENTED;53 affected +16 focused PASS (overlap); analyze/web PASS; journeyA complete; independent behavior review found no actionable regression |
-| 3 | Documents/version/renewal/archive, attention/incomplete/notifications | Pending |
+| 3 | Documents/version/renewal/archive, attention/incomplete/notifications | IMPLEMENTED;54 focused PASS, analyze/web PASS; connected renewal/old-file journeyC complete |
 | 4 | Issue/maintenance/detail/history/status/attachments and original M2 links | Pending |
 | 5 | Team/invitations/permissions/scope/DIRECT–REVIEW/assignment, driver, review flow | Pending |
 | 6 | Optional organizations and projects/contracts, linking/history/attachments/summary | Pending |
 | Final | Full Flutter once, analyze, 3 web builds, feasible native builds/runs, connected journeys, final visual review, branch PR+CI | Pending |
 
-Last implemented/tested batch: 2. Next action: batch3 documents/attention. Remaining locale/final-pixel captures are tracked in the screenshot index. JourneyA complete on existing record. Continue through queue without routine approval.
+Last implemented/tested batch: 3. Next action: batch4 issues/maintenance. Remaining locale/final-pixel captures are tracked in the screenshot index. JourneyA complete on existing record. Continue through queue without routine approval.
 
 ## Evidence discipline
 [Coverage](COVERAGE.md) separates theme propagation, widget tests, connected actions and actual visual inspection. [Screenshots](ALMARAI_ROLLOUT_SCREENSHOTS.md) contains only actual rendered images. Previous pilot182 tests are not rollout results. Batch1 actual screenshots and connected partial-expense save recorded below; full journeys pending.
@@ -35,7 +35,7 @@ Main writer only; one bounded read-only behavior reviewer completed, requested A
 
 Final batch1 visual pass:9 actual connected images saved and inspected. Added More/settings panels after real render. Language modal minWidth280 restored after narrow intrinsic-width render; final recapture with next production build. Last analyze clean, web release PASS, whitespace PASS. No rollback of business/security assertions. No backend changes or new binaries/dependencies.
 
-## Batch2 progress
+## Batch2 — commit `1d6b36e`
 - Existing journal reuses the proven A entry card. Draft list/detail recovery and completion separated into panels. Real financial detail has identity, amounts, settlement/history and attachments sections; cancellation action keeps confirmation and uses semantic error color. Reports use bounded filters and responsive metric grid. Month grid adapts at200%; date logic unchanged.
 - Fixed pre-existing uncertain-save UI holes exposed while validating state: allocation amount fields and project picker now disable during busy/uncertain just like other inputs. Request key lifecycle/API/body/calculations unchanged. New test proves identical body+key on retry. Not a domain/permission change.
 - Checks: `flutter analyze` clean; widget/reports/rollout **53 PASS**; focused rollout with actual Almarai/Plex fonts **16 PASS** including 3locale huge amounts/keyboard/refund,200%monthgrid and immutable ambiguous retry. Counts overlap. Web release PASS including latest amount alignment, attachment spacing and uncertain guards.
@@ -45,3 +45,9 @@ Final batch1 visual pass:9 actual connected images saved and inspected. Added Mo
 - Independent static review by `/root/rollout_behavior_review` (requested Astra/High, no edits/test execution) found no actionable regression in the assigned financial/forms diff. Reviewer checked exact amounts, total lock, classifications, DIRECT/REVIEW guards, retry identity, stable fields/navigation/date/filter code; did not claim device/screen-reader/visual coverage. Native/full suites/CI still pending final batch.
 
 - Connected reports: recorded2850 expenses/4500 income; movements paid2450/refunded200/net2250; current remaining600 under expense filter. Entry drill-down/back retained October1–31, EXPENSE and date basis. Project drill-down deferred batch6 fixture.
+
+## Batch3
+- Documents, history, attention, incomplete and notifications use bounded A page composition and spaced cards. Create/edit/renew form shares mounted form section; dropdown wraps; current status badge and distinct attachment panel. Previous immutable info panel, incomplete action wraps under content and pagination wraps. Native file picker unchanged.
+- Dates, version id/concurrency, upload recovery, archive guards and notification semantics unchanged. One formatting-only missing-brace lint fixed; one test tap helper now waits for focus/scroll settling after text entry. First run53pass/1failed offscreen tap; corrected **54/54 PASS** (documents+pilot+rollout including3language real-font320/200% renewal and keyboard checks), analyze clean, productionweb PASS.
+- JourneyC via actual production English UI on existingEQ37 insurance: attach synthetic receipt toversion1, renew ONCE to2027-10-15 note`A-F3 rollout — renewal C`, verifycurrent date andversion1expiry2026-10-15 readonly, openversion1protectedfile. Currentversionhasnoattachments, provingversionseparation. No duplicate document/new account.
+- Actual English mobile form/detail/oldversion/viewer images inspected. Arabic/Urdu final representative captures still pending.

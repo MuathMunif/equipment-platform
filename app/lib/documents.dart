@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'file_export.dart';
 import 'localization.dart';
 import 'maintenance.dart';
@@ -315,6 +316,7 @@ class _EquipmentDocumentsCardState extends State<EquipmentDocumentsCard> {
             (a['expiryDate'] as String).compareTo(b['expiryDate'] as String),
       );
     return Card(
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -465,6 +467,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
       const SizedBox(height: 8),
       ...docs.map(
         (doc) => Card(
+          margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             title: Text(localizedDocumentName(context, doc)),
             subtitle: Text(
@@ -510,8 +513,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 ],
               ),
             )
-          : ListView(
-              padding: const EdgeInsets.all(20),
+          : EquipmentPageBody(
+              maxWidth: 960,
               children: [
                 if (widget.api.can('DOCUMENT_MANAGE'))
                   Align(
@@ -801,169 +804,168 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
               : l10n(context).addDocument,
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 660),
-          child: Form(
-            key: form,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  if (widget.renewal)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 16),
-                      child: Text(
-                        l10n(context).uiThePreviousDocumentWillBeKeptIn,
-                      ),
+      body: Form(
+        key: form,
+        child: EquipmentPageBody(
+          maxWidth: 800,
+          children: [
+            EquipmentFormSection(
+              children: [
+                if (widget.renewal)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      l10n(context).uiThePreviousDocumentWillBeKeptIn,
                     ),
-                  DropdownButtonFormField<String>(
-                    key: const Key('documentType'),
-                    initialValue: type,
-                    decoration: InputDecoration(
-                      labelText: l10n(context).documentType,
-                    ),
-                    items: documentTypeCodes
-                        .map(
-                          (e) => DropdownMenuItem(
-                            value: e,
-                            child: Text(
-                              e == 'OTHER'
-                                  ? l10n(context).other
-                                  : localizedDocumentName(context, {'type': e}),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: widget.renewal || locked || saved != null
-                        ? null
-                        : (value) => setState(() => type = value!),
                   ),
-                  if (type == 'OTHER') ...[
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      key: const Key('customDocumentName'),
-                      controller: custom,
-                      enabled: !widget.renewal && !locked && saved == null,
-                      decoration: InputDecoration(
-                        labelText: l10n(context).uiDocumentName,
-                      ),
-                      maxLength: 100,
-                      validator: (_) =>
-                          type == 'OTHER' && custom.text.trim().isEmpty
-                          ? l10n(context).uiEnterDocumentName
-                          : null,
-                    ),
-                  ],
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  key: const Key('documentType'),
+                  initialValue: type,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).documentType,
+                  ),
+                  items: documentTypeCodes
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(
+                            e == 'OTHER'
+                                ? l10n(context).other
+                                : localizedDocumentName(context, {'type': e}),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: widget.renewal || locked || saved != null
+                      ? null
+                      : (value) => setState(() => type = value!),
+                ),
+                if (type == 'OTHER') ...[
                   const SizedBox(height: 14),
                   TextFormField(
-                    controller: number,
+                    key: const Key('customDocumentName'),
+                    controller: custom,
+                    enabled: !widget.renewal && !locked && saved == null,
                     decoration: InputDecoration(
-                      labelText: l10n(context).uiDocumentNumberOptional,
+                      labelText: l10n(context).uiDocumentName,
                     ),
                     maxLength: 100,
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          key: const Key('documentIssueDate'),
-                          controller: issue,
-                          decoration: InputDecoration(
-                            labelText: l10n(context).uiIssueDateOptional,
-                            hintText: '2026-09-25',
-                          ),
-                          keyboardType: TextInputType.datetime,
-                          validator: dateError,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: l10n(context).uiSelectIssueDate,
-                        onPressed: () => pickDate(issue),
-                        icon: const Icon(Icons.event),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          key: const Key('documentExpiryDate'),
-                          controller: expiry,
-                          decoration: InputDecoration(
-                            labelText: widget.renewal
-                                ? l10n(context).newExpiryDate
-                                : l10n(context).uiExpiryDateOptional,
-                            hintText: '2026-09-25',
-                          ),
-                          keyboardType: TextInputType.datetime,
-                          validator: (v) =>
-                              dateError(v, required: widget.renewal),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: l10n(context).uiSelectExpiryDate,
-                        onPressed: () => pickDate(expiry),
-                        icon: const Icon(Icons.event),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: notes,
-                    decoration: InputDecoration(
-                      labelText: l10n(context).uiNoteOptional,
-                    ),
-                    maxLength: 1000,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    key: const Key('selectDocumentAttachment'),
-                    onPressed: busy || files.length >= 10 ? null : addFile,
-                    icon: const Icon(Icons.attach_file),
-                    label: Text(l10n(context).uiAddImageOrPdf),
-                  ),
-                  ...files.map(
-                    (f) => ListTile(
-                      title: Text(f.filename),
-                      subtitle: Text(
-                        f.id == null
-                            ? l10n(context).uiReadyToUpload
-                            : l10n(context).uiReadyToRetryUpload,
-                      ),
-                    ),
-                  ),
-                  if (error != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(
-                        error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 14),
-                  FilledButton(
-                    key: const Key('saveDocument'),
-                    onPressed: busy ? null : save,
-                    child: Text(
-                      busy
-                          ? l10n(context).uiSaving
-                          : saved != null
-                          ? l10n(context).uiRetryUploadingAttachments
-                          : widget.renewal
-                          ? l10n(context).renewDocument
-                          : l10n(context).saveDocument,
-                    ),
+                    validator: (_) =>
+                        type == 'OTHER' && custom.text.trim().isEmpty
+                        ? l10n(context).uiEnterDocumentName
+                        : null,
                   ),
                 ],
-              ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: number,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiDocumentNumberOptional,
+                  ),
+                  maxLength: 100,
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        key: const Key('documentIssueDate'),
+                        controller: issue,
+                        decoration: InputDecoration(
+                          labelText: l10n(context).uiIssueDateOptional,
+                          hintText: '2026-09-25',
+                        ),
+                        keyboardType: TextInputType.datetime,
+                        validator: dateError,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l10n(context).uiSelectIssueDate,
+                      onPressed: () => pickDate(issue),
+                      icon: const Icon(Icons.event),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        key: const Key('documentExpiryDate'),
+                        controller: expiry,
+                        decoration: InputDecoration(
+                          labelText: widget.renewal
+                              ? l10n(context).newExpiryDate
+                              : l10n(context).uiExpiryDateOptional,
+                          hintText: '2026-09-25',
+                        ),
+                        keyboardType: TextInputType.datetime,
+                        validator: (v) =>
+                            dateError(v, required: widget.renewal),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l10n(context).uiSelectExpiryDate,
+                      onPressed: () => pickDate(expiry),
+                      icon: const Icon(Icons.event),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: notes,
+                  decoration: InputDecoration(
+                    labelText: l10n(context).uiNoteOptional,
+                  ),
+                  maxLength: 1000,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  key: const Key('selectDocumentAttachment'),
+                  onPressed: busy || files.length >= 10 ? null : addFile,
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(l10n(context).uiAddImageOrPdf),
+                ),
+                ...files.map(
+                  (f) => ListTile(
+                    title: Text(f.filename),
+                    subtitle: Text(
+                      f.id == null
+                          ? l10n(context).uiReadyToUpload
+                          : l10n(context).uiReadyToRetryUpload,
+                    ),
+                  ),
+                ),
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  key: const Key('saveDocument'),
+                  onPressed: busy ? null : save,
+                  child: Text(
+                    busy
+                        ? l10n(context).uiSaving
+                        : saved != null
+                        ? l10n(context).uiRetryUploadingAttachments
+                        : widget.renewal
+                        ? l10n(context).renewDocument
+                        : l10n(context).saveDocument,
+                  ),
+                ),
+              ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -1155,112 +1157,108 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                 ],
               ),
             )
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    Text(
-                      equipment?['name'] as String? ?? '',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 12),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              localizedDocumentName(context, d!),
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(localizedDocumentStatus(context, d)),
-                            const SizedBox(height: 8),
-                            Text(
-                              d['expiryDate'] == null
-                                  ? l10n(context).docMissingExpiry
-                                  : l10n(context).expiryValue(
-                                      localizedDate(
-                                        context,
-                                        d['expiryDate'] as String,
-                                      ),
-                                    ),
-                            ),
-                            if (d['documentNumber'] != null)
-                              Text(
-                                l10n(context)
-                                    .numberValue('${d['documentNumber']}'),
-                              ),
-                            if (d['issueDate'] != null)
-                              Text(
-                                l10n(context).issueDateValue(
+          : EquipmentPageBody(
+              maxWidth: 960,
+              children: [
+                Text(
+                  equipment?['name'] as String? ?? '',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          localizedDocumentName(context, d!),
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        EquipmentBadge(localizedDocumentStatus(context, d)),
+                        const SizedBox(height: 8),
+                        Text(
+                          d['expiryDate'] == null
+                              ? l10n(context).docMissingExpiry
+                              : l10n(context).expiryValue(
                                   localizedDate(
                                     context,
-                                    d['issueDate'] as String,
+                                    d['expiryDate'] as String,
                                   ),
                                 ),
-                              ),
-                            if ((d['notes'] as String? ?? '').isNotEmpty)
-                              Text(l10n(context).noteValue('${d['notes']}')),
-                          ],
                         ),
-                      ),
+                        if (d['documentNumber'] != null)
+                          Text(
+                            l10n(context).numberValue('${d['documentNumber']}'),
+                          ),
+                        if (d['issueDate'] != null)
+                          Text(
+                            l10n(context).issueDateValue(
+                              localizedDate(context, d['issueDate'] as String),
+                            ),
+                          ),
+                        if ((d['notes'] as String? ?? '').isNotEmpty)
+                          Text(l10n(context).noteValue('${d['notes']}')),
+                      ],
                     ),
-                    if (error != null)
-                      Text(
-                        error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    if (!archived && widget.api.can('DOCUMENT_MANAGE')) ...[
-                      if (expired)
-                        FilledButton.icon(
-                          key: const Key('renewDocument'),
-                          onPressed: busy ? null : () => edit(renewal: true),
-                          icon: const Icon(Icons.autorenew),
-                          label: Text(l10n(context).renewDocument),
-                        ),
-                      if (expired) const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        key: const Key('editDocument'),
-                        onPressed: busy ? null : () => edit(),
-                        icon: const Icon(Icons.edit_outlined),
-                        label: Text(l10n(context).edit),
-                      ),
-                      if (!expired) const SizedBox(height: 8),
-                      if (!expired)
-                        FilledButton.icon(
-                          key: const Key('renewDocument'),
-                          onPressed: busy ? null : () => edit(renewal: true),
-                          icon: const Icon(Icons.autorenew),
-                          label: Text(l10n(context).renewDocument),
-                        ),
-                      const SizedBox(height: 8),
-                      TextButton.icon(
-                        key: const Key('archiveDocument'),
-                        onPressed: busy ? null : archive,
-                        icon: const Icon(Icons.archive_outlined),
-                        label: Text(l10n(context).uiArchiveDocument),
-                      ),
-                    ] else if (archived &&
-                        widget.api.can('DOCUMENT_MANAGE') &&
-                        d['equipmentArchived'] != true)
-                      FilledButton(
-                        key: const Key('restoreDocument'),
-                        onPressed: busy ? null : () => action('restore'),
-                        child: Text(l10n(context).restoreDocument),
-                      )
-                    else if (archived && widget.api.can('DOCUMENT_MANAGE'))
-                      Text(
-                        l10n(context)
-                            .uiRestoreTheEquipmentBeforeRestoringThisDocument,
-                      ),
-                    const SizedBox(height: 24),
+                  ),
+                ),
+                if (error != null)
+                  Text(
+                    error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                if (!archived && widget.api.can('DOCUMENT_MANAGE')) ...[
+                  if (expired)
+                    FilledButton.icon(
+                      key: const Key('renewDocument'),
+                      onPressed: busy ? null : () => edit(renewal: true),
+                      icon: const Icon(Icons.autorenew),
+                      label: Text(l10n(context).renewDocument),
+                    ),
+                  if (expired) const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: const Key('editDocument'),
+                    onPressed: busy ? null : () => edit(),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(l10n(context).edit),
+                  ),
+                  if (!expired) const SizedBox(height: 8),
+                  if (!expired)
+                    FilledButton.icon(
+                      key: const Key('renewDocument'),
+                      onPressed: busy ? null : () => edit(renewal: true),
+                      icon: const Icon(Icons.autorenew),
+                      label: Text(l10n(context).renewDocument),
+                    ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    key: const Key('archiveDocument'),
+                    onPressed: busy ? null : archive,
+                    icon: const Icon(Icons.archive_outlined),
+                    label: Text(l10n(context).uiArchiveDocument),
+                  ),
+                ] else if (archived &&
+                    widget.api.can('DOCUMENT_MANAGE') &&
+                    d['equipmentArchived'] != true)
+                  FilledButton(
+                    key: const Key('restoreDocument'),
+                    onPressed: busy ? null : () => action('restore'),
+                    child: Text(l10n(context).restoreDocument),
+                  )
+                else if (archived && widget.api.can('DOCUMENT_MANAGE'))
+                  Text(
+                    l10n(context)
+                        .uiRestoreTheEquipmentBeforeRestoringThisDocument,
+                  ),
+                const SizedBox(height: 24),
+                EquipmentFormSection(
+                  children: [
                     Text(
                       l10n(context).attachments,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -1304,24 +1302,24 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                           color: Theme.of(context).colorScheme.error,
                         ),
                       ),
-                    const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      key: const Key('documentHistory'),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DocumentHistoryPage(
-                            api: widget.api,
-                            documentId: widget.id,
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.history),
-                      label: Text(l10n(context).previousVersions),
-                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  key: const Key('documentHistory'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DocumentHistoryPage(
+                        api: widget.api,
+                        documentId: widget.id,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.history),
+                  label: Text(l10n(context).previousVersions),
+                ),
+              ],
             ),
     );
   }
@@ -1380,8 +1378,8 @@ class _DocumentHistoryPageState extends State<DocumentHistoryPage> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? documentLoadFailure(context, load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (versions.length <= 1)
                 Text(l10n(context).uiNoPreviousVersionsYet),
@@ -1389,6 +1387,7 @@ class _DocumentHistoryPageState extends State<DocumentHistoryPage> {
                   .where((v) => v['status'] == 'PREVIOUS_VERSION')
                   .map(
                     (v) => Card(
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
                         title: Text(
                           l10n(context).versionNumber('${v['versionNumber']}'),
@@ -1483,42 +1482,46 @@ class _DocumentVersionPageState extends State<DocumentVersionPage> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? documentLoadFailure(context, load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
-              Text(l10n(context).uiPreviousVersionIsViewOnly),
-              const SizedBox(height: 16),
-              Text(
-                localizedDocumentName(context, version!),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              Text(
-                l10n(context)
-                    .versionNumberLabel('${version!['versionNumber']}'),
-              ),
-              if (version!['documentNumber'] != null)
-                Text(
-                  l10n(context)
-                      .documentNumberLabel('${version!['documentNumber']}'),
-                ),
-              if (version!['issueDate'] != null)
-                Text(
-                  l10n(context).issueDateValue(
-                    localizedDate(context, version!['issueDate'] as String),
+              EquipmentFormSection(
+                children: [
+                  Text(l10n(context).uiPreviousVersionIsViewOnly),
+                  const SizedBox(height: 16),
+                  Text(
+                    localizedDocumentName(context, version!),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                ),
-              Text(
-                version!['expiryDate'] == null
-                    ? l10n(context).docMissingExpiry
-                    : l10n(context).expiryDateValue(
-                        localizedDate(
-                          context,
-                          version!['expiryDate'] as String,
-                        ),
+                  Text(
+                    l10n(context)
+                        .versionNumberLabel('${version!['versionNumber']}'),
+                  ),
+                  if (version!['documentNumber'] != null)
+                    Text(
+                      l10n(context)
+                          .documentNumberLabel('${version!['documentNumber']}'),
+                    ),
+                  if (version!['issueDate'] != null)
+                    Text(
+                      l10n(context).issueDateValue(
+                        localizedDate(context, version!['issueDate'] as String),
                       ),
+                    ),
+                  Text(
+                    version!['expiryDate'] == null
+                        ? l10n(context).docMissingExpiry
+                        : l10n(context).expiryDateValue(
+                            localizedDate(
+                              context,
+                              version!['expiryDate'] as String,
+                            ),
+                          ),
+                  ),
+                  if ((version!['notes'] as String? ?? '').isNotEmpty)
+                    Text(l10n(context).noteValue('${version!['notes']}')),
+                ],
               ),
-              if ((version!['notes'] as String? ?? '').isNotEmpty)
-                Text(l10n(context).noteValue('${version!['notes']}')),
               const SizedBox(height: 20),
               Text(
                 l10n(context).versionAttachments,
@@ -1541,7 +1544,11 @@ class _DocumentVersionPageState extends State<DocumentVersionPage> {
 class HomeDocumentAttention extends StatefulWidget {
   final Api api;
   final bool showIncomplete;
-  const HomeDocumentAttention({super.key, required this.api, this.showIncomplete = true});
+  const HomeDocumentAttention({
+    super.key,
+    required this.api,
+    this.showIncomplete = true,
+  });
   @override
   State<HomeDocumentAttention> createState() => _HomeDocumentAttentionState();
 }
@@ -1559,35 +1566,68 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
 
   Future<void> load() async {
     final request = ++generation, workspace = widget.api.workspace;
-    setState(() { loading = true; error = null; incompleteError = null; items = []; incomplete = []; });
+    setState(() {
+      loading = true;
+      error = null;
+      incompleteError = null;
+      items = [];
+      incomplete = [];
+    });
     try {
-      final attention = await widget.api.json('GET', widget.api.scoped('/attention')) as List<dynamic>;
-      if (mounted && request == generation && workspace == widget.api.workspace) {
-        setState(() => items = attention.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+      final attention = await widget.api.json(
+        'GET',
+        widget.api.scoped('/attention'),
+      ) as List<dynamic>;
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
+        setState(
+          () => items = attention
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList(),
+        );
       }
       if (widget.showIncomplete) {
         try {
-          final missing = await widget.api.json('GET', widget.api.scoped('/documents/incomplete')) as List<dynamic>;
-          if (mounted && request == generation && workspace == widget.api.workspace) {
-            setState(() => incomplete = missing.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+          final missing = await widget.api.json(
+            'GET',
+            widget.api.scoped('/documents/incomplete'),
+          ) as List<dynamic>;
+          if (mounted &&
+              request == generation &&
+              workspace == widget.api.workspace) {
+            setState(
+              () => incomplete = missing
+                  .map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList(),
+            );
           }
         } catch (e) {
-          if (mounted && request == generation && workspace == widget.api.workspace) {
+          if (mounted &&
+              request == generation &&
+              workspace == widget.api.workspace) {
             setState(() => incompleteError = localizedError(context, e));
           }
         }
       }
     } catch (e) {
-      if (mounted && request == generation && workspace == widget.api.workspace) {
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
         setState(() => error = localizedError(context, e));
       }
     } finally {
-      if (mounted && request == generation && workspace == widget.api.workspace) setState(() => loading = false);
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
+        setState(() => loading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
     child: Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1616,15 +1656,15 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                         ? Icon(
                             Icons.report_outlined,
                             color: d['equipmentStopped'] == true
-                                ? Colors.red
-                                : Colors.orange,
+                                ? Theme.of(context).colorScheme.error
+                                : EquipmentA.muted,
                           )
                         : null,
                     title: Text(
                       d['entityType'] == 'FINANCIAL_REVIEW'
-                          ? l10n(context).m5PendingReviewsCount(
-                              '${d['pendingCount'] ?? 0}',
-                            )
+                          ? l10n(
+                              context,
+                            ).m5PendingReviewsCount('${d['pendingCount'] ?? 0}')
                           : d['entityType'] == 'ISSUE'
                           ? (d['equipmentStopped'] == true
                                 ? l10n(context).m4StoppedBadge
@@ -1674,29 +1714,34 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
                 child: Text(l10n(context).viewAll),
               ),
             if (widget.showIncomplete) ...[
-            const Divider(),
-            Text(
-              l10n(context).uiDetailsToComplete,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (incompleteError != null)
-              TextButton(onPressed: load, child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain))
-            else Text(
-              incomplete.isEmpty
-                  ? l10n(context).uiNoDocumentsHaveMissingInformation
-                  : l10n(context).missingDocumentsCount('${incomplete.length}'),
-            ),
-            if (incompleteError == null && incomplete.isNotEmpty)
-              TextButton(
-                key: const Key('openIncompleteDocuments'),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => IncompleteDocumentsPage(api: widget.api),
-                  ),
-                ),
-                child: Text(l10n(context).uiViewDocuments),
+              const Divider(),
+              Text(
+                l10n(context).uiDetailsToComplete,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+              if (incompleteError != null)
+                TextButton(
+                  onPressed: load,
+                  child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain),
+                )
+              else
+                Text(
+                  incomplete.isEmpty
+                      ? l10n(context).uiNoDocumentsHaveMissingInformation
+                      : l10n(context)
+                            .missingDocumentsCount('${incomplete.length}'),
+                ),
+              if (incompleteError == null && incomplete.isNotEmpty)
+                TextButton(
+                  key: const Key('openIncompleteDocuments'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => IncompleteDocumentsPage(api: widget.api),
+                    ),
+                  ),
+                  child: Text(l10n(context).uiViewDocuments),
+                ),
             ],
           ],
         ],
@@ -1762,12 +1807,13 @@ class _AttentionPageState extends State<AttentionPage> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? documentLoadFailure(context, load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (items.isEmpty) Text(l10n(context).m4AttentionEmpty),
               ...items.map(
                 (d) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     leading: d['entityType'] == 'FINANCIAL_REVIEW'
                         ? const Icon(Icons.fact_check_outlined)
@@ -1775,15 +1821,15 @@ class _AttentionPageState extends State<AttentionPage> {
                         ? Icon(
                             Icons.report_outlined,
                             color: d['equipmentStopped'] == true
-                                ? Colors.red
-                                : Colors.orange,
+                                ? Theme.of(context).colorScheme.error
+                                : EquipmentA.muted,
                           )
                         : null,
                     title: Text(
                       d['entityType'] == 'FINANCIAL_REVIEW'
-                          ? l10n(context).m5PendingReviewsCount(
-                              '${d['pendingCount'] ?? 0}',
-                            )
+                          ? l10n(
+                              context,
+                            ).m5PendingReviewsCount('${d['pendingCount'] ?? 0}')
                           : d['entityType'] == 'ISSUE'
                           ? (d['equipmentStopped'] == true
                                 ? l10n(context).m4StoppedBadge
@@ -1905,23 +1951,28 @@ class _IncompleteDocumentsPageState extends State<IncompleteDocumentsPage> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? documentLoadFailure(context, load)
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (items.isEmpty)
                 Text(l10n(context).uiNoDocumentsHaveMissingInformation),
               ...items.map(
                 (d) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text(localizedDocumentName(context, d)),
-                    subtitle: Text(l10n(context).docMissingExpiry),
-                    trailing: widget.api.can('DOCUMENT_MANAGE')
-                        ? TextButton(
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n(context).docMissingExpiry),
+                        if (widget.api.can('DOCUMENT_MANAGE'))
+                          TextButton(
                             key: Key('addExpiry-${d['id']}'),
                             onPressed: () => addExpiry(d),
                             child: Text(l10n(context).addExpiryDate),
-                          )
-                        : null,
+                          ),
+                      ],
+                    ),
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -2146,8 +2197,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               ],
             ),
           )
-        : ListView(
-            padding: const EdgeInsets.all(20),
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
               if (error != null)
                 Text(
@@ -2157,6 +2208,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               if (items.isEmpty) Text(l10n(context).noNotifications),
               ...items.map(
                 (item) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     leading: Icon(
                       item['readAt'] == null
@@ -2182,8 +2234,10 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                 ),
               ),
               if (total > 30)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
                   children: [
                     TextButton(
                       onPressed: page == 0

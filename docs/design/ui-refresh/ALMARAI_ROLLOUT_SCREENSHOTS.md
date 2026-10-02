@@ -18,3 +18,6 @@ EN/UR connected forms, native, other families and final review still pending. Wi
 
 ## Batch2 — connected production / synthetic OWNER
 Actual images captured and self-inspected: `refund-dialog-ar-390.jpg`, `entry-refunded-ar-390.jpg`, `entry-refunded-ar-1440.jpg`, `entry-history-attachment-ar-390.jpg`, `receipt-viewer-ar-390.jpg`, `report-recorded-ar-1440.jpg`, `report-movements-ar-1440.jpg`, `report-outstanding-ar-390.jpg` in `screenshots/almarai-rollout/`. Financial detail images predate final amount-edge alignment and attachment-margin correction; recapture before final review. Reports show real current synthetic data; outstanding is all-time current600, not an October snapshot. Receipt image350 is an existing generic synthetic attachment, not a calculation input for entry1000.
+
+## Batch3 source (after1d6b36e, current batch3 changes)
+Connected OWNER/en/390×1000 actual self-inspected: [finance](screenshots/almarai-rollout/entry-refunded-en-390.jpg) latest valuealignment; [document](screenshots/almarai-rollout/document-en-390.jpg), [renewform](screenshots/almarai-rollout/document-renew-en-390.jpg), [oldreadonly](screenshots/almarai-rollout/document-history-en-390.jpg), [protectedoldfile](screenshots/almarai-rollout/document-old-attachment-en-390.jpg). Historicalattachmentname/frame are app-controlled Almarai; imagecontents are syntheticfixture.
