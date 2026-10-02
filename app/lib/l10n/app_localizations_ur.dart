@@ -2421,4 +2421,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get pilotOptionalConnections => 'اختیاری روابط';
+
+  @override
+  String get m5AccessRevoked => 'رسائی واپس لے لی گئی';
 }

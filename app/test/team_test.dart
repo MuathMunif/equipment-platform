@@ -1,4 +1,5 @@
 import 'package:equipment_app/design_system/equipment_a.dart';
+
 import 'dart:convert';
 
 import 'package:equipment_app/api.dart';
@@ -20,6 +21,7 @@ http.Response reply(Object value) => http.Response(
 );
 
 Widget host(Widget page) => MaterialApp(
+  theme: EquipmentA.theme(),
   locale: const Locale('ar'),
   supportedLocales: AppLocalizations.supportedLocales,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -27,6 +29,34 @@ Widget host(Widget page) => MaterialApp(
 );
 
 void main() {
+  testWidgets(
+    'revoked membership is visibly distinct without changing access',
+    (tester) async {
+      final api = Api(
+        persistNative: false,
+        client: MockClient(
+          (request) async => reply(
+            request.url.path.endsWith('/members')
+                ? [
+                    {
+                      'userId': 'driver',
+                      'displayName': 'سائق اختبار',
+                      'role': 'DRIVER',
+                      'active': false,
+                    },
+                  ]
+                : [],
+          ),
+        ),
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(TeamPage(api: api, owner: true, canAssign: true)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('وصول مسحوب'), findsOneWidget);
+      expect(find.byKey(const Key('member-driver')), findsOneWidget);
+    },
+  );
   test('auth profile restores the selected workspace and selection uses its endpoint', () async {
     final paths = <String>[];
     final api = Api(
@@ -118,6 +148,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('approveSubmission')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('approveSubmission')));
       await tester.pumpAndSettle();
       expect(find.byType(ApprovalPage), findsOneWidget);
@@ -136,6 +167,7 @@ void main() {
       expect(approved?['expenseScope'], 'SINGLE');
       expect(approved?['paymentStatus'], 'FULL');
       expect(approved?['initialPaid'], isNull);
+      expect(approved!.containsKey('initialPaid'), isFalse);
     },
   );
 
@@ -328,7 +360,12 @@ void main() {
         if (request.url.path.endsWith('/assignments')) return reply([]);
         return reply({
           'items': [
-            {'id': 'equipment', 'name': 'قلاب', 'reference': 'EQ-000001', 'archivedAt': null},
+            {
+              'id': 'equipment',
+              'name': 'قلاب',
+              'reference': 'EQ-000001',
+              'archivedAt': null,
+            },
           ],
           'total': 1,
         });

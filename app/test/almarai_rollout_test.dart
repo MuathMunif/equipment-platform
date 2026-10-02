@@ -8,6 +8,7 @@ import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:equipment_app/main.dart';
 import 'package:equipment_app/maintenance.dart';
 import 'package:equipment_app/reports.dart';
+import 'package:equipment_app/team.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -59,6 +60,91 @@ void main() {
       await loader.load();
     }
   });
+
+  for (final locale in ['ar', 'en', 'ur']) {
+    testWidgets(
+      'team, driver submission and approval retain controls at320/200% $locale',
+      (tester) async {
+        viewport(tester, 320, 800);
+        var writes = 0;
+        final api = Api(
+          persistNative: false,
+          client: MockClient((r) async {
+            if (r.method != 'GET') writes++;
+            return response(
+              r.url.path.endsWith('/organizations')
+                  ? []
+                  : {'items': [], 'total': 0},
+            );
+          }),
+        )..workspace = 'w';
+        await tester.pumpWidget(
+          host(TeamEditorPage(api: api), locale: locale, scale: 2),
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('saveTeamMember')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(
+          host(
+            SubmissionFormPage(api: api, equipment: equipment),
+            locale: locale,
+            scale: 2,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('submissionAmount')),
+          '250',
+        );
+        tester.view.physicalSize = const Size(900, 800);
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('submissionAmount')))
+              .controller!
+              .text,
+          '250',
+        );
+        tester.view.physicalSize = const Size(320, 800);
+        tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+        addTearDown(tester.view.resetViewInsets);
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('sendSubmission')));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getRect(find.byKey(const Key('sendSubmission'))).bottom,
+          lessThanOrEqualTo(520),
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(
+          host(
+            ApprovalPage(
+              api: api,
+              submission: {
+                'id': 's',
+                'equipmentId': 'eq',
+                'amount': '250.00',
+                'transactionDate': '2026-10-02',
+              },
+            ),
+            locale: locale,
+            scale: 2,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('confirmApproval')));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getRect(find.byKey(const Key('confirmApproval'))).bottom,
+          lessThanOrEqualTo(520),
+        );
+        expect(tester.takeException(), isNull);
+        expect(writes, 0);
+      },
+    );
+  }
 
   for (final locale in ['ar', 'en', 'ur']) {
     testWidgets('maintenance form and issue actions fit320/200% $locale', (

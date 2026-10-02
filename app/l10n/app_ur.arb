@@ -1131,5 +1131,6 @@
   "previewRecordedExpenses": "درج شدہ اخراجات",
   "previewRecordedIncome": "درج شدہ آمدنی",
   "pilotEquipmentRecord": "مشین کا ریکارڈ",
-  "pilotOptionalConnections": "اختیاری روابط"
+  "pilotOptionalConnections": "اختیاری روابط",
+  "m5AccessRevoked": "رسائی واپس لے لی گئی"
 }

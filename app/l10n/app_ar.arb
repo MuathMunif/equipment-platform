@@ -1131,5 +1131,6 @@
   "previewRecordedExpenses": "المصروفات المسجلة",
   "previewRecordedIncome": "الإيرادات المسجلة",
   "pilotEquipmentRecord": "سجل المعدة",
-  "pilotOptionalConnections": "ارتباطات اختيارية"
+  "pilotOptionalConnections": "ارتباطات اختيارية",
+  "m5AccessRevoked": "وصول مسحوب"
 }

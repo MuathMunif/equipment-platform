@@ -12,7 +12,7 @@ All below are actual production `lib/main.dart`, connected local API/session, sy
 | Unsaved warning |1440|[unsaved](screenshots/almarai-rollout/unsaved-dialog-ar-1440.jpg)|Actual app modal and safe exit|
 | More |390|[more](screenshots/almarai-rollout/more-ar-390.jpg)|Existing owner destinations|
 | Account/settings |390|[settings](screenshots/almarai-rollout/settings-ar-390.jpg)|Existing user and language control|
-| Language dialog |390|[language](screenshots/almarai-rollout/language-dialog-ar-390.jpg)|Pre-width-fix: font verified, final minWidth280 recapture pending|
+| Language dialog |390|[language](screenshots/almarai-rollout/language-dialog-ar-390.jpg)|Recaptured batch5 final width280 on actualdriver dialog|
 
 EN/UR connected forms, native, other families and final review still pending. Widget ar/en/ur results are not connected screenshots.
 
@@ -24,3 +24,9 @@ Connected OWNER/en/390×1000 actual self-inspected: [finance](screenshots/almara
 
 ## Batch4 source (after3c5590c, current batch4 changes)
 Connected OWNER/en actual inspected: [openissue390](screenshots/almarai-rollout/issue-open-en-390.jpg), [linkedmaintenance1440](screenshots/almarai-rollout/maintenance-linked-en-1440.jpg), [closedissue390](screenshots/almarai-rollout/issue-closed-en-390.jpg). Height1000. Hover tint on relatedmaintenance row is pointerstate. No preview or duplicatedfinance.
+
+## Batch5 source (afterfd5326a, current batch5 changes)
+All connectedproduction/syntheticroles/height1000, self-inspected:
+- DRIVER: [ar390](screenshots/almarai-rollout/driver-ar-390.jpg), [en390](screenshots/almarai-rollout/driver-en-390.jpg), [ur390](screenshots/almarai-rollout/driver-ur-390.jpg), [UR form390](screenshots/almarai-rollout/driver-submit-ur-390.jpg) (finalstableunsaved250sample, discarded), [pendingUR](screenshots/almarai-rollout/driver-pending-ur-390.jpg), [approvedUR](screenshots/almarai-rollout/driver-approved-ur-390.jpg).
+- OWNER/reviewer: [requestEN390](screenshots/almarai-rollout/review-en-390.jpg), [approvalEN390](screenshots/almarai-rollout/approval-en-390.jpg), [teamEN1440](screenshots/almarai-rollout/team-en-1440.jpg), [teamUR390](screenshots/almarai-rollout/team-ur-390.jpg). Team images predate smallrevokedlabel+phoneisolatefix; finalrecapturepending.
+- SameuserworkspaceF: [selectorUR390](screenshots/almarai-rollout/workspace-picker-ur-390.jpg), [ownemptyUR390](screenshots/almarai-rollout/workspace-own-empty-ur-390.jpg). Actualemptyconnected, notharness.

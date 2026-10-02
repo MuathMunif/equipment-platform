@@ -4524,6 +4524,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ارتباطات اختيارية'**
   String get pilotOptionalConnections;
+
+  /// No description provided for @m5AccessRevoked.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصول مسحوب'**
+  String get m5AccessRevoked;
 }
 
 class _AppLocalizationsDelegate

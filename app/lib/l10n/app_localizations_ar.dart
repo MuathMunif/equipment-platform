@@ -2399,4 +2399,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pilotOptionalConnections => 'ارتباطات اختيارية';
+
+  @override
+  String get m5AccessRevoked => 'وصول مسحوب';
 }

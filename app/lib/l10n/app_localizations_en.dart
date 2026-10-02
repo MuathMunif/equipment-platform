@@ -2425,4 +2425,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pilotOptionalConnections => 'Optional connections';
+
+  @override
+  String get m5AccessRevoked => 'Access revoked';
 }

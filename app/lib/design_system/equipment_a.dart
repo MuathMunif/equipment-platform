@@ -230,10 +230,12 @@ abstract final class EquipmentA {
 class EquipmentPageBody extends StatelessWidget {
   final List<Widget> children;
   final double maxWidth;
+  final bool alwaysScrollable;
   const EquipmentPageBody({
     super.key,
     required this.children,
     this.maxWidth = 1240,
+    this.alwaysScrollable = false,
   });
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -242,6 +244,9 @@ class EquipmentPageBody extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: ListView(
+          physics: alwaysScrollable
+              ? const AlwaysScrollableScrollPhysics()
+              : null,
           padding: EdgeInsets.all(
             MediaQuery.sizeOf(context).width < 600 ? 20 : 32,
           ),

@@ -1131,5 +1131,6 @@
   "previewRecordedExpenses": "Recorded expenses",
   "previewRecordedIncome": "Recorded income",
   "pilotEquipmentRecord": "Equipment record",
-  "pilotOptionalConnections": "Optional connections"
+  "pilotOptionalConnections": "Optional connections",
+  "m5AccessRevoked": "Access revoked"
 }
