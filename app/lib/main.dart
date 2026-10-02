@@ -1195,6 +1195,9 @@ Future<bool> confirmLeave(BuildContext context) async =>
             child: Text(l10n(context).uiContinueEntry),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n(context).uiLeave),
           ),

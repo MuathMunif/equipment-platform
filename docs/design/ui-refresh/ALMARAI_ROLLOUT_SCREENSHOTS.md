@@ -28,7 +28,7 @@ Connected OWNER/en actual inspected: [openissue390](screenshots/almarai-rollout/
 ## Batch5 source (afterfd5326a, current batch5 changes)
 All connectedproduction/syntheticroles/height1000, self-inspected:
 - DRIVER: [ar390](screenshots/almarai-rollout/driver-ar-390.jpg), [en390](screenshots/almarai-rollout/driver-en-390.jpg), [ur390](screenshots/almarai-rollout/driver-ur-390.jpg), [UR form390](screenshots/almarai-rollout/driver-submit-ur-390.jpg) (finalstableunsaved250sample, discarded), [pendingUR](screenshots/almarai-rollout/driver-pending-ur-390.jpg), [approvedUR](screenshots/almarai-rollout/driver-approved-ur-390.jpg).
-- OWNER/reviewer: [requestEN390](screenshots/almarai-rollout/review-en-390.jpg), [approvalEN390](screenshots/almarai-rollout/approval-en-390.jpg), [teamEN1440](screenshots/almarai-rollout/team-en-1440.jpg), [teamUR390](screenshots/almarai-rollout/team-ur-390.jpg). Team images predate smallrevokedlabel+phoneisolatefix; finalrecapturepending.
+- OWNER/reviewer: [requestEN390](screenshots/almarai-rollout/review-en-390.jpg), [approvalEN390](screenshots/almarai-rollout/approval-en-390.jpg), [teamEN1440](screenshots/almarai-rollout/team-en-1440.jpg), [teamUR390](screenshots/almarai-rollout/team-ur-390.jpg). Both team images recaptured during final closeout with revoked label and isolated LTR phone.
 - SameuserworkspaceF: [selectorUR390](screenshots/almarai-rollout/workspace-picker-ur-390.jpg), [ownemptyUR390](screenshots/almarai-rollout/workspace-own-empty-ur-390.jpg). Actualemptyconnected, notharness.
 
 
@@ -46,5 +46,16 @@ All connected synthetic OWNER0802; height1000 unless native. Saved and self-insp
 | Current renewed insurance | ur/390 | [document](screenshots/almarai-rollout/document-ur-390.jpg) | Current2027, new version has no attachments |
 | Receipt-first draft | ur/390 | [draft](screenshots/almarai-rollout/draft-ur-390.jpg) | Unique unposted draft, actual ready file |
 | Native expense form/software keyboard | ur/iPhone17Pro | [iOS keyboard](screenshots/almarai-rollout/ios-expense-ur-keyboard.png) | Actual app restored session;123.45 unsaved, software keyboard |
-| Native unsaved dialog | ur/iPhone17Pro | [iOS dialog](screenshots/almarai-rollout/ios-unsaved-ur.png) | Left safely, no new expense |
+| Native unsaved dialog | ur/iPhone17Pro | [iOS dialog](screenshots/almarai-rollout/ios-unsaved-ur.png) | Left safely; PRE final P3 Leave-color fix, see final web image below |
 Native window PNGs include simulator chrome (774×1666); native keyboards/system viewers are not app-controlled typography. No image generation or fake fixtures injected into the production app.
+
+
+## Final review fix and gap closure (25a65bf + final visual fix)
+| Screen | Locale / role / viewport | File | Evidence |
+|---|---|---|---|
+| Login | ar / unauthenticated /390×1000 | [login](screenshots/almarai-rollout/login-ar-390.jpg) | Actual local development login, no SMS |
+| Notifications | en / synthetic OWNER0030 /390×1000 | [notifications](screenshots/almarai-rollout/notifications-en-390.jpg) | Six pre-existing rows; not marked read |
+| Equipment form | ar / synthetic OWNER0802 /390×1000 | [form](screenshots/almarai-rollout/equipment-form-ar-390.jpg) | Name/model only, sample discarded without save |
+| Unsaved confirmation, FINAL | ar / synthetic OWNER0802 /390×1000 | [fixed dialog](screenshots/almarai-rollout/unsaved-fixed-ar-390.jpg) | P3 review fix: Leave is semantic destructive color |
+
+Final self-review covers latest teamEN1440/UR390 replacements. Independent review inspected four baseline +14 rollout images named in its report, not every image in this index; newer gap-closure/fix images are self-reviewed only. No complete manual matrix claim. [Review details](ALMARAI_ROLLOUT_DELIVERY.md).

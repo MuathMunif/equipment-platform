@@ -1,3 +1,5 @@
+> Final implementation coverage: all inventoried rows migrated. Full211 tests, final focused57 after visual fix, analyze and builds recorded in [delivery](ALMARAI_ROLLOUT_DELIVERY.md). Historical batch notes below preserve what was pending at each checkpoint; this final closeout supersedes their pending-capture wording. No all-state/all-device claim.
+
 # Existing application UI coverage
 
 Inventory derived from actual production Widget destinations and overlays, baseline `6f61d3b`. Shared theme propagation is not visual verification. Guards below summarize existing behavior; exact control gates are checked per batch. [Actual screenshots](ALMARAI_ROLLOUT_SCREENSHOTS.md).
@@ -102,3 +104,5 @@ Every inventoried route above now has explicit A composition or a shared A contr
 Final representative UR finance/document/draft and native expense/keyboard/unsaved screens added. Draft actual ready attachment, completion/discard options, stored note and no recognized amount; prior draft recovery/error tests remain automated evidence. AR error uses real blocked organization archive; connected empty workspace/driver scope remains separate evidence. Historical images predating refinements are marked in the image index.
 
 Limits: Android execution blocked by disk; no physical-device, interactive screen-reader or native Urdu linguistic certification. Not every archive/restore/revocation/cancellation state was re-executed on real data; widget tests and unchanged backend CI are distinct evidence. Accountant0032 connected negative-access campaign not repeated. Native coordinate-scroll tooling failed; 200% and keyboard bottom reach are widget evidence, not a complete native matrix. No GPS or new product routes.
+
+Final additions: login AR and populated unsaved equipment form; notifications EN with six existing rows; team EN/UR recaptured with latest labels/phone direction. Independent visual review: no P0–P2, one P3 Leave-color fixed and self-verified on web. Native Android final rebuild/launch blocked by disk; earlier APK success distinguished from final source. See delivery table for exact boundary.
