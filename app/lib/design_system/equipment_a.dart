@@ -390,6 +390,67 @@ class EquipmentFieldRow extends StatelessWidget {
   );
 }
 
+/// Bounded, wrapping report tiles; no fixed heights or reduced text scaling.
+class EquipmentGrid extends StatelessWidget {
+  final List<Widget> children;
+  const EquipmentGrid({super.key, required this.children});
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+      final columns = largeText || box.maxWidth < 560
+          ? 1
+          : box.maxWidth < 900
+          ? 2
+          : 3;
+      final width = (box.maxWidth - 12 * (columns - 1)) / columns;
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          for (final child in children) SizedBox(width: width, child: child),
+        ],
+      );
+    },
+  );
+}
+
+class EquipmentValue extends StatelessWidget {
+  final String label, value;
+  const EquipmentValue({super.key, required this.label, required this.value});
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final valueText = Text(
+        value,
+        style: Theme.of(context).textTheme.titleLarge,
+      );
+      if (box.maxWidth < 440 ||
+          MediaQuery.textScalerOf(context).scale(14) > 21) {
+        return SizedBox(
+          width: box.maxWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [Text(label), const SizedBox(height: 6), valueText],
+          ),
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: Text(label)),
+          const SizedBox(width: 20),
+          Flexible(
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: valueText,
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 class EquipmentCanvas extends StatelessWidget {
   final List<Widget> children;
   const EquipmentCanvas({super.key, required this.children});

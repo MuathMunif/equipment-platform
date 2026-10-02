@@ -5,7 +5,9 @@ import 'package:equipment_app/design_system/equipment_a.dart';
 import 'package:equipment_app/design_system/equipment_typography.dart';
 import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:equipment_app/main.dart';
+import 'package:equipment_app/reports.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -41,6 +43,147 @@ void viewport(WidgetTester tester, double width, [double height = 1000]) {
 const equipment = {'id': 'eq', 'name': 'شاحنة الاختبار Volvo FH 460'};
 
 void main() {
+  setUpAll(() async {
+    for (final entry in {
+      EquipmentTypography.family: 'Almarai',
+      EquipmentTypography.fallbackFamily: 'IBMPlexSansArabic',
+    }.entries) {
+      final loader = FontLoader(entry.key);
+      for (final weight in ['Regular', 'Bold']) {
+        loader.addFont(
+          rootBundle.load('assets/typography_fonts/${entry.value}-$weight.ttf'),
+        );
+      }
+      await loader.load();
+    }
+  });
+
+  for (final locale in ['ar', 'en', 'ur']) {
+    testWidgets(
+      'financial value and refund modal fit320 with real fonts and keyboard $locale',
+      (tester) async {
+        viewport(tester, 320, 800);
+        final api = Api(
+          persistNative: false,
+          client: MockClient(
+            (r) async => response(
+              r.url.path.endsWith('/attachments')
+                  ? []
+                  : {
+                      'id': 'e',
+                      'entryType': 'EXPENSE',
+                      'category': 'FUEL',
+                      'equipmentName': 'معدات الاختبار Volvo 460',
+                      'expenseScope': 'SINGLE',
+                      'operationDate': '2026-10-02',
+                      'amount': '999999999.99',
+                      'paid': '600.00',
+                      'netPaid': '400.00',
+                      'refunded': '200.00',
+                      'remaining': '999999599.99',
+                      'refundable': '400.00',
+                      'settlementStatus': 'PARTIAL',
+                      'lifecycle': 'POSTED',
+                      'partyName': 'مورد اختبار',
+                      'note': '',
+                      'settlements': [],
+                      'refunds': [],
+                    },
+            ),
+          ),
+        )..workspace = 'w';
+        await tester.pumpWidget(
+          host(
+            EntryDetail(api: api, id: 'e'),
+            locale: locale,
+            scale: 2,
+          ),
+        );
+        await tester.pumpAndSettle();
+        final amount = find.textContaining('999,999,999.99');
+        expect(amount, findsOneWidget);
+        final paragraph = tester.renderObject<RenderParagraph>(amount);
+        for (final box in paragraph.getBoxesForSelection(
+          TextSelection(
+            baseOffset: 0,
+            extentOffset: paragraph.text.toPlainText().length,
+          ),
+        )) {
+          expect(box.left, greaterThanOrEqualTo(-1));
+          expect(box.right, lessThanOrEqualTo(paragraph.size.width + 1));
+        }
+        await tester.ensureVisible(find.byKey(const Key('addRefund')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('addRefund')));
+        await tester.pumpAndSettle();
+        tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.enterText(find.byKey(const Key('refundAmount')), '200');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('refundReason')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('refundReason')),
+          'اختبار فقط',
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('saveRefund')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('saveRefund')).hitTestable(),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('month picker keeps every month reachable at320 and200%', (
+    tester,
+  ) async {
+    viewport(tester, 320, 800);
+    final api = Api(
+      persistNative: false,
+      client: MockClient(
+        (_) async => response({
+          'activeEquipmentCount': 1,
+          'summary': {'recordedExpenses': '1000.00', 'recordedIncome': '0.00'},
+          'recentEntries': [],
+        }),
+      ),
+    )..workspace = 'w';
+    await tester.pumpWidget(
+      host(
+        Scaffold(
+          body: EquipmentPageBody(
+            children: [
+              DashboardSection(
+                api: api,
+                canFinance: true,
+                canManage: true,
+                canSubmitReview: false,
+              ),
+            ],
+          ),
+        ),
+        scale: 2,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('dashboardMonth')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('ديسمبر'),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(GridView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('ديسمبر').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('navigation wraps at 200% with keyboard access', (tester) async {
     viewport(tester, 320);
     int selected = 0;
@@ -283,6 +426,89 @@ void main() {
         expect(reads.length, count);
         expect(tester.takeException(), isNull);
       }
+    },
+  );
+
+  testWidgets(
+    'uncertain shared save freezes allocations and project and retries identical request',
+    (tester) async {
+      viewport(tester, 1440, 1400);
+      final writes = <http.Request>[];
+      final api = Api(
+        persistNative: false,
+        client: MockClient((r) async {
+          if (r.method == 'GET') {
+            return response({
+              'items': [
+                equipment,
+                {'id': 'eq2', 'name': 'الثانية'},
+              ],
+              'total': 2,
+            });
+          }
+          writes.add(r);
+          return http.Response(
+            '{"code":"NETWORK","message":"unavailable"}',
+            503,
+          );
+        }),
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(ExpenseForm(api: api, equipment: equipment)),
+      );
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byKey(const Key('expenseScope')),
+          )
+          .onChanged!('SHARED');
+      await tester.pumpAndSettle();
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byKey(const Key('allocationEquipment1')),
+          )
+          .onChanged!('eq2');
+      await tester.enterText(find.byKey(const Key('expenseAmount')), '1000');
+      await tester.enterText(find.byKey(const Key('allocationAmount0')), '600');
+      await tester.enterText(find.byKey(const Key('allocationAmount1')), '400');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      expect(writes.length, 1);
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('allocationAmount0')))
+            .enabled,
+        isFalse,
+      );
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('allocationAmount1')))
+            .enabled,
+        isFalse,
+      );
+      await tester.ensureVisible(find.text('تفاصيل إضافية'));
+      await tester.tap(find.text('تفاصيل إضافية'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<OutlinedButton>(find.byKey(const Key('financeProject')))
+            .onPressed,
+        isNull,
+      );
+      await tester.ensureVisible(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saveExpense')));
+      await tester.pumpAndSettle();
+      expect(writes.length, 2);
+      expect(writes[1].body, writes[0].body);
+      expect(
+        writes[1].headers['Idempotency-Key'],
+        writes[0].headers['Idempotency-Key'],
+      );
+      expect(tester.takeException(), isNull);
     },
   );
 }

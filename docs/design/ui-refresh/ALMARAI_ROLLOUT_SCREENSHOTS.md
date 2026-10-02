@@ -15,3 +15,6 @@ All below are actual production `lib/main.dart`, connected local API/session, sy
 | Language dialog |390|[language](screenshots/almarai-rollout/language-dialog-ar-390.jpg)|Pre-width-fix: font verified, final minWidth280 recapture pending|
 
 EN/UR connected forms, native, other families and final review still pending. Widget ar/en/ur results are not connected screenshots.
+
+## Batch2 — connected production / synthetic OWNER
+Actual images captured and self-inspected: `refund-dialog-ar-390.jpg`, `entry-refunded-ar-390.jpg`, `entry-refunded-ar-1440.jpg`, `entry-history-attachment-ar-390.jpg`, `receipt-viewer-ar-390.jpg`, `report-recorded-ar-1440.jpg`, `report-movements-ar-1440.jpg`, `report-outstanding-ar-390.jpg` in `screenshots/almarai-rollout/`. Financial detail images predate final amount-edge alignment and attachment-margin correction; recapture before final review. Reports show real current synthetic data; outstanding is all-time current600, not an October snapshot. Receipt image350 is an existing generic synthetic attachment, not a calculation input for entry1000.

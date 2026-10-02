@@ -1711,6 +1711,7 @@ class _LedgerPageState extends State<LedgerPage> {
     initialValue: value,
     decoration: InputDecoration(labelText: label),
     isExpanded: true,
+    itemHeight: null,
     items: [
       DropdownMenuItem(value: '', child: Text(l10n(context).uiAll)),
       ...choices.entries.map(
@@ -1879,8 +1880,7 @@ class _LedgerPageState extends State<LedgerPage> {
     if (widget.equipmentPilot) return equipmentPresentation();
     if (loading) return const Center(child: CircularProgressIndicator());
     if (error != null) return ErrorPanel(message: error!, retry: load);
-    return ListView(
-      padding: const EdgeInsets.all(24),
+    return EquipmentPageBody(
       children: [
         if (widget.equipment == null) ...[
           if (widget.canManage)
@@ -2085,55 +2085,7 @@ class _LedgerPageState extends State<LedgerPage> {
             ),
           ),
         ),
-    ...items.map(
-      (entry) => widget.equipmentPilot
-          ? pilotEntry(entry)
-          : Card(
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                leading: const CircleAvatar(
-                  child: Icon(Icons.receipt_long_outlined),
-                ),
-                title: Text(
-                  '${entry['entryType'] == 'INCOME' ? l10n(context).income : localizedCategory(context, entry['category'])} • ${entry['expenseScope'] == 'GENERAL'
-                      ? l10n(context).generalExpense
-                      : entry['expenseScope'] == 'SHARED'
-                      ? l10n(context).uiMultipleEquipment
-                      : entry['equipmentName']}',
-                ),
-                subtitle: Text(
-                  l10n(context).entryDateStatus(
-                    localizedDate(context, entry['operationDate'] as String),
-                    entry['lifecycle'] == 'CANCELLED'
-                        ? l10n(context).cancelled
-                        : localizedFinancialStatus(
-                            context,
-                            entry['entryType'] == 'INCOME',
-                            entry['settlementStatus'],
-                          ),
-                  ),
-                ),
-                isThreeLine: true,
-                trailing: Text(
-                  localizedMoney(context, entry['amount']),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: brand,
-                  ),
-                ),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        EntryDetail(api: widget.api, id: entry['id']),
-                  ),
-                ),
-              ),
-            ),
-    ),
+    ...items.map(entryCard),
     Pager(
       page: page,
       total: total,
@@ -2143,7 +2095,7 @@ class _LedgerPageState extends State<LedgerPage> {
       },
     ),
   ];
-  Widget pilotEntry(dynamic entry) => Padding(
+  Widget entryCard(dynamic entry) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Card(
       child: InkWell(
@@ -2649,8 +2601,7 @@ class _DraftListPageState extends State<DraftListPage> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? ErrorPanel(message: error!, retry: load)
-        : ListView(
-            padding: const EdgeInsets.all(24),
+        : EquipmentPageBody(
             children: [
               if (items.isEmpty)
                 Card(
@@ -2661,6 +2612,7 @@ class _DraftListPageState extends State<DraftListPage> {
                 ),
               ...items.map(
                 (draft) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text(draft['equipmentName'] as String),
                     subtitle: Text(
@@ -2928,54 +2880,64 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
         : error != null
         ? ErrorPanel(message: error!, retry: load)
         : FormBody(
+            panel: false,
             children: [
-              Text(
-                draft!['equipmentName'] as String,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(l10n(context).uiThisInvoiceIsSavedForLaterCompletion),
-              if ((draft!['note'] as String).isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(l10n(context).noteValue('${draft!['note']}')),
-                ),
-              const SizedBox(height: 24),
-              Text(
-                l10n(context).attachments,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              if (attachments.isEmpty) Text(l10n(context).noAttachments),
-              ...attachments.map(
-                (file) => ListTile(
-                  title: Text(file['filename'] as String),
-                  subtitle: Text(
-                    file['state'] == 'READY'
-                        ? l10n(context).uiReadyToView
-                        : file['state'] == 'FAILED'
-                        ? l10n(context).uiUploadFailedTryAgain
-                        : l10n(context).uiUploadIncomplete,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    draft!['equipmentName'] as String,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  onTap: file['state'] == 'READY'
-                      ? () => openAttachment(Map<String, dynamic>.from(file))
-                      : null,
-                ),
+                  const SizedBox(height: 8),
+                  Text(l10n(context).uiThisInvoiceIsSavedForLaterCompletion),
+                  if ((draft!['note'] as String).isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(l10n(context).noteValue('${draft!['note']}')),
+                    ),
+                ],
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const Key('addDraftAttachment'),
-                onPressed: busy ? null : addAttachment,
-                icon: const Icon(Icons.attach_file),
-                label: Text(l10n(context).uiAddAttachment),
+              const SizedBox(height: 24),
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    l10n(context).attachments,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (attachments.isEmpty) Text(l10n(context).noAttachments),
+                  ...attachments.map(
+                    (file) => ListTile(
+                      title: Text(file['filename'] as String),
+                      subtitle: Text(
+                        file['state'] == 'READY'
+                            ? l10n(context).uiReadyToView
+                            : file['state'] == 'FAILED'
+                            ? l10n(context).uiUploadFailedTryAgain
+                            : l10n(context).uiUploadIncomplete,
+                      ),
+                      onTap: file['state'] == 'READY'
+                          ? () =>
+                                openAttachment(Map<String, dynamic>.from(file))
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('addDraftAttachment'),
+                    onPressed: busy ? null : addAttachment,
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(l10n(context).uiAddAttachment),
+                  ),
+                  if (bytes != null && uploadError != null)
+                    TextButton(
+                      key: const Key('retryDraftAttachment'),
+                      onPressed: busy ? null : upload,
+                      child: Text(l10n(context).uiRetryFileUpload),
+                    ),
+                  InlineError(uploadError),
+                ],
               ),
-              if (bytes != null && uploadError != null)
-                TextButton(
-                  key: const Key('retryDraftAttachment'),
-                  onPressed: busy ? null : upload,
-                  child: Text(l10n(context).uiRetryFileUpload),
-                ),
-              InlineError(uploadError),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               FilledButton(
                 key: const Key('completeDraftExpense'),
                 onPressed: busy ? null : () => complete(),
@@ -2990,6 +2952,9 @@ class _DraftDetailPageState extends State<DraftDetailPage> {
               const SizedBox(height: 12),
               TextButton(
                 key: const Key('discardDraft'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
                 onPressed: busy ? null : discard,
                 child: Text(l10n(context).uiDiscardDraft),
               ),
@@ -3400,6 +3365,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
                         second: TextFormField(
                           key: Key('allocationAmount${item.key}'),
                           controller: item.value.amount,
+                          enabled: !busy && !uncertain,
                           textDirection: TextDirection.ltr,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
@@ -3640,7 +3606,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
                     children: [
                       OutlinedButton.icon(
                         key: const Key('financeProject'),
-                        onPressed: busy ? null : chooseProject,
+                        onPressed: busy || uncertain ? null : chooseProject,
                         icon: const Icon(Icons.folder_outlined),
                         label: Text(
                           projectName ?? l10n(context).m6ProjectClassification,
@@ -4202,8 +4168,10 @@ class _EntryDetailState extends State<EntryDetail> {
           title: Text(l10n(context).uiCancelEntry),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(l10n(context).uiPaymentsAndAttachmentsWillRemainInThe),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('cancellationReason'),
                 onChanged: (value) => reason = value,
@@ -4224,6 +4192,10 @@ class _EntryDetailState extends State<EntryDetail> {
             ),
             FilledButton(
               key: const Key('confirmCancellation'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
               onPressed: saving
                   ? null
                   : () async {
@@ -4285,6 +4257,7 @@ class _EntryDetailState extends State<EntryDetail> {
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 l10n(context).remainingValue(
@@ -4294,6 +4267,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   localizedMoney(context, entry!['remaining']),
                 ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 onChanged: (value) => paymentAmount = value,
                 enabled: !saving,
@@ -4307,6 +4281,7 @@ class _EntryDetailState extends State<EntryDetail> {
                       : l10n(context).uiInitialPayment,
                 ),
               ),
+              const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: saving
                     ? null
@@ -4408,6 +4383,7 @@ class _EntryDetailState extends State<EntryDetail> {
           title: Text(l10n(context).uiRecordRefund),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 income
@@ -4418,6 +4394,7 @@ class _EntryDetailState extends State<EntryDetail> {
                         localizedMoney(context, entry!['refundable']),
                       ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('refundAmount'),
                 onChanged: (value) => refundAmount = value,
@@ -4430,6 +4407,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   labelText: l10n(context).uiRefundAmount,
                 ),
               ),
+              const SizedBox(height: 16),
               OutlinedButton(
                 key: const Key('refundDate'),
                 onPressed: saving
@@ -4454,6 +4432,7 @@ class _EntryDetailState extends State<EntryDetail> {
                   l10n(context).refundDate(localizedDate(context, refundedOn)),
                 ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('refundReason'),
                 onChanged: (value) => reason = value,
@@ -4466,6 +4445,7 @@ class _EntryDetailState extends State<EntryDetail> {
               ),
               if (needsParty) ...[
                 Text(l10n(context).uiABalanceWillRemainAfterTheRefund),
+                const SizedBox(height: 16),
                 TextField(
                   key: const Key('refundPartyName'),
                   onChanged: (value) => partyName = value,
@@ -4780,70 +4760,82 @@ class _EntryDetailState extends State<EntryDetail> {
         ? const Center(child: CircularProgressIndicator())
         : error != null
         ? ErrorPanel(message: error!, retry: load)
-        : FormBody(
+        : EquipmentPageBody(
+            maxWidth: 960,
             children: [
-              Text(
-                '${income ? l10n(context).income : localizedCategory(context, entry!['category'])} • ${entry!['expenseScope'] == 'GENERAL'
-                    ? l10n(context).generalExpense
-                    : entry!['expenseScope'] == 'SHARED'
-                    ? l10n(context).uiMultipleEquipment
-                    : entry!['equipmentName']}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(localizedDate(context, entry!['operationDate'] as String)),
-              if (cancelled) ...[
-                const SizedBox(height: 12),
-                Card(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n(context).cancelledEntry,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          l10n(context).cancelReasonValue(
-                            '${entry!['cancellationReason']}',
-                          ),
-                        ),
-                        Text(
-                          l10n(context).cancelDateValue(
-                            localizedRiyadhDateTime(
-                              context,
-                              entry!['cancelledAt'] as String,
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    '${income ? l10n(context).income : localizedCategory(context, entry!['category'])} • ${entry!['expenseScope'] == 'GENERAL'
+                        ? l10n(context).generalExpense
+                        : entry!['expenseScope'] == 'SHARED'
+                        ? l10n(context).uiMultipleEquipment
+                        : entry!['equipmentName']}',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localizedDate(context, entry!['operationDate'] as String),
+                  ),
+                  if (cancelled) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n(context).cancelledEntry,
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                          ),
+                            Text(
+                              l10n(context).cancelReasonValue(
+                                '${entry!['cancellationReason']}',
+                              ),
+                            ),
+                            Text(
+                              l10n(context).cancelDateValue(
+                                localizedRiyadhDateTime(
+                                  context,
+                                  entry!['cancelledAt'] as String,
+                                ),
+                              ),
+                            ),
+                            Text(l10n(context).cancelledAmountsHistory),
+                          ],
                         ),
-                        Text(l10n(context).cancelledAmountsHistory),
+                      ),
+                    ),
+                  ] else if (widget.api.canPostFinance) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          key: const Key('editEntry'),
+                          onPressed: editEntry,
+                          icon: const Icon(Icons.edit_outlined),
+                          label: Text(l10n(context).edit),
+                        ),
+                        TextButton.icon(
+                          key: const Key('cancelEntry'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .error,
+                          ),
+                          onPressed: cancelEntry,
+                          icon: const Icon(Icons.cancel_outlined),
+                          label: Text(l10n(context).uiCancelEntry),
+                        ),
                       ],
                     ),
-                  ),
-                ),
-              ] else if (widget.api.canPostFinance) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      key: const Key('editEntry'),
-                      onPressed: editEntry,
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(l10n(context).edit),
-                    ),
-                    TextButton.icon(
-                      key: const Key('cancelEntry'),
-                      onPressed: cancelEntry,
-                      icon: const Icon(Icons.cancel_outlined),
-                      label: Text(l10n(context).uiCancelEntry),
-                    ),
                   ],
-                ),
-              ],
-              const SizedBox(height: 20),
+                ],
+              ),
+              const SizedBox(height: 24),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -4934,249 +4926,265 @@ class _EntryDetailState extends State<EntryDetail> {
                 )),
                 const SizedBox(height: 16),
               ],
-              if (entry!['projectId'] != null ||
-                  (!cancelled && widget.api.canPostFinance)) ...[
-                const SizedBox(height: 12),
-                ListTile(
-                  title: Text(l10n(context).m6ProjectClassification),
-                  subtitle: Text(
-                    projectName ??
-                        (entry!['projectId'] == null
-                            ? l10n(context).m6NoProjects
-                            : l10n(context).m6ProjectsContracts),
-                  ),
-                  trailing: cancelled || !widget.api.canPostFinance
-                      ? null
-                      : const Icon(Icons.edit_outlined),
-                  onTap: cancelled || !widget.api.canPostFinance
-                      ? null
-                      : () async {
-                          final selected =
-                              await showDialog<Map<String, dynamic>>(
-                                context: context,
-                                builder: (_) => ProjectSearchPicker(
-                                  api: widget.api,
-                                  includeArchived: false,
-                                  allowNone: true,
-                                  selectedId: entry!['projectId'] as String?,
-                                  selectedName: projectName,
-                                ),
-                              );
-                          if (selected == null || !mounted) return;
-                          try {
-                            await widget.api.json(
-                              'PUT',
-                              widget.api.scoped(
-                                '/entries/${widget.id}/project',
-                              ),
-                              body: {'projectId': selected['id']},
-                            );
-                            await load();
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(localizedError(context, e)),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                ),
-              ],
-              if (entry!['partyName'] != null)
-                Text(l10n(context).partyValue('${entry!['partyName']}')),
-              if (entry!['dueDate'] != null)
-                Text(
-                  l10n(context).dueDateValue(
-                    localizedDate(context, entry!['dueDate'] as String),
-                  ),
-                ),
-              if (widget.api.canPostFinance &&
-                  !cancelled &&
-                  entry!['settlementStatus'] != 'PAID') ...[
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: addPayment,
-                  icon: const Icon(Icons.add),
-                  label: Text(
-                    income
-                        ? l10n(context).uiAddReceipt
-                        : l10n(context).uiAddPayment,
-                  ),
-                ),
-              ],
-              if (widget.api.canPostFinance && canRefund) ...[
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  key: const Key('addRefund'),
-                  onPressed: addRefund,
-                  icon: const Icon(Icons.undo_outlined),
-                  label: Text(l10n(context).uiRecordRefund),
-                ),
-              ],
-              const SizedBox(height: 24),
-              Text(
-                income ? l10n(context).uiReceipts : l10n(context).uiPayments,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              ...((entry!['settlements'] as List).map(
-                (s) => ListTile(
-                  leading: const Icon(Icons.payments_outlined),
-                  title: Text(localizedMoney(context, s['amount'])),
-                  subtitle: Text(
-                    income
-                        ? l10n(context).receivedOn(
-                            localizedDate(context, s['paidOn'] as String),
-                          )
-                        : l10n(context).paidOn(
-                            localizedDate(context, s['paidOn'] as String),
-                          ),
-                  ),
-                ),
-              )),
-              if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 24),
-                Text(
-                  l10n(context).uiRefunds,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                ...((entry!['refunds'] as List).map(
-                  (r) => ListTile(
-                    leading: const Icon(Icons.undo_outlined),
-                    title: Text(localizedMoney(context, r['amount'])),
-                    subtitle: Text(
-                      l10n(context).refundRecord(
+              EquipmentFormSection(
+                children: [
+                  if (entry!['projectId'] != null ||
+                      (!cancelled && widget.api.canPostFinance)) ...[
+                    const SizedBox(height: 12),
+                    ListTile(
+                      title: Text(l10n(context).m6ProjectClassification),
+                      subtitle: Text(
+                        projectName ??
+                            (entry!['projectId'] == null
+                                ? l10n(context).m6NoProjects
+                                : l10n(context).m6ProjectsContracts),
+                      ),
+                      trailing: cancelled || !widget.api.canPostFinance
+                          ? null
+                          : const Icon(Icons.edit_outlined),
+                      onTap: cancelled || !widget.api.canPostFinance
+                          ? null
+                          : () async {
+                              final selected =
+                                  await showDialog<Map<String, dynamic>>(
+                                    context: context,
+                                    builder: (_) => ProjectSearchPicker(
+                                      api: widget.api,
+                                      includeArchived: false,
+                                      allowNone: true,
+                                      selectedId:
+                                          entry!['projectId'] as String?,
+                                      selectedName: projectName,
+                                    ),
+                                  );
+                              if (selected == null || !mounted) return;
+                              try {
+                                await widget.api.json(
+                                  'PUT',
+                                  widget.api.scoped(
+                                    '/entries/${widget.id}/project',
+                                  ),
+                                  body: {'projectId': selected['id']},
+                                );
+                                await load();
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(localizedError(context, e)),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                    ),
+                  ],
+                  if (entry!['partyName'] != null)
+                    Text(l10n(context).partyValue('${entry!['partyName']}')),
+                  if (entry!['dueDate'] != null)
+                    Text(
+                      l10n(context).dueDateValue(
+                        localizedDate(context, entry!['dueDate'] as String),
+                      ),
+                    ),
+                  if (widget.api.canPostFinance &&
+                      !cancelled &&
+                      entry!['settlementStatus'] != 'PAID') ...[
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: addPayment,
+                      icon: const Icon(Icons.add),
+                      label: Text(
                         income
-                            ? l10n(context).uiReturnedToTheCustomerOrOtherParty
-                            : l10n(context).uiReturnedToYouByTheOtherParty,
-                        localizedDate(context, r['refundedOn'] as String),
-                        '${r['reason']}',
+                            ? l10n(context).uiAddReceipt
+                            : l10n(context).uiAddPayment,
+                      ),
+                    ),
+                  ],
+                  if (widget.api.canPostFinance && canRefund) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      key: const Key('addRefund'),
+                      onPressed: addRefund,
+                      icon: const Icon(Icons.undo_outlined),
+                      label: Text(l10n(context).uiRecordRefund),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 24),
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    income
+                        ? l10n(context).uiReceipts
+                        : l10n(context).uiPayments,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  ...((entry!['settlements'] as List).map(
+                    (s) => ListTile(
+                      leading: const Icon(Icons.payments_outlined),
+                      title: Text(localizedMoney(context, s['amount'])),
+                      subtitle: Text(
+                        income
+                            ? l10n(context).receivedOn(
+                                localizedDate(context, s['paidOn'] as String),
+                              )
+                            : l10n(context).paidOn(
+                                localizedDate(context, s['paidOn'] as String),
+                              ),
+                      ),
+                    ),
+                  )),
+                  if ((entry!['refunds'] as List?)?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n(context).uiRefunds,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    ...((entry!['refunds'] as List).map(
+                      (r) => ListTile(
+                        leading: const Icon(Icons.undo_outlined),
+                        title: Text(localizedMoney(context, r['amount'])),
+                        subtitle: Text(
+                          l10n(context).refundRecord(
+                            income
+                                ? l10n(context)
+                                      .uiReturnedToTheCustomerOrOtherParty
+                                : l10n(context).uiReturnedToYouByTheOtherParty,
+                            localizedDate(context, r['refundedOn'] as String),
+                            '${r['reason']}',
+                          ),
+                        ),
+                      ),
+                    )),
+                  ],
+                  if (entry!['note'] != '') ...[
+                    const Divider(),
+                    Text(l10n(context).noteValue('${entry!['note']}')),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 24),
+              EquipmentFormSection(
+                children: [
+                  Text(
+                    l10n(context).attachments,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(l10n(context).filesHelp),
+                  const SizedBox(height: 12),
+                  if (attachments.isEmpty)
+                    Text(l10n(context).noEntryAttachments),
+                ...attachments.map(
+                  (file) => Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              file['filename'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              file['state'] == 'READY'
+                                  ? l10n(context).uiReadyToView
+                                  : file['state'] == 'FAILED'
+                                  ? l10n(context).uiAttachmentUploadFailed
+                                  : l10n(context).uiUploadIncomplete,
+                            ),
+                            if (file['state'] == 'READY')
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: uploading
+                                        ? null
+                                        : () => open(file),
+                                    icon: const Icon(Icons.visibility_outlined),
+                                    label: Text(
+                                      file['mediaType'] == 'application/pdf'
+                                          ? (kIsWeb
+                                                ? l10n(context).uiDownloadPdf
+                                                : l10n(context).uiOpenPdf)
+                                          : l10n(context).uiViewAttachment,
+                                    ),
+                                  ),
+                                  if (kIsWeb &&
+                                      file['mediaType'] != 'application/pdf')
+                                    TextButton.icon(
+                                      onPressed: uploading
+                                          ? null
+                                          : () => open(file, download: true),
+                                      icon: const Icon(Icons.download_outlined),
+                                      label: Text(
+                                        l10n(context).uiDownloadAttachment,
+                                      ),
+                                    ),
+                                ],
+                              )
+                            else
+                              TextButton(
+                                onPressed: uploading
+                                    ? null
+                                    : () => select(
+                                        retry: Map<String, dynamic>.from(file),
+                                      ),
+                                child: Text(
+                                  l10n(context).uiUploadAttachmentAgain,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                )),
-              ],
-              if (entry!['note'] != '') ...[
-                const Divider(),
-                Text(l10n(context).noteValue('${entry!['note']}')),
-              ],
-              const SizedBox(height: 24),
-              Text(
-                l10n(context).attachments,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(l10n(context).filesHelp),
-              const SizedBox(height: 12),
-              if (attachments.isEmpty) Text(l10n(context).noEntryAttachments),
-              ...attachments.map(
-                (file) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  InlineError(uploadError),
+                  if (uploading) ...[
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 12),
+                    Text(l10n(context).uiUploadingAndCheckingAttachment),
+                  ] else if (pendingBytes != null)
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
-                        Text(
-                          file['filename'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        FilledButton.icon(
+                          onPressed: upload,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(l10n(context).uiUploadAttachmentAgain),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          file['state'] == 'READY'
-                              ? l10n(context).uiReadyToView
-                              : file['state'] == 'FAILED'
-                              ? l10n(context).uiAttachmentUploadFailed
-                              : l10n(context).uiUploadIncomplete,
+                        OutlinedButton(
+                          onPressed: () => select(),
+                          child: Text(l10n(context).uiChooseAnotherFile),
                         ),
-                        if (file['state'] == 'READY')
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              TextButton.icon(
-                                onPressed: uploading ? null : () => open(file),
-                                icon: const Icon(Icons.visibility_outlined),
-                                label: Text(
-                                  file['mediaType'] == 'application/pdf'
-                                      ? (kIsWeb
-                                            ? l10n(context).uiDownloadPdf
-                                            : l10n(context).uiOpenPdf)
-                                      : l10n(context).uiViewAttachment,
-                                ),
-                              ),
-                              if (kIsWeb &&
-                                  file['mediaType'] != 'application/pdf')
-                                TextButton.icon(
-                                  onPressed: uploading
-                                      ? null
-                                      : () => open(file, download: true),
-                                  icon: const Icon(Icons.download_outlined),
-                                  label: Text(
-                                    l10n(context).uiDownloadAttachment,
-                                  ),
-                                ),
-                            ],
-                          )
-                        else
-                          TextButton(
-                            onPressed: uploading
-                                ? null
-                                : () => select(
-                                    retry: Map<String, dynamic>.from(file),
-                                  ),
-                            child: Text(l10n(context).uiUploadAttachmentAgain),
-                          ),
                       ],
-                    ),
-                  ),
-                ),
-              ),
-              InlineError(uploadError),
-              if (uploading) ...[
-                const LinearProgressIndicator(),
-                const SizedBox(height: 12),
-                Text(l10n(context).uiUploadingAndCheckingAttachment),
-              ] else if (pendingBytes != null)
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: upload,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(l10n(context).uiUploadAttachmentAgain),
-                    ),
-                    OutlinedButton(
+                    )
+                  else if (widget.api.canPostFinance)
+                    OutlinedButton.icon(
+                      key: const Key('addAttachment'),
                       onPressed: () => select(),
-                      child: Text(l10n(context).uiChooseAnotherFile),
+                      icon: const Icon(Icons.attach_file),
+                      label: Text(l10n(context).uiAddAttachment),
                     ),
-                  ],
-                )
-              else if (widget.api.canPostFinance)
-                OutlinedButton.icon(
-                  key: const Key('addAttachment'),
-                  onPressed: () => select(),
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(l10n(context).uiAddAttachment),
-                ),
-              const SizedBox(height: 16),
-              Text(
-                l10n(context).uiLocalDevelopmentStorageMalwareScanningIsNot,
-                style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n(context).uiLocalDevelopmentStorageMalwareScanningIsNot,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             ],
           ),
   );
-  Widget moneyRow(String label, String amount) => Row(
-    children: [
-      Expanded(child: Text(label)),
-      Text(
-        localizedMoney(context, amount),
-        textDirection: Directionality.of(context),
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-      ),
-    ],
-  );
+  Widget moneyRow(String label, String amount) =>
+      EquipmentValue(label: label, value: localizedMoney(context, amount));
 }
 
 class _MoreMenu extends StatelessWidget {

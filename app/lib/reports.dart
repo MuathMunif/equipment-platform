@@ -393,24 +393,21 @@ class _ReportsPageState extends State<ReportsPage> {
     movementType = null;
     generalExpense = false;
   });
-  Widget metric(String title, Object? value, {VoidCallback? onTap}) => SizedBox(
-    width: 230,
-    child: Card(
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title),
-              const SizedBox(height: 6),
-              Text(
-                localizedMoney(context, value),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
+  Widget metric(String title, Object? value, {VoidCallback? onTap}) => Card(
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title),
+            const SizedBox(height: 6),
+            Text(
+              localizedMoney(context, value),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
         ),
       ),
     ),
@@ -420,129 +417,143 @@ class _ReportsPageState extends State<ReportsPage> {
     final loc = l10n(context);
     return Scaffold(
       appBar: AppBar(title: Text(loc.m7Reports)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: EquipmentPageBody(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
+          EquipmentFormSection(
             children: [
-              ChoiceChip(
-                label: Text(loc.m7Recorded),
-                selected: kind == 0,
-                onSelected: (_) => change(() => kind = 0),
-              ),
-              ChoiceChip(
-                label: Text(loc.m7Movements),
-                selected: kind == 1,
-                onSelected: (_) => change(() => kind = 1),
-              ),
-              ChoiceChip(
-                label: Text(loc.m7Outstanding),
-                selected: kind == 2,
-                onSelected: (_) => change(() => kind = 2),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            kind == 0
-                ? loc.m7EntryDateBasis
-                : kind == 1
-                ? loc.m7MovementDateBasis
-                : loc.m7CurrentBasis,
-          ),
-          if (kind != 2)
-            Wrap(
-              spacing: 8,
-              children: [
-                OutlinedButton(
-                  key: const Key('reportFromDate'),
-                  onPressed: () => date(true),
-                  child: Text(
-                    '${loc.m7FromDate}: ${localizedDate(context, fromDate)}',
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  ChoiceChip(
+                    label: Text(loc.m7Recorded),
+                    selected: kind == 0,
+                    onSelected: (_) => change(() => kind = 0),
                   ),
-                ),
-                OutlinedButton(
-                  key: const Key('reportToDate'),
-                  onPressed: () => date(false),
-                  child: Text(
-                    '${loc.m7ToDate}: ${localizedDate(context, toDate)}',
+                  ChoiceChip(
+                    label: Text(loc.m7Movements),
+                    selected: kind == 1,
+                    onSelected: (_) => change(() => kind = 1),
                   ),
-                ),
-              ],
-            ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                key: const Key('reportEquipmentFilter'),
-                icon: const Icon(Icons.local_shipping_outlined),
-                label: Text(selectedEquipmentName ?? loc.m7FilterEquipment),
-                onPressed: () async {
-                  final selected = await showDialog<Map<String, dynamic>>(
-                    context: context,
-                    builder: (_) => HistoryEquipmentPicker(api: widget.api),
-                  );
-                  if (selected != null && mounted) {
-                    change(() {
-                      equipmentId = selected['id'] as String?;
-                      selectedEquipmentName = selected['name'] as String?;
-                      generalExpense = false;
-                    });
-                  }
-                },
+                  ChoiceChip(
+                    label: Text(loc.m7Outstanding),
+                    selected: kind == 2,
+                    onSelected: (_) => change(() => kind = 2),
+                  ),
+                ],
               ),
-              if (widget.canProjects)
-                OutlinedButton.icon(
-                  key: const Key('reportProjectFilter'),
-                  icon: const Icon(Icons.folder_outlined),
-                  label: Text(selectedProjectName ?? loc.m7FilterProject),
-                  onPressed: () async {
-                    final selected = await showDialog<Map<String, dynamic>>(
-                      context: context,
-                      builder: (_) => ProjectSearchPicker(
-                        api: widget.api,
-                        selectedId: projectId,
-                        selectedName: selectedProjectName,
+              const SizedBox(height: 12),
+              Text(
+                kind == 0
+                    ? loc.m7EntryDateBasis
+                    : kind == 1
+                    ? loc.m7MovementDateBasis
+                    : loc.m7CurrentBasis,
+              ),
+              if (kind != 2)
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    OutlinedButton(
+                      key: const Key('reportFromDate'),
+                      onPressed: () => date(true),
+                      child: Text(
+                        '${loc.m7FromDate}: ${localizedDate(context, fromDate)}',
                       ),
-                    );
-                    if (selected != null && mounted) {
-                      change(() {
-                        projectId = selected['id'] as String?;
-                        selectedProjectName = selected['name'] as String?;
-                      });
-                    }
-                  },
-                ),
-              SizedBox(
-                width: 180,
-                child: DropdownButtonFormField<String>(
-                  key: ValueKey('entryType:$entryType'),
-                  initialValue: entryType,
-                  decoration: InputDecoration(labelText: loc.uiEntryType),
-                  items: [
-                    DropdownMenuItem(value: '', child: Text(loc.uiAll)),
-                    DropdownMenuItem(
-                      value: 'EXPENSE',
-                      child: Text(loc.expense),
                     ),
-                    DropdownMenuItem(value: 'INCOME', child: Text(loc.income)),
+                    OutlinedButton(
+                      key: const Key('reportToDate'),
+                      onPressed: () => date(false),
+                      child: Text(
+                        '${loc.m7ToDate}: ${localizedDate(context, toDate)}',
+                      ),
+                    ),
                   ],
-                  onChanged: (value) =>
-                      change(() => entryType = value == '' ? null : value),
                 ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    key: const Key('reportEquipmentFilter'),
+                    icon: const Icon(Icons.local_shipping_outlined),
+                    label: Text(selectedEquipmentName ?? loc.m7FilterEquipment),
+                    onPressed: () async {
+                      final selected = await showDialog<Map<String, dynamic>>(
+                        context: context,
+                        builder: (_) => HistoryEquipmentPicker(api: widget.api),
+                      );
+                      if (selected != null && mounted) {
+                        change(() {
+                          equipmentId = selected['id'] as String?;
+                          selectedEquipmentName = selected['name'] as String?;
+                          generalExpense = false;
+                        });
+                      }
+                    },
+                  ),
+                  if (widget.canProjects)
+                    OutlinedButton.icon(
+                      key: const Key('reportProjectFilter'),
+                      icon: const Icon(Icons.folder_outlined),
+                      label: Text(selectedProjectName ?? loc.m7FilterProject),
+                      onPressed: () async {
+                        final selected = await showDialog<Map<String, dynamic>>(
+                          context: context,
+                          builder: (_) => ProjectSearchPicker(
+                            api: widget.api,
+                            selectedId: projectId,
+                            selectedName: selectedProjectName,
+                          ),
+                        );
+                        if (selected != null && mounted) {
+                          change(() {
+                            projectId = selected['id'] as String?;
+                            selectedProjectName = selected['name'] as String?;
+                          });
+                        }
+                      },
+                    ),
+                  SizedBox(
+                    width: (MediaQuery.sizeOf(context).width - 100).clamp(
+                      180,
+                      320,
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      itemHeight: null,
+                      key: ValueKey('entryType:$entryType'),
+                      initialValue: entryType,
+                      decoration: InputDecoration(labelText: loc.uiEntryType),
+                      items: [
+                        DropdownMenuItem(value: '', child: Text(loc.uiAll)),
+                        DropdownMenuItem(
+                          value: 'EXPENSE',
+                          child: Text(loc.expense),
+                        ),
+                        DropdownMenuItem(
+                          value: 'INCOME',
+                          child: Text(loc.income),
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          change(() => entryType = value == '' ? null : value),
+                    ),
+                  ),
+                  if (equipmentId != null ||
+                      projectId != null ||
+                      entryType != null ||
+                      movementType != null ||
+                      generalExpense)
+                    TextButton(
+                      onPressed: clear,
+                      child: Text(loc.m7ClearFilters),
+                    ),
+                ],
               ),
-              if (equipmentId != null ||
-                  projectId != null ||
-                  entryType != null ||
-                  movementType != null ||
-                  generalExpense)
-                TextButton(onPressed: clear, child: Text(loc.m7ClearFilters)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           if (loading)
             const Center(child: CircularProgressIndicator())
           else if (error != null)
@@ -559,8 +570,7 @@ class _ReportsPageState extends State<ReportsPage> {
             )
           else if (summary != null) ...[
             if (kind == 0) ...[
-              Wrap(
-                spacing: 8,
+              EquipmentGrid(
                 children: [
                   metric(
                     loc.income,
@@ -591,9 +601,8 @@ class _ReportsPageState extends State<ReportsPage> {
                         : '${group['equipmentName']}',
                   ),
                   subtitle: Text(
-                    group['entryType'] == 'INCOME' ? loc.income : loc.expense,
+                    '${group['entryType'] == 'INCOME' ? loc.income : loc.expense} • ${localizedMoney(context, group['amount'])}',
                   ),
-                  trailing: Text(localizedMoney(context, group['amount'])),
                   onTap: () => change(() {
                     equipmentId = group['equipmentId'] as String?;
                     selectedEquipmentName = group['equipmentName'] as String?;
@@ -602,8 +611,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   }),
                 ),
             ] else if (kind == 1)
-              Wrap(
-                spacing: 8,
+              EquipmentGrid(
                 children: [
                   metric(
                     loc.m7Collected,
@@ -656,8 +664,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 ],
               )
             else
-              Wrap(
-                spacing: 8,
+              EquipmentGrid(
                 children: [
                   metric(
                     loc.m7Receivable,
@@ -685,8 +692,10 @@ class _ReportsPageState extends State<ReportsPage> {
                       : loc.m7NoPeriodRecords,
                 ),
               ),
+            const SizedBox(height: 20),
             for (final item in items)
               Card(
+                margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   key: Key(
                     'reportRow:${item['entryId']}:${item['movementId'] ?? ''}',
@@ -991,11 +1000,13 @@ class _MonthPickerState extends State<_MonthPicker> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
+                  tooltip: l10n(context).previous,
                   onPressed: year > 1900 ? () => setState(() => year--) : null,
                   icon: const Icon(Icons.chevron_left),
                 ),
                 Text('$year', style: Theme.of(context).textTheme.titleLarge),
                 IconButton(
+                  tooltip: l10n(context).next,
                   onPressed: year < 2100 ? () => setState(() => year++) : null,
                   icon: const Icon(Icons.chevron_right),
                 ),
@@ -1003,8 +1014,11 @@ class _MonthPickerState extends State<_MonthPicker> {
             ),
             Expanded(
               child: GridView.count(
-                crossAxisCount: 3,
-                childAspectRatio: 1.7,
+                crossAxisCount: MediaQuery.textScalerOf(context).scale(14) > 21
+                    ? 2
+                    : 3,
+                mainAxisExtent:
+                    MediaQuery.textScalerOf(context).scale(14) * 3 + 24,
                 children: [
                   for (var m = 1; m <= 12; m++)
                     TextButton(
