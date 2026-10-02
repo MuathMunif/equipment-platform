@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:equipment_app/api.dart';
 import 'package:equipment_app/design_system/equipment_a.dart';
+import 'package:equipment_app/design_system/equipment_typography.dart';
 import 'package:equipment_app/documents.dart';
 import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:equipment_app/localization.dart';
@@ -11,6 +12,7 @@ import 'package:equipment_app/maintenance.dart';
 import 'package:equipment_app/projects.dart';
 import 'package:equipment_app/team.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -102,6 +104,23 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  setUpAll(() async {
+    // Flutter widget tests normally substitute Ahem. Load the actual pilot faces
+    // so wrapping checks exercise Almarai and its approved local fallback.
+    for (final entry in {
+      EquipmentTypography.family: 'Almarai',
+      EquipmentTypography.fallbackFamily: 'IBMPlexSansArabic',
+    }.entries) {
+      final loader = FontLoader(entry.key);
+      for (final weight in ['Regular', 'Bold']) {
+        loader.addFont(
+          rootBundle.load('assets/typography_fonts/${entry.value}-$weight.ttf'),
+        );
+      }
+      await loader.load();
+    }
+  });
+
   test('Direction A tonal search button has readable icon contrast', () {
     final colors = EquipmentA.theme().colorScheme;
     final contrast =
@@ -124,7 +143,7 @@ void main() {
                 equipment: {
                   ...equipment,
                   'name':
-                      '${equipment['name']} — معدة نقل المعدات الثقيلة طويلة الاسم',
+                      '${equipment['name']} — معدة نقل المعدات الثقيلة طويلة الاسم ٹ ڈ ڑ ں ھ ہ ے پ چ ژ گ',
                 },
                 canAssignDrivers: true,
               ),
@@ -141,6 +160,22 @@ void main() {
             locale == 'en' ? TextDirection.ltr : TextDirection.rtl,
           );
           expect(Theme.of(context).colorScheme.primary, EquipmentA.accent);
+          final typography = Theme.of(context).textTheme;
+          expect(
+            typography.headlineLarge!.fontFamily,
+            EquipmentTypography.family,
+          );
+          expect(typography.headlineLarge!.fontWeight, FontWeight.w700);
+          expect(typography.bodyMedium!.fontFamily, EquipmentTypography.family);
+          expect(typography.bodyMedium!.fontWeight, FontWeight.w400);
+          expect(typography.bodySmall!.fontWeight, FontWeight.w400);
+          expect(typography.bodyMedium!.fontFamilyFallback, [
+            EquipmentTypography.fallbackFamily,
+          ]);
+          expect(
+            MediaQuery.textScalerOf(context).scale(14),
+            closeTo(width == 320 ? 22.4 : 14, .001),
+          );
           expect(find.text('EQ-004'), findsOneWidget);
           expect(find.byKey(const Key('addExpense')), findsOneWidget);
           expect(find.byKey(const Key('addIncome')), findsOneWidget);
@@ -368,6 +403,11 @@ void main() {
         expect(
           Theme.of(tester.element(route)).colorScheme.primary,
           isNot(EquipmentA.accent),
+        );
+        expect(
+          Theme.of(tester.element(route)).textTheme.bodyMedium!.fontFamily,
+          isNot(EquipmentTypography.family),
+          reason: 'Unmigrated routes retain their root typography',
         );
         if (type == ExpenseForm) {
           final form = tester.widget<ExpenseForm>(route);

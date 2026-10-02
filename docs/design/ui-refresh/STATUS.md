@@ -1,4 +1,18 @@
-# Active task — Direction A typography selection checkpoint
+# Active task complete — approved A + F3 Almarai production pilot
+
+- **APPROVED_COMBINATION: A + F3 Almarai.** Owner selection settled; real EquipmentDetail now uses it. Other production screens are not migrated; full rollout awaits new instructions.
+- Branch `feat/ui-a-typography`, inspected clean baseline `7f328d1` containing pilot `ca6201d` and date fix. The latest commit carrying this checkpoint/integration is the required next rollout baseline (`git log -1 --oneline`). No reset/stash/main/merge/PR/deployment.
+- Production typography: `app/lib/design_system/equipment_typography.dart`; scoped `EquipmentA.theme()`; explicit Almarai400/700 + Plex400/700 declarations in pubspec. ar/en/ur use Almarai with Plex unsupported-character fallback, unchanged from F3. Body400, emphasis700 where F3 used it; no size/height/spacing or scaling changes.
+- `EquipmentA.referenceTheme()` preserves historical comparison semantics. Production imports no preview. Root theme unchanged; six route regression checks and byte-identical before/after home screenshot support isolation.
+- Four actual production-route screenshots: `screenshots/almarai-pilot/equipment-{ar-390,ar-1440,en-390,ur-390}.jpg`. Same existing synthetic EQ-000037/API/database/session; no OTP attempts or new records; language restored to Arabic. Main self-review,0 subagents.
+- Checks actually run: focused93/93; full Flutter182/182 once for shared font registration; analyze clean; production and typography-preview web release PASS; diff whitespace PASS. Manifest400/700 + fontHTTP200 +12/12 source/license hashes; production import graph20 files excludes preview.
+- Server8081 now serves `.local/almarai-pilot/web-production`; previous build preserved. Existing API/Docker untouched. Exact commands/results/limits: [ALMARAI_PILOT.md](ALMARAI_PILOT.md).
+- Limits: no native/Android/physical-device, native Urdu, screen-reader or backend campaign; no per-glyph attribution/human Urdu approval. Existing Cupertino warning remains; no dependency upgrades/global configuration changes. Existing user-approved Astra/High exception, no repeated runtime investigation.
+- **Next concrete action: await the owner's updated full-rollout instruction. STOP.** Do not restart comparisons, ask F1/F2/F3 again, resume old milestones, or start rollout automatically.
+
+---
+
+# Historical typography comparison — superseded by F3 approval
 
 - **A layout approved; current Noto font rejected; F1/F2/F3 READY FOR SELECTION; FULL ROLLOUT PAUSED.** Production default unchanged.
 - Branch `feat/ui-a-typography`, source clean pilot `ca6201d`. HEAD of this branch carries the comparison/checkpoint; read `git log -1 --oneline` for its SHA. Pilot, date fix, old previews preserved. No main/merge/PR/deployment.

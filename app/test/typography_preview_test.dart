@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:equipment_app/design_preview/screens.dart';
 import 'package:equipment_app/design_preview/tokens.dart';
 import 'package:equipment_app/design_system/equipment_a.dart';
+import 'package:equipment_app/design_system/equipment_typography.dart';
 import 'package:equipment_app/localization.dart';
 import 'package:equipment_app/typography_preview/fonts.dart';
 import 'package:equipment_app/typography_preview/gallery.dart';
@@ -83,7 +84,64 @@ void main() {
       }
       expect(TypographyChoice.f2.familyFor('ur'), TypographyChoice.f1.family);
       expect(TypographyChoice.f2.familyFor('en'), TypographyChoice.f2.family);
-      expect(EquipmentA.family, 'EquipmentNoto');
+      expect(EquipmentA.family, EquipmentTypography.family);
+      expect(
+        EquipmentA.referenceTheme().textTheme.headlineLarge!.fontWeight,
+        FontWeight.w600,
+      );
+    },
+  );
+
+  test(
+    'production Almarai matches approved F3 metrics, weights and controls',
+    () {
+      final production = EquipmentA.theme();
+      final preview = TypographyChoice.f3.theme(locale: 'ar', expense: false);
+      List<TextStyle?> roles(TextTheme t) => [
+        t.displayLarge,
+        t.displayMedium,
+        t.displaySmall,
+        t.headlineLarge,
+        t.headlineMedium,
+        t.headlineSmall,
+        t.titleLarge,
+        t.titleMedium,
+        t.titleSmall,
+        t.bodyLarge,
+        t.bodyMedium,
+        t.bodySmall,
+        t.labelLarge,
+        t.labelMedium,
+        t.labelSmall,
+      ];
+      TextStyle? previewAliases(TextStyle? style) => style?.copyWith(
+        fontFamily: TypographyChoice.f3.family,
+        fontFamilyFallback: [TypographyChoice.f1.family],
+      );
+      expect(
+        roles(production.textTheme).map(previewAliases).toList(),
+        roles(preview.textTheme),
+      );
+      expect(
+        previewAliases(production.appBarTheme.titleTextStyle),
+        preview.appBarTheme.titleTextStyle,
+      );
+      expect(
+        previewAliases(production.inputDecorationTheme.labelStyle),
+        preview.inputDecorationTheme.labelStyle,
+      );
+      expect(
+        previewAliases(production.chipTheme.labelStyle),
+        preview.chipTheme.labelStyle,
+      );
+      expect(
+        previewAliases(
+          production.filledButtonTheme.style!.textStyle!.resolve({}),
+        ),
+        preview.filledButtonTheme.style!.textStyle!.resolve({}),
+      );
+      expect(production.colorScheme, preview.colorScheme);
+      expect(production.cardTheme, preview.cardTheme);
     },
   );
 

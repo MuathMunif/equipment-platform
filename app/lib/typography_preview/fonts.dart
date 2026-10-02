@@ -40,7 +40,7 @@ enum TypographyChoice {
       headingFamily: family,
       emphasis: emphasis,
     );
-    final base = expense ? tokens.theme() : EquipmentA.theme();
+    final base = expense ? tokens.theme() : EquipmentA.referenceTheme();
     TextStyle face(TextStyle? style) {
       final original = style ?? const TextStyle();
       return original.copyWith(

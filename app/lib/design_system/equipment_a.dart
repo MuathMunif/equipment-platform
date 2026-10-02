@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../localization.dart';
+import 'equipment_typography.dart';
 
 /// Approved Direction A. Applied only inside EquipmentDetail, never at app root.
 abstract final class EquipmentA {
@@ -13,12 +14,17 @@ abstract final class EquipmentA {
   static const controlBorder = Color(0xFF7A8A93);
   static const gap = 24.0;
   static const radius = 12.0;
-  static const family = 'EquipmentNoto';
+  static const family = EquipmentTypography.family;
+  static const _referenceFamily = 'EquipmentNoto';
 
-  static ThemeData theme() {
+  static ThemeData theme() => EquipmentTypography.apply(referenceTheme());
+
+  /// Original A styling basis, also preserved by the historical font comparison.
+  /// Production screens must use [theme], which applies approved Almarai.
+  static ThemeData referenceTheme() {
     final base = ThemeData(
       useMaterial3: true,
-      fontFamily: family,
+      fontFamily: _referenceFamily,
       colorScheme: const ColorScheme.light(
         primary: accent,
         onPrimary: Colors.white,
@@ -41,47 +47,47 @@ abstract final class EquipmentA {
       scaffoldBackgroundColor: canvas,
       textTheme: base.textTheme.copyWith(
         headlineLarge: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 30,
           height: 1.45,
           fontWeight: FontWeight.w600,
           color: ink,
         ),
         headlineSmall: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 24,
           height: 1.5,
           fontWeight: FontWeight.w600,
           color: ink,
         ),
         titleLarge: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 20,
           height: 1.5,
           fontWeight: FontWeight.w600,
           color: ink,
         ),
         titleMedium: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 16,
           height: 1.55,
           fontWeight: FontWeight.w600,
           color: ink,
         ),
         bodyMedium: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 14,
           height: 1.6,
           color: ink,
         ),
         bodySmall: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 12,
           height: 1.6,
           color: muted,
         ),
         labelLarge: const TextStyle(
-          fontFamily: family,
+          fontFamily: _referenceFamily,
           fontSize: 14,
           height: 1.5,
           fontWeight: FontWeight.w600,
