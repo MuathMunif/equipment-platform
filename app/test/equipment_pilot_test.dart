@@ -80,7 +80,7 @@ Api apiFor({
 
 Widget host(Widget child, {String locale = 'ar', double scale = 1}) =>
     MaterialApp(
-      theme: ThemeData(colorSchemeSeed: brand),
+      theme: EquipmentA.theme(),
       locale: Locale(locale),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -402,12 +402,12 @@ void main() {
         expect(route, findsOneWidget);
         expect(
           Theme.of(tester.element(route)).colorScheme.primary,
-          isNot(EquipmentA.accent),
+          EquipmentA.accent,
         );
         expect(
           Theme.of(tester.element(route)).textTheme.bodyMedium!.fontFamily,
-          isNot(EquipmentTypography.family),
-          reason: 'Unmigrated routes retain their root typography',
+          EquipmentTypography.family,
+          reason: 'Normal routes inherit the approved root typography',
         );
         if (type == ExpenseForm) {
           final form = tester.widget<ExpenseForm>(route);

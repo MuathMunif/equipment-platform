@@ -1,3 +1,4 @@
+import 'package:equipment_app/design_system/equipment_a.dart';
 import 'dart:convert';
 
 import 'package:equipment_app/api.dart';
@@ -183,7 +184,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('لا توجد معدة معيّنة لك حاليًا.'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(EquipmentNavigationBar), findsOneWidget);
     expect(find.text('التقارير'), findsNothing);
     expect(find.byKey(const Key('openTeam')), findsNothing);
     expect(tester.takeException(), isNull);

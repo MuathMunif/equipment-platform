@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Owner-approved F3, applied only by migrated Direction A screen themes.
+/// Owner-approved F3 for the production root and its app-controlled overlays.
 /// Assets are registered with explicit 400/700 faces in pubspec.yaml.
 abstract final class EquipmentTypography {
   static const family = 'EquipmentAlmarai';
@@ -70,6 +70,39 @@ abstract final class EquipmentTypography {
       ),
       tooltipTheme: base.tooltipTheme.copyWith(
         textStyle: text.bodySmall?.copyWith(color: Colors.white),
+      ),
+      dialogTheme: base.dialogTheme.copyWith(
+        titleTextStyle: text.titleLarge,
+        contentTextStyle: text.bodyMedium,
+      ),
+      snackBarTheme: base.snackBarTheme.copyWith(
+        contentTextStyle: text.bodyMedium?.copyWith(color: Colors.white),
+      ),
+      popupMenuTheme: base.popupMenuTheme.copyWith(textStyle: text.bodyMedium),
+      dropdownMenuTheme: base.dropdownMenuTheme.copyWith(
+        textStyle: text.bodyMedium,
+      ),
+      datePickerTheme: base.datePickerTheme.copyWith(
+        headerHeadlineStyle: text.headlineSmall,
+        headerHelpStyle: text.bodySmall,
+        weekdayStyle: text.bodySmall,
+        dayStyle: text.bodyMedium,
+        yearStyle: text.bodyMedium,
+      ),
+      navigationBarTheme: base.navigationBarTheme.copyWith(
+        labelTextStyle: WidgetStatePropertyAll(text.bodySmall),
+      ),
+      navigationRailTheme: base.navigationRailTheme.copyWith(
+        selectedLabelTextStyle: text.labelLarge,
+        unselectedLabelTextStyle: text.bodyMedium,
+      ),
+      listTileTheme: base.listTileTheme.copyWith(
+        titleTextStyle: text.bodyLarge,
+        subtitleTextStyle: text.bodySmall,
+      ),
+      tabBarTheme: base.tabBarTheme.copyWith(
+        labelStyle: text.labelLarge,
+        unselectedLabelStyle: text.bodyMedium,
       ),
     );
   }

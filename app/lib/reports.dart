@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'api.dart';
+import 'design_system/equipment_a.dart';
 import 'localization.dart';
 import 'main.dart' show EntryDetail, LedgerPage, HistoryEquipmentPicker;
 import 'projects.dart' show m6Rows;
@@ -126,7 +127,7 @@ class _DashboardSectionState extends State<DashboardSection> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(loc.m7LoadFailed),
               Text(error!),
@@ -139,7 +140,7 @@ class _DashboardSectionState extends State<DashboardSection> {
     final summary = data?['summary'] as Map<String, dynamic>?;
     final recent = data?['recentEntries'] as List<dynamic>? ?? [];
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.canEquipment &&
             data?.containsKey('activeEquipmentCount') == true)
@@ -147,7 +148,10 @@ class _DashboardSectionState extends State<DashboardSection> {
             child: ListTile(
               leading: const Icon(Icons.local_shipping_outlined),
               title: Text(loc.m7ActiveEquipment),
-              trailing: Text('${data!['activeEquipmentCount']}'),
+              trailing: Text(
+                '${data!['activeEquipmentCount']}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
           ),
         if (widget.canFinance && summary != null) ...[
@@ -164,27 +168,24 @@ class _DashboardSectionState extends State<DashboardSection> {
             loc.m7EntryDateBasis,
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              _card(
-                context,
-                const Key('recordedExpenseCard'),
-                loc.m7RecordedExpensesMonth,
-                summary['recordedExpenses'],
-                () => openLedger('EXPENSE'),
-              ),
-              _card(
-                context,
-                const Key('recordedIncomeCard'),
-                loc.m7RecordedIncomeMonth,
-                summary['recordedIncome'],
-                () => openLedger('INCOME'),
-              ),
-            ],
+          const SizedBox(height: 16),
+          EquipmentFieldRow(
+            first: _card(
+              context,
+              const Key('recordedExpenseCard'),
+              loc.m7RecordedExpensesMonth,
+              summary['recordedExpenses'],
+              () => openLedger('EXPENSE'),
+            ),
+            second: _card(
+              context,
+              const Key('recordedIncomeCard'),
+              loc.m7RecordedIncomeMonth,
+              summary['recordedIncome'],
+              () => openLedger('INCOME'),
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 24),
           Text(
             loc.m7RecentEntries,
             style: Theme.of(context).textTheme.titleMedium,
@@ -219,25 +220,22 @@ class _DashboardSectionState extends State<DashboardSection> {
     String title,
     Object? amount,
     VoidCallback open,
-  ) => SizedBox(
-    width: 245,
-    child: Card(
-      child: InkWell(
-        key: key,
-        onTap: open,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title),
-              const SizedBox(height: 8),
-              Text(
-                localizedMoney(context, amount),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ],
-          ),
+  ) => Card(
+    child: InkWell(
+      key: key,
+      onTap: open,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(title),
+            const SizedBox(height: 8),
+            Text(
+              localizedMoney(context, amount),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ],
         ),
       ),
     ),
@@ -343,11 +341,15 @@ class _ReportsPageState extends State<ReportsPage> {
         });
       }
     } catch (e) {
-      if (mounted && request == generation && workspace == widget.api.workspace) {
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
         setState(() => error = localizedError(context, e));
       }
     } finally {
-      if (mounted && request == generation && workspace == widget.api.workspace) {
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
         setState(() => loading = false);
       }
     }
@@ -686,7 +688,9 @@ class _ReportsPageState extends State<ReportsPage> {
             for (final item in items)
               Card(
                 child: ListTile(
-                  key: Key('reportRow:${item['entryId']}:${item['movementId'] ?? ''}'),
+                  key: Key(
+                    'reportRow:${item['entryId']}:${item['movementId'] ?? ''}',
+                  ),
                   title: Text(
                     '${item['entryType'] == 'INCOME' ? loc.income : loc.expense} • ${localizedMoney(context, item[kind == 2 ? 'remaining' : 'amount'])}',
                   ),
@@ -826,7 +830,9 @@ class _ProjectFilterPickerState extends State<ProjectSearchPicker> {
         'GET',
         widget.api.scoped('/projects?$query'),
       );
-      if (mounted && request == generation && workspace == widget.api.workspace) {
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
         setState(() {
           final batch = m6Rows(response);
           items = more ? [...items, ...batch] : batch;
@@ -835,11 +841,15 @@ class _ProjectFilterPickerState extends State<ProjectSearchPicker> {
         });
       }
     } catch (e) {
-      if (mounted && request == generation && workspace == widget.api.workspace) {
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
         setState(() => error = localizedError(context, e));
       }
     } finally {
-      if (mounted && request == generation && workspace == widget.api.workspace) {
+      if (mounted &&
+          request == generation &&
+          workspace == widget.api.workspace) {
         setState(() {
           loading = false;
           loadingMore = false;

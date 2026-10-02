@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../localization.dart';
 import 'equipment_typography.dart';
 
-/// Approved Direction A. Applied only inside EquipmentDetail, never at app root.
+/// Approved Direction A, shared by production routes and app-controlled overlays.
 abstract final class EquipmentA {
   static const canvas = Color(0xFFF5F7F9);
   static const ink = Color(0xFF182F40);
@@ -17,7 +17,73 @@ abstract final class EquipmentA {
   static const family = EquipmentTypography.family;
   static const _referenceFamily = 'EquipmentNoto';
 
-  static ThemeData theme() => EquipmentTypography.apply(referenceTheme());
+  static ThemeData theme() {
+    final base = referenceTheme();
+    const shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(radius)),
+      side: BorderSide(color: line),
+    );
+    return EquipmentTypography.apply(
+      base.copyWith(
+        appBarTheme: base.appBarTheme.copyWith(centerTitle: false),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: shape,
+          constraints: BoxConstraints(minWidth: 280, maxWidth: 560),
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          showDragHandle: true,
+        ),
+        popupMenuTheme: const PopupMenuThemeData(
+          color: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: shape,
+        ),
+        datePickerTheme: const DatePickerThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          headerBackgroundColor: tint,
+          headerForegroundColor: ink,
+          shape: shape,
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          backgroundColor: ink,
+          behavior: SnackBarBehavior.floating,
+          actionTextColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(radius)),
+          ),
+        ),
+        navigationBarTheme: const NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: tint,
+        ),
+        navigationRailTheme: const NavigationRailThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: tint,
+        ),
+        listTileTheme: const ListTileThemeData(
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          iconColor: accent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(radius)),
+          ),
+        ),
+        chipTheme: const ChipThemeData(
+          backgroundColor: tint,
+          selectedColor: tint,
+          side: BorderSide(color: line),
+        ),
+      ),
+    );
+  }
 
   /// Original A styling basis, also preserved by the historical font comparison.
   /// Production screens must use [theme], which applies approved Almarai.
@@ -155,6 +221,173 @@ abstract final class EquipmentA {
       ),
     );
   }
+}
+
+/// A bounded scroll canvas. Stable children stay mounted at every breakpoint.
+class EquipmentPageBody extends StatelessWidget {
+  final List<Widget> children;
+  final double maxWidth;
+  const EquipmentPageBody({
+    super.key,
+    required this.children,
+    this.maxWidth = 1240,
+  });
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: ListView(
+          padding: EdgeInsets.all(
+            MediaQuery.sizeOf(context).width < 600 ? 20 : 32,
+          ),
+          // Paginated pages are bounded. Keep form fields mounted so off-screen
+          // validators and dropdown values survive scrolling and resizing.
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class EquipmentFormSection extends StatelessWidget {
+  final String? title;
+  final List<Widget> children;
+  const EquipmentFormSection({super.key, this.title, required this.children});
+  @override
+  Widget build(BuildContext context) => EquipmentPanel(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [if (title != null) EquipmentHeading(title!), ...children],
+    ),
+  );
+}
+
+/// Same destinations/actions as Material's bar, with wrapping, unbounded labels.
+/// Material NavigationDestination clamps text scaling, which hides 200% text.
+class EquipmentNavigationBar extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+  final List<NavigationDestination> destinations;
+  const EquipmentNavigationBar({
+    super.key,
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    required this.destinations,
+  });
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    shape: const Border(top: BorderSide(color: EquipmentA.line)),
+    child: SafeArea(
+      top: false,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < destinations.length; i++)
+              Expanded(
+                child: Semantics(
+                  selected: selectedIndex == i,
+                  button: true,
+                  child: InkWell(
+                    onTap: () => onDestinationSelected(i),
+                    focusColor: EquipmentA.tint,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 12,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: selectedIndex == i
+                                  ? EquipmentA.tint
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 4,
+                              ),
+                              child: IconTheme(
+                                data: const IconThemeData(
+                                  color: EquipmentA.accent,
+                                  size: 24,
+                                ),
+                                child: destinations[i].icon,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            destinations[i].label,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Wrap retains each field element/focus when switching from columns to rows.
+class EquipmentFieldRow extends StatelessWidget {
+  final Widget first, second;
+  final Widget? action;
+  final double breakpoint, firstFraction;
+  const EquipmentFieldRow({
+    super.key,
+    required this.first,
+    required this.second,
+    this.action,
+    this.breakpoint = 520,
+    this.firstFraction = .5,
+  });
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final stacked =
+          box.maxWidth < breakpoint ||
+          MediaQuery.textScalerOf(context).scale(14) > 21;
+      final available = box.maxWidth - 12 - (action == null ? 0 : 60);
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.start,
+          children: [
+            SizedBox(
+              width: stacked ? box.maxWidth : available * firstFraction,
+              child: first,
+            ),
+            SizedBox(
+              width: stacked ? box.maxWidth : available * (1 - firstFraction),
+              child: second,
+            ),
+            ?action,
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class EquipmentCanvas extends StatelessWidget {
