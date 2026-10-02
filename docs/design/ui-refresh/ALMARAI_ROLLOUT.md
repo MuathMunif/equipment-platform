@@ -8,13 +8,13 @@ Owner instruction: [ALMARAI_ROLLOUT_TASK.md](ALMARAI_ROLLOUT_TASK.md). Branch `f
 |---|---|---|
 | 1 | Expense/edit proving ground; A root/overlays; login, workspace, home/dashboard, equipment list/form/detail, More/settings | IMPLEMENTED / affected83 PASS; later focused11 and24 PASS (overlap); analyze + actual web PASS; commit `30ff1c0` |
 | 2 | Ledger, entry detail, settlements/refunds/cancellation, allocations, drafts/attachments, reports/drill-down | IMPLEMENTED;53 affected +16 focused PASS (overlap); analyze/web PASS; journeyA complete; independent behavior review found no actionable regression |
-| 3 | Documents/version/renewal/archive, attention/incomplete/notifications | IMPLEMENTED;54 focused PASS, analyze/web PASS; connected renewal/old-file journeyC complete |
-| 4 | Issue/maintenance/detail/history/status/attachments and original M2 links | Pending |
+| 3 | Documents/version/renewal/archive, attention/incomplete/notifications | commit `3c5590c`; IMPLEMENTED;54 focused PASS, analyze/web PASS; connected renewal/old-file journeyC complete |
+| 4 | Issue/maintenance/detail/history/status/attachments and original M2 links | IMPLEMENTED;54 affected PASS, analyze/web PASS; journeyD connected |
 | 5 | Team/invitations/permissions/scope/DIRECT–REVIEW/assignment, driver, review flow | Pending |
 | 6 | Optional organizations and projects/contracts, linking/history/attachments/summary | Pending |
 | Final | Full Flutter once, analyze, 3 web builds, feasible native builds/runs, connected journeys, final visual review, branch PR+CI | Pending |
 
-Last implemented/tested batch: 3. Next action: batch4 issues/maintenance. Remaining locale/final-pixel captures are tracked in the screenshot index. JourneyA complete on existing record. Continue through queue without routine approval.
+Last implemented/tested batch: 4. Next action: batch5 team/driver/review. Remaining locale/final-pixel captures are tracked in the screenshot index. JourneyA complete on existing record. Continue through queue without routine approval.
 
 ## Evidence discipline
 [Coverage](COVERAGE.md) separates theme propagation, widget tests, connected actions and actual visual inspection. [Screenshots](ALMARAI_ROLLOUT_SCREENSHOTS.md) contains only actual rendered images. Previous pilot182 tests are not rollout results. Batch1 actual screenshots and connected partial-expense save recorded below; full journeys pending.
@@ -51,3 +51,8 @@ Final batch1 visual pass:9 actual connected images saved and inspected. Added Mo
 - Dates, version id/concurrency, upload recovery, archive guards and notification semantics unchanged. One formatting-only missing-brace lint fixed; one test tap helper now waits for focus/scroll settling after text entry. First run53pass/1failed offscreen tap; corrected **54/54 PASS** (documents+pilot+rollout including3language real-font320/200% renewal and keyboard checks), analyze clean, productionweb PASS.
 - JourneyC via actual production English UI on existingEQ37 insurance: attach synthetic receipt toversion1, renew ONCE to2027-10-15 note`A-F3 rollout — renewal C`, verifycurrent date andversion1expiry2026-10-15 readonly, openversion1protectedfile. Currentversionhasnoattachments, provingversionseparation. No duplicate document/new account.
 - Actual English mobile form/detail/oldversion/viewer images inspected. Arabic/Urdu final representative captures still pending.
+
+## Batch4
+- Issue/maintenance forms and details explicitly use shared bounded A pages/panels; attachment recovery is a separate panel, history/actions unchanged. Header/status wraps, tabs become wrapping choice chips with original predicates/callbacks; filters/pagers adapt and page buttons have labels. Central semantic success/warning/danger; maintenance amounts use existing financialvalue component, no arithmetic.
+- Initial31pass/1failed was an old test tapping below the600px viewport. Test now scrolls after focus settles; final **54/54 PASS** maintenance/pilot/rollout, including3locale320/200% issue/keyboardmodal and maintenance form reachability. Analyze clean, webrelease PASS. No backend/API/financial changes.
+- JourneyD actual English UI: existing IS-000006 -> one new maintenance `فحص تجريبي A-F3 rollout — journey D` -> link ORIGINAL1000 journeyA expense via eligible picker ->summary1000/net400/remaining600 ->open sameM2 andback ->closeissue with `فحص تجريبي مكتمل — A-F3 journey D`. Closed/read-only attachments/reopen and closurehistory visible. **No new money**; no unlink/cancellation made. 3 actual images390/1440 inspected.

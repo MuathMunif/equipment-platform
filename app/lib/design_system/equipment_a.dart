@@ -12,6 +12,9 @@ abstract final class EquipmentA {
   static const tint = Color(0xFFEAF1F5);
   static const line = Color(0xFFDDE4E9);
   static const controlBorder = Color(0xFF7A8A93);
+  static const success = Color(0xFF29634B);
+  static const warning = Color(0xFF855C18);
+  static const danger = Color(0xFFAC2E28);
   static const gap = 24.0;
   static const radius = 12.0;
   static const family = EquipmentTypography.family;

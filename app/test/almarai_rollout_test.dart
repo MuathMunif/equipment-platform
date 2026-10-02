@@ -6,6 +6,7 @@ import 'package:equipment_app/design_system/equipment_a.dart';
 import 'package:equipment_app/design_system/equipment_typography.dart';
 import 'package:equipment_app/l10n/app_localizations.dart';
 import 'package:equipment_app/main.dart';
+import 'package:equipment_app/maintenance.dart';
 import 'package:equipment_app/reports.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -58,6 +59,68 @@ void main() {
       await loader.load();
     }
   });
+
+  for (final locale in ['ar', 'en', 'ur']) {
+    testWidgets('maintenance form and issue actions fit320/200% $locale', (
+      tester,
+    ) async {
+      viewport(tester, 320, 800);
+      final api = Api(
+        persistNative: false,
+        client: MockClient(
+          (r) async => response(
+            r.url.path.endsWith('/attachments')
+                ? []
+                : {
+                    'id': 'i',
+                    'equipmentId': 'eq',
+                    'equipmentName': 'شاحنة اختبار Volvo FH460',
+                    'reference': 'IS-000037',
+                    'description': 'وصف بلاغ طويل / engine inspection',
+                    'status': 'OPEN',
+                    'equipmentStopped': true,
+                    'createdAt': '2026-10-02',
+                    'maintenance': [],
+                    'closures': [],
+                  },
+          ),
+        ),
+      )..workspace = 'w';
+      await tester.pumpWidget(
+        host(
+          IssueDetailPage(api: api, id: 'i'),
+          locale: locale,
+          scale: 2,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.byKey(const Key('m4Close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('m4Close')));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('m4Resolution')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(
+        host(
+          MaintenanceFormPage(api: api, equipment: equipment),
+          locale: locale,
+          scale: 2,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('m4SaveMaintenance')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getRect(find.byKey(const Key('m4SaveMaintenance'))).bottom,
+        lessThanOrEqualTo(520),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final locale in ['ar', 'en', 'ur']) {
     testWidgets(

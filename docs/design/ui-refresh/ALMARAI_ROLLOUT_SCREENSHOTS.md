@@ -21,3 +21,6 @@ Actual images captured and self-inspected: `refund-dialog-ar-390.jpg`, `entry-re
 
 ## Batch3 source (after1d6b36e, current batch3 changes)
 Connected OWNER/en/390×1000 actual self-inspected: [finance](screenshots/almarai-rollout/entry-refunded-en-390.jpg) latest valuealignment; [document](screenshots/almarai-rollout/document-en-390.jpg), [renewform](screenshots/almarai-rollout/document-renew-en-390.jpg), [oldreadonly](screenshots/almarai-rollout/document-history-en-390.jpg), [protectedoldfile](screenshots/almarai-rollout/document-old-attachment-en-390.jpg). Historicalattachmentname/frame are app-controlled Almarai; imagecontents are syntheticfixture.
+
+## Batch4 source (after3c5590c, current batch4 changes)
+Connected OWNER/en actual inspected: [openissue390](screenshots/almarai-rollout/issue-open-en-390.jpg), [linkedmaintenance1440](screenshots/almarai-rollout/maintenance-linked-en-1440.jpg), [closedissue390](screenshots/almarai-rollout/issue-closed-en-390.jpg). Height1000. Hover tint on relatedmaintenance row is pointerstate. No preview or duplicatedfinance.
