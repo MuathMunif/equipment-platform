@@ -1,4 +1,17 @@
-# التسليم الحالي — تعميم A + F3 Almarai مكتمل
+# تحقق مركز قبل دمج PR #9 — initialPaid — 2026-10-02
+
+- الفرع الفعلي `feat/ui-a-almarai-rollout`؛ أساس الفحص النظيف `d9e5b69ddd82d41187416e0ac114a89be767fa40`، وهو رأس PR #9 عند البداية. CI السابق [36958122171](https://github.com/MuathMunif/equipment-platform/actions/runs/36958122171) ناجح على هذا الأساس: Backend وFlutter. لا إعادة تعميم أو مراجعة شاملة، ولا تعديل main أو دمج.
+- فُحص تغيير `ApprovalPage` في `app/lib/team.dart` مقابل `EntryCreate` في `contracts/openapi.yaml` و`SubmissionService` و`FinanceService`. العقد القائم لإجمالي `1000.00`: `FULL` يحذف `initialPaid` وينتج مدفوع1000/متبقي0؛ `PARTIAL` يرسل `initialPaid: "600.00"` وينتج600/400؛ `UNPAID` صريح يحذف `initialPaid` ويترك `paidOn` فارغًا وينتج0/1000. الصفر ممثل بـUNPAID، وليس PARTIAL بقيمة صفر. إرسال JSON null ليس كحذف حقل JsonNode عند الخادم؛ التغيير الموجود صحيح ولا يحتاج تصحيحًا إنتاجيًا.
+- كانت تغطية اعتماد Flutter السابقة FULL فقط: `pending submission opens approval and posts one full expense without initialPaid`. أضيفت في `app/test/team_test.dart` ثلاثة اختبارات `approval serializes 1000 {FULL|PARTIAL|UNPAID} using the existing payment contract`. تمر عبر نموذج الاعتماد وتأكيده وتفحص الطلب المسلسل فعليًا؛ حالة UNPAID تبدأ بإدخال دفعة جزئية600 ثم تتحول إلى غير مدفوع، وتثبت عدم تسرب الدفعة وعدم الرجوع إلى FULL. الاختبارات تستخدم HTTP double؛ لا تدعي رحلة خادم حية جديدة بقيمة1000. نتائج المدفوع/المتبقي تستند إلى منطق الخادم القائم وتغطيته السابقة.
+- **منفذ فعليًا من `app/`:** `flutter test test/team_test.dart --plain-name 'approval serializes 1000' --reporter expanded` ناجح3/3؛ `flutter analyze --no-pub test/team_test.dart` بلا ملاحظات؛ `git diff --check` ناجح. محاولة بناء الاختبار الأولى فشلت بسبب finder يستخدم getter غير متاح، وصُحح كود الاختبار ثم نجح التشغيل. لم تُعد محليًا الحزم الكاملة أو Android أو حملات القبول القديمة.
+- **الحفظ غير المؤكد:** أُعيد استخدام أدلة CI السابق لاختباري `uncertain expense save preserves exact payload and same idempotency key` في `app/test/widget_test.dart` و`uncertain shared save freezes allocations and project and retries identical request` في `app/test/almarai_rollout_test.dart`: قفل البيانات وإعادة الطلب نفسه بالمفتاح نفسه. أدلة الخادم القائمة `fullyPaidExpenseIsAtomicExactAndConcurrentReplayDoesNotDuplicate` و`partialAndUnpaidExpensesKeepOneOriginalAndDatedSettlements` في `OwnerSliceTest` تثبت عدم إنشاء قيد/تسوية إضافية عند الإعادة، و`concurrentDoubleApprovalCreatesOneEntry` في `TeamM5Test` يثبت اعتمادًا واحدًا. تعدد محاولات HTTP لا يعني إنشاء عمليات مالية جديدة.
+- الملفات المعدلة في هذا التحقق: الاختبار أعلاه وهذا التسليم فقط؛ لا تعديل Flutter إنتاجي أو Backend أو migrations أو API أو قواعد مالية. الرئيسي وحده؛ صفر وكلاء فرعيين، ولا تغيير إعدادات النموذج.
+- **حدود التحقق باقية صراحةً:** بناء وتشغيل Android النهائيان غير مكتملين بسبب سعة القرص؛ اختبار جهاز فعلي معلق؛ اختبار قارئ شاشة تفاعلي معلق؛ مراجعة الأردية لغويًا من متحدث أصلي معلقة. لم تُعد تهيئة Android ولم تُحذف ملفات المستخدم.
+- التالي ضمن هذه المهمة فقط: حفظ الاختبارات ودفعها إلى الفرع نفسه والتحقق من CI عند الرأس المحدث؛ النتيجة النهائية وSHA في رد التسليم وPR، بلا commit لمجرد تسجيل نجاح CI. بعدها التوقف لمراجعة المالك للدمج؛ لا دمج ولا مهمة جديدة. الأقسام أدناه سجل التسليم السابق.
+
+---
+
+# التسليم السابق — تعميم A + F3 Almarai مكتمل
 
 اكتملت الدفعات الست على `feat/ui-a-almarai-rollout` من `6f61d3b`، مع حفظ ancestry التصميم والتجربة والخطوط. main وorigin/main عند `8aae24f` دون تعديل. commits الدفعات: `30ff1c0`، `1d6b36e`، `3c5590c`، `fd5326a`، `6345219`، `25a65bf`، ثم commit الإغلاق وتصحيح المراجعة. لا مرحلة منتج جديدة ولا دمج أو نشر.
 
