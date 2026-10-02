@@ -6,8 +6,8 @@
 | UI_A_ALMARAI_ROLLOUT_STATUS | اكتمل تنفيذ الدفعات الست والتحقق المحلي المتاح؛ جاهز لمراجعة PR البشرية ضمن الحدود المذكورة. نتيجةCI النهائية في PR ورد التسليم، ولا commit لمجرد تسجيل نجاحها. |
 | APPROVED_COMBINATION | A «واضح وهادئ» + F3 Almarai المعتمد؛ لا إعادة اختيار. |
 | SOURCE_BASELINE_AND_INHERITED_BRANCHES | `6f61d3bf965453e0c6f402efc9b86fe3db65ce46` على feat/ui-a-typography؛ يتضمن تصميم A/B/C، تجربة المعدة وTypography. كلها ancestry غير مدمجة في main عند البداية. `8aae24fddf37ec39d5a93b475e4a65a82d406923` سلف ويحتوي إصلاح التاريخ. |
-| FEATURE_BRANCH_AND_FINAL_HEAD | `feat/ui-a-almarai-rollout`؛ commit الذي يحمل هذا الملف هو إغلاق التعميم بعد `25a65bf`. الرأس الكامل في رد التسليم/PR، أو `git rev-parse HEAD`. |
-| COMMITS_BY_BATCH | 1:`30ff1c0`، 2:`1d6b36e`، 3:`3c5590c`، 4:`fd5326a`، 5:`6345219`، 6:`25a65bf`، ثم commit الإغلاق وتصحيح المراجعة. |
+| FEATURE_BRANCH_AND_FINAL_HEAD | `feat/ui-a-almarai-rollout`؛ commit الذي يحمل آخر تحديث لهذا الملف يتضمن إصلاحCI بعد `0c5ee08`. الرأس الكامل في رد التسليم/PR، أو `git rev-parse HEAD`. |
+| COMMITS_BY_BATCH | 1:`30ff1c0`، 2:`1d6b36e`، 3:`3c5590c`، 4:`fd5326a`، 5:`6345219`، 6:`25a65bf`، ثم `0c5ee08` للإغلاق وتصحيح المراجعة، وبعده إصلاح تنقل المعرض الذي كشفهCI. |
 
 ## ما تغيّر
 | بند | النتيجة |
@@ -19,7 +19,7 @@
 | APP_CONTROLLED_OVERLAYS_AND_NATIVE_EXCEPTIONS | dialog/date/dropdown/popup/snackbar/navigation على الخط المحدد. منتقي الملفات ولوحة مفاتيح النظام ومحتوى المرفق مستثناة من التحكم الطباعي. |
 | SCREEN_COVERAGE_FILE | [COVERAGE.md](COVERAGE.md) يسمي كل وجهة/تدفق وحالته ونوع الأدلة. |
 | MIGRATED_SCREEN_FAMILIES | الدخول، مساحة العمل، الرئيسية/الملخص، المعدات، الإضافة/التعديل، السجل، تفاصيل المال/دفعات/استرداد، المسودات/المرفقات، التقارير، المستندات/الإصدارات/التنبيه، الصيانة/البلاغات، الفريق/الدعوات/التعيين، السائق/المراجعة، المؤسسات والمشاريع/العقود، الإعدادات. |
-| INTENTIONALLY_UNCHANGED | العقود والباك إند والمهاجرات والحسابات والصلاحيات وتكاملات الإنتاج، والمعرضان التاريخيان. لاGPS/مؤسسة أو فريق إلزامي/ميزة جديدة. |
+| INTENTIONALLY_UNCHANGED | العقود والباك إند والمهاجرات والحسابات والصلاحيات وتكاملات الإنتاج، والمعرضان التاريخيان محفوظان؛ استثناء لاحق لتكبير تسميات تنقل المعرض بسببCI. لاGPS/مؤسسة أو فريق إلزامي/ميزة جديدة. |
 | BLOCKED_OR_NOT_MIGRATED | لا عائلة واجهة تطبيق متروكة دون ترحيل. توجد فجوات تحقق منصة/حالات؛ ليست ادعاء اختبار كل permutation. |
 | REAL_APP_VS_PREVIEW_SEPARATION | الصور من main.dart متصلAPI/DB؛ شجرة الإنتاج20 ملفDart لا تستورد أي معاينة. أبنية المعاينتين مستقلة. |
 | SOURCE_DIFF_BOUNDARY_CHECK | لا تغيير Backend أو migrations أو OpenAPI/API client أو money/date helpers مقابل6f61d3b. استثناء frontend معلن: حذف initialPaid من FULL/UNPAID في الاعتماد وفق العقد الموجود، بدلnull الذي سبب400؛ قفل حقول التوزيع/المشروع أثناء حفظ غير مؤكد؛ تسميات الحالة/الخطأ فقط. لا تغيير حسابات أو قواعد وصول. |
@@ -45,7 +45,7 @@
 | اختبارات الدفعات | 83،53/16،54،54،56/36/37/12،70/50 ناجحة في مراحلها؛ أعداد متداخلة. محاولات الفشل الأولية وإصلاحاتها في [سجل التنفيذ](ALMARAI_ROLLOUT.md). اختبارات التجربة التاريخية ليست نتائج جديدة لهذه المهمة. |
 | `flutter analyze` | نظيف بعد التعديل النهائي. |
 | PRODUCTION_WEB_BUILD | `flutter build web --release -t lib/main.dart --output=../.local/almarai-rollout/web-production` ناجح بعد التصحيح النهائي؛ الحوار المصحح فُحص فعليًا. |
-| DESIGN_AND_TYPOGRAPHY_PREVIEW_BUILDS | كلا الأمرين أدناه ناجح؛ ملفات المعاينتين لم تتغير بعدهما. |
+| DESIGN_AND_TYPOGRAPHY_PREVIEW_BUILDS | كلا الأمرين أدناه ناجح؛ أعيد بناء معرض التصميم بعد إصلاحCI؛ معاينة الخطوط لم تتغير. |
 | IOS_BUILD_AND_RUN | بناء المحاكي ناجح قبل وبعد التصحيح. install/launch على iPhone17Pro/iOS26.5 ناجح مع الجلسة الموجودة. رحلة iOS والصور قبل تصحيح اللون؛ البناء النهائي ناجح وتصحيح اللون فُحص على الويب. |
 | ANDROID_BUILD_AND_RUN | بناء APK العادي ناجح قبل تصحيح اللون. إعادة البناء النهائية ARM64 **فشلت بنقص القرص**؛ لا ندعي APK مطابقًا للتصحيح الأخير. محاولة تشغيل AVD الموجود فشلت للسبب نفسه. لا تنزيل نظام أو مسح بيانات. |
 | تدقيق الملفات | `git diff --check` ناجح؛ أداة تدقيق الخطوط نُفذت؛12/12 بصمة مصدر/ترخيص مطابقة. شجرة الإنتاج20 ملف Dart بلا استيراد للمعاينات. فحص أنماط المفاتيح بلا نتائج. |
@@ -77,9 +77,9 @@ flutter build apk --debug --target-platform android-arm64 -t lib/main.dart --dar
 | بند | النتيجة |
 |---|---|
 | ملفات التغيير | [القائمة الدقيقة](ALMARAI_ROLLOUT_FILES.md) مقابل baseline التعميم. |
-| PR_CREATED_AND_URL | يُنشأ بعد commit الإغلاق؛ الرابط في رد التسليم. [مقارنة الفرع](https://github.com/MuathMunif/equipment-platform/compare/main...feat/ui-a-almarai-rollout). لا PR مكرر عند الفحص. |
+| PR_CREATED_AND_URL | أُنشئ للفرع نفسه؛ [مقارنة الفرع](https://github.com/MuathMunif/equipment-platform/compare/main...feat/ui-a-almarai-rollout). [PR #9](https://github.com/MuathMunif/equipment-platform/pull/9) أُنشئ وربط بالمهمة دون تكرار. |
 | CI_AT_FINAL_HEAD | يجب التحقق من Backend tests وFlutter checks على الرأس النهائي. النتيجة في PR ورد التسليم؛ لا commit لمجرد تسجيل نجاح CI. فحص حماية الفرع أعاد404 Branch not protected؛ لم تتغير الحماية. |
-| WORKTREE_STATUS | commit الإغلاق يجمع التصحيح والتوثيق والأدلة؛ الحالة النهائية تُفحص بعده وتُذكر في الرد. |
+| WORKTREE_STATUS | commit الإغلاق وإصلاحCI يجمعان التصحيح والتوثيق والأدلة؛ الحالة النهائية تُفحص بعده وتُذكر في الرد. |
 | MAIN_UNCHANGED | main وorigin/main بقيا عند8aae24f أثناء الفحص. لا دمج أو نشر أو مستودع جديد. |
 | HOW_TO_OPEN_THE_REAL_APP | `http://127.0.0.1:8081/` يخدم بناء الإنتاج، API المحلي على8080. الحساب0500000802 والرمز123456 للتطوير المحلي فقط؛ لا SMS حقيقي. |
 | READY_FOR_USER_MERGE_REVIEW | نعم بعد نجاح CI المطلوب، ضمن حد Android المعلن. لا يعني نشرًا أو قبول كل V1. |
@@ -95,3 +95,6 @@ python3 -m http.server 8081 --bind 127.0.0.1 --directory .local/almarai-rollout/
 xcrun simctl install 657C142E-E597-481F-B8F9-8C07082C1D30 app/build/ios/iphonesimulator/Runner.app
 xcrun simctl launch --terminate-running-process 657C142E-E597-481F-B8F9-8C07082C1D30 com.equipment.equipmentApp
 ```
+
+
+متابعة CI الأولى عند `0c5ee08`: Backend ناجح، Flutter210 ناجحة واختبار تباين واحد فاشل في المعرض الموروث علىLinux. لم تُحذف أو تُخفف أي assertion. عولج نص التنقل الصغير بتكبيره من10 إلى12 ورفع وزن غير المحدد إلى600؛ الخط والألوان والتصميم المختار باقية. نجحت محليًا **62/62** من اختبارات المعاينتين وanalyze، وأعيد بناء المعرض المتأثر. تفاصيل الحالة النهائية فيPR ورد التسليم. هذا استثناء عرض محدود داخل المعاينة؛ لا تغيير إنتاجي إضافي أو Backend أو صلاحيات.

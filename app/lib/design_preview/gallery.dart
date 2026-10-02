@@ -371,11 +371,11 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                           item.$1,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             color: t.ink,
                             fontWeight: screen == item.$3
                                 ? FontWeight.bold
-                                : FontWeight.normal,
+                                : FontWeight.w600,
                           ),
                         ),
                       ],

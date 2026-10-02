@@ -59,3 +59,6 @@ Native window PNGs include simulator chrome (774×1666); native keyboards/system
 | Unsaved confirmation, FINAL | ar / synthetic OWNER0802 /390×1000 | [fixed dialog](screenshots/almarai-rollout/unsaved-fixed-ar-390.jpg) | P3 review fix: Leave is semantic destructive color |
 
 Final self-review covers latest teamEN1440/UR390 replacements. Independent review inspected four baseline +14 rollout images named in its report, not every image in this index; newer gap-closure/fix images are self-reviewed only. No complete manual matrix claim. [Review details](ALMARAI_ROLLOUT_DELIVERY.md).
+
+## CI follow-up — explicitly PREVIEW evidence
+[Historical gallery navigation fix](screenshots/almarai-rollout/preview-nav-ci-fix-ar-390.jpg): actual rendered `main_design_preview.dart`, A/Arabic/390×1000, synthetic preview fixtures (not connected production), after0c5ee08 plus12px/600nav fix. Self-inspected for the inherited CI contrast failure only. It is not evidence for production financial journeys. Temporary8086server/tab stopped; real app8081 remains.

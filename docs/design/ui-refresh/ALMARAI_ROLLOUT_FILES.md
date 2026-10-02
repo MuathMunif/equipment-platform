@@ -1,13 +1,14 @@
 # ملفات تغيير التعميم
 
-القائمة مقابل baseline `6f61d3b`، وتشمل التنفيذ والاختبارات والتوثيق والصور الفعلية. ملفات المعاينات والخطوط الموروثة من فروع سابقة ليست إضافات جديدة لهذا التعميم.
+القائمة مقابل baseline `6f61d3b`، تشمل التنفيذ والاختبارات والتوثيق والصور. تعديل لاحق محدود في gallery.dart يعالج فشل تباين نص التنقل في CI؛ صورة المعرض معلّمة preview وليست دليل إنتاج.
 
-المجموع: **87 ملفًا**.
+المجموع: **89 ملفًا**.
 
 - `AGENTS.md`
 - `app/l10n/app_ar.arb`
 - `app/l10n/app_en.arb`
 - `app/l10n/app_ur.arb`
+- `app/lib/design_preview/gallery.dart`
 - `app/lib/design_system/equipment_a.dart`
 - `app/lib/design_system/equipment_typography.dart`
 - `app/lib/documents.dart`
@@ -75,6 +76,7 @@
 - `docs/design/ui-refresh/screenshots/almarai-rollout/organization-ar-390.jpg`
 - `docs/design/ui-refresh/screenshots/almarai-rollout/organization-archive-blocked-ar-390.jpg`
 - `docs/design/ui-refresh/screenshots/almarai-rollout/organization-archive-dialog-ar-390.jpg`
+- `docs/design/ui-refresh/screenshots/almarai-rollout/preview-nav-ci-fix-ar-390.jpg`
 - `docs/design/ui-refresh/screenshots/almarai-rollout/project-form-ar-390.jpg`
 - `docs/design/ui-refresh/screenshots/almarai-rollout/project-report-back-ar-1440.jpg`
 - `docs/design/ui-refresh/screenshots/almarai-rollout/project-summary-ar-1440.jpg`
