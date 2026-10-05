@@ -102,16 +102,22 @@ class _DashboardSectionState extends State<DashboardSection> {
     load();
   }
 
-  void openLedger(String type) => Navigator.push(
+  // LedgerPage is a body shared by tabs and EquipmentDetail. Pushed shortcuts
+  // need their own Material/page shell; the caller's Scaffold is not an ancestor
+  // of the new route. AppBar consumes the top inset; the body keeps bottom safety.
+  void openLedger([String? type]) => Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => LedgerPage(
-        api: widget.api,
-        canManage: widget.canManage,
-        canSubmitReview: widget.canSubmitReview,
-        initialEntryType: type,
-        initialFromDate: _first(month),
-        initialToDate: _last(month),
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: Text(l10n(context).ledger)),
+        body: LedgerPage(
+          api: widget.api,
+          canManage: widget.canManage,
+          canSubmitReview: widget.canSubmitReview,
+          initialEntryType: type,
+          initialFromDate: type == null ? null : _first(month),
+          initialToDate: type == null ? null : _last(month),
+        ),
       ),
     ),
   );
@@ -133,16 +139,7 @@ class _DashboardSectionState extends State<DashboardSection> {
               loc.m7RecentEntries,
               action: TextButton(
                 key: const Key('homeViewJournal'),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LedgerPage(
-                      api: widget.api,
-                      canManage: widget.canManage,
-                      canSubmitReview: widget.canSubmitReview,
-                    ),
-                  ),
-                ),
+                onPressed: () => openLedger(),
                 child: Text(loc.homeViewJournal),
               ),
             ),

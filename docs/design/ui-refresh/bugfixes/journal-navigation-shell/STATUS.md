@@ -1,0 +1,10 @@
+# Journal route shell — implementation and local verification complete
+
+- Branch: `fix/journal-navigation-shell`; baseline merged main `9ea913b0a0141367c86ff229eedcae5dd017a3cc`. PR10 confirmed MERGED; compact source matches6713ac6. Safe ff-only synchronization, no discarded work.
+- Root cause reproduced on actual iOS/web: DashboardSection pushed shared LedgerPage BODY without route Scaffold/Material/AppBar. Theme existed, but subtitle inherited MaterialApp red/yellow monospace fallback; EquipmentPageBody(top:false) had no top-inset owner.
+- Only production change: `app/lib/reports.dart`, shared `openLedger([type])` supplies canonical Scaffold/AppBar + unchanged LedgerPage. Recent shortcut has no dates/type; monthly routes retain exact dates/type and access flags.
+- New root regression failed before fix with monospace; final8/8new tests,30existing affected tests, full256/256once, analyze clean, web release and native iOS build PASS. Initial6harness failures corrected null-versus-none decoration expectation only.13font/theme/asset hashes unchanged; diff-check clean.
+-15screenshots in `screenshots/`:12actual app and3root-widget locale/inset fixtures. [Index](screenshots/INDEX.md), [commands/cause/results](FIX.md).
+- Actual native repeated Home→Journal + detail/back + bottom entry complete; app left on pushed Journal. Existing OWNER/مساحتي, API8080, Web8081, PostgreSQL55432 preserved. Native scroll/drag automation did not move screen; iOS scrolling remains unverified, while web and widget scrolling verified.
+- No subagents/model changes, backend/API/data edits, deployment or merge. Android final build/run remains incomplete due disk; physical device, interactive screen reader and native Urdu linguistic review pending.
+- Next concrete action: commit focused fix/tests/evidence, push same branch, create NEW PR, verify required CI at final head, report then STOP for owner review. Final head/CI outcome belong in PR/final response, not a success-only commit. Do not restart rollout or PR10.
