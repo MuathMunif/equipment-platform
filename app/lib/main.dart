@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:file_selector/file_selector.dart';
 
 import 'api.dart';
+import 'compact_workspace_layout.dart';
 import 'design_system/equipment_a.dart';
 import 'file_export.dart';
 import 'documents.dart';
@@ -1008,7 +1009,7 @@ class _EquipmentListState extends State<EquipmentList> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            EquipmentHeading(
+            CompactSectionHeading(
               loc.homeMyEquipment,
               action: TextButton(
                 key: const Key('homeViewEquipment'),
@@ -1040,21 +1041,13 @@ class _EquipmentListState extends State<EquipmentList> {
             if (items.isEmpty) Text(loc.noEquipmentMatches),
             for (var i = 0; i < items.take(3).length; i++) ...[
               if (i > 0) const Divider(height: 1),
-              ListTile(
+              CompactEquipmentRow(
                 key: ValueKey('homeEquipment-${items[i]['id']}'),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                minVerticalPadding: 8,
-                leading: const Icon(Icons.local_shipping_outlined, size: 24),
-                title: Text(
-                  items[i]['name'] as String,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                subtitle: Text(
-                  items[i]['reference'] as String,
-                  textDirection: TextDirection.ltr,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                trailing: const Icon(Icons.chevron_right, size: 18),
+                name: items[i]['name'] as String,
+                reference: items[i]['reference'] as String,
+                model: '${items[i]['model']}',
+                actionLabel: loc.uiViewRecordsAndEntries,
+                home: true,
                 onTap: () =>
                     openEquipment(Map<String, dynamic>.from(items[i] as Map)),
               ),
@@ -1111,145 +1104,99 @@ class _EquipmentListState extends State<EquipmentList> {
         ],
       );
     }
+    final loc = l10n(context);
+    final firstUse = items.isEmpty && search.text.isEmpty && widget.canManage;
+    final addAction = FilledButton.icon(
+      key: const Key('addEquipment'),
+      onPressed: add,
+      icon: const Icon(Icons.add),
+      label: Text(loc.addEquipment),
+    );
     return EquipmentPageBody(
       children: [
-        Text(
-          widget.home
-              ? '${l10n(context).home} • ${widget.name}'
-              : l10n(context).equipment,
-          style: Theme.of(context).textTheme.headlineSmall,
+        LayoutBuilder(
+          builder: (context, box) {
+            final title = Text(
+              loc.equipment,
+              style: Theme.of(context).textTheme.headlineSmall,
+            );
+            final showAdd = widget.canManage && !firstUse;
+            if (box.maxWidth < 340 ||
+                MediaQuery.textScalerOf(context).scale(14) > 21) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  title,
+                  if (showAdd) ...[const SizedBox(height: 8), addAction],
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: title),
+                if (showAdd) addAction,
+              ],
+            );
+          },
         ),
         const SizedBox(height: 8),
-        if (widget.canEquipment) Text(l10n(context).equipmentSubtitle),
-        const SizedBox(height: 24),
-        if (widget.canEquipment && loading)
-          const Center(child: CircularProgressIndicator()),
-        if (widget.canEquipment && error != null)
-          ErrorPanel(message: error!, retry: load),
-        if (widget.canEquipment && !loading && error == null)
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: search,
-                  decoration: InputDecoration(
-                    labelText: l10n(context).searchEquipment,
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onSubmitted: (_) {
-                    page = 0;
-                    load();
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              IconButton.filledTonal(
-                tooltip: l10n(context).uiSearch,
+        if (widget.canEquipment) Text(loc.equipmentSubtitle),
+        const SizedBox(height: 16),
+        if (widget.canEquipment)
+          TextField(
+            key: const Key('equipmentSearch'),
+            controller: search,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              labelText: loc.searchEquipment,
+              suffixIcon: IconButton(
+                key: const Key('equipmentSearchSubmit'),
+                tooltip: loc.uiSearch,
                 onPressed: () {
                   page = 0;
                   load();
                 },
                 icon: const Icon(Icons.search),
               ),
-            ],
-          ),
-        const SizedBox(height: 20),
-        if (!widget.home &&
-            !loading &&
-            error == null &&
-            items.isEmpty &&
-            search.text.isEmpty &&
-            widget.canManage)
-          firstUseCard()
-        else if (widget.canEquipment &&
-            !loading &&
-            error == null &&
-            !(widget.home &&
-                items.isEmpty &&
-                search.text.isEmpty &&
-                widget.canManage)) ...[
-          if (widget.canManage)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: FilledButton.icon(
-                key: const Key('addEquipment'),
-                onPressed: add,
-                icon: const Icon(Icons.add),
-                label: Text(l10n(context).addEquipment),
-              ),
             ),
-          const SizedBox(height: 20),
+            onSubmitted: (_) {
+              page = 0;
+              load();
+            },
+          ),
+        const SizedBox(height: 12),
+        if (firstUse)
+          firstUseCard()
+        else if (widget.canEquipment) ...[
           if (items.isEmpty)
             Text(
               search.text.isEmpty
-                  ? l10n(context).noEquipmentMatches
-                  : l10n(context).uiNoMatchingEquipment,
+                  ? loc.noEquipmentMatches
+                  : loc.uiNoMatchingEquipment,
             ),
           LayoutBuilder(
             builder: (context, constraints) => Wrap(
-              spacing: 16,
-              runSpacing: 16,
+              spacing: 12,
+              runSpacing: 12,
               children: items
                   .map(
                     (item) => SizedBox(
-                      width: constraints.maxWidth > 640
-                          ? (constraints.maxWidth - 16) / 2
+                      width:
+                          constraints.maxWidth >= 800 &&
+                              MediaQuery.textScalerOf(context).scale(14) <= 21
+                          ? (constraints.maxWidth - 12) / 2
                           : constraints.maxWidth,
                       child: Card(
                         margin: EdgeInsets.zero,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(
-                            EquipmentA.radius,
-                          ),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => EquipmentDetail(
-                                api: widget.api,
-                                equipment: item,
-                                canManage: widget.canManage,
-                                canFinance: widget.canFinance,
-                                canFinanceManage: widget.canFinanceManage,
-                                canSubmitReview: widget.canSubmitReview,
-                                canDocuments: widget.canDocuments,
-                                canMaintenance: widget.canMaintenance,
-                                canAssignDrivers: widget.canAssignDrivers,
-                              ),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.local_shipping_outlined,
-                                  color: brand,
-                                  size: 30,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  item['name'],
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  l10n(context).modelValue('${item['model']}'),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  item['reference'],
-                                  textDirection: TextDirection.ltr,
-                                  style: const TextStyle(
-                                    color: EquipmentA.muted,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  l10n(context).uiViewRecordsAndEntries,
-                                  style: TextStyle(color: brand),
-                                ),
-                              ],
-                            ),
+                        child: CompactEquipmentRow(
+                          key: ValueKey('equipmentRow-${item['id']}'),
+                          name: item['name'] as String,
+                          reference: item['reference'] as String,
+                          model: loc.modelValue('${item['model']}'),
+                          actionLabel: loc.uiViewRecordsAndEntries,
+                          home: false,
+                          onTap: () => openEquipment(
+                            Map<String, dynamic>.from(item as Map),
                           ),
                         ),
                       ),
@@ -5342,72 +5289,111 @@ class _MoreMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     void open(Widget page) =>
         Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    final rows = <Widget>[
+      if (canReports)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 8,
+          minTileHeight: 56,
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.analytics_outlined),
+          title: Text(l10n(context).m7Reports),
+          onTap: () => open(ReportsPage(api: api, canProjects: canProjects)),
+        ),
+      if (canMaintain)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 8,
+          minTileHeight: 56,
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.build_outlined),
+          title: Text(l10n(context).m4Hub),
+          onTap: () => open(MaintenanceHub(api: api)),
+        ),
+      if (canOrganizations)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 8,
+          minTileHeight: 56,
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.business_outlined),
+          title: Text(l10n(context).m6Organizations),
+          onTap: () => open(
+            OrganizationsPage(api: api, canManage: canManageOrganizations),
+          ),
+        ),
+      if (canProjects)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 8,
+          minTileHeight: 56,
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.folder_copy_outlined),
+          title: Text(l10n(context).m6ProjectsContracts),
+          onTap: () => open(
+            ProjectsPage(
+              api: api,
+              canManage: canManageProjects,
+              canFinance: canFinance,
+            ),
+          ),
+        ),
+      if (canTeam)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 8,
+          minTileHeight: 56,
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.group_outlined),
+          title: Text(l10n(context).m5Team),
+          onTap: () => open(
+            TeamPage(api: api, owner: owner, canAssign: canAssignDrivers),
+          ),
+        ),
+      if (canReview)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          minVerticalPadding: 8,
+          minTileHeight: 56,
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.fact_check_outlined),
+          title: Text(l10n(context).m5ReviewQueue),
+          onTap: () => open(ReviewQueuePage(api: api)),
+        ),
+      ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        minVerticalPadding: 8,
+        minTileHeight: 56,
+        trailing: const Icon(Icons.chevron_right, size: 18),
+        leading: const Icon(Icons.settings_outlined),
+        title: Text(l10n(context).settings),
+        onTap: onSettings,
+      ),
+    ];
     return EquipmentPageBody(
-      maxWidth: 880,
+      maxWidth: 720,
       children: [
         Text(
           l10n(context).m7More,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
-        const SizedBox(height: 24),
-        EquipmentFormSection(
-          children: [
-            if (canReports)
-              ListTile(
-                leading: const Icon(Icons.analytics_outlined),
-                title: Text(l10n(context).m7Reports),
-                onTap: () =>
-                    open(ReportsPage(api: api, canProjects: canProjects)),
-              ),
-            if (canMaintain)
-              ListTile(
-                leading: const Icon(Icons.build_outlined),
-                title: Text(l10n(context).m4Hub),
-                onTap: () => open(MaintenanceHub(api: api)),
-              ),
-            if (canOrganizations)
-              ListTile(
-                leading: const Icon(Icons.business_outlined),
-                title: Text(l10n(context).m6Organizations),
-                onTap: () => open(
-                  OrganizationsPage(
-                    api: api,
-                    canManage: canManageOrganizations,
+        const SizedBox(height: 12),
+        Card(
+          key: const Key('compactMoreMenu'),
+          margin: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                if (i > 0)
+                  const Padding(
+                    padding: EdgeInsetsDirectional.only(start: 56, end: 16),
+                    child: Divider(height: 1),
                   ),
-                ),
-              ),
-            if (canProjects)
-              ListTile(
-                leading: const Icon(Icons.folder_copy_outlined),
-                title: Text(l10n(context).m6ProjectsContracts),
-                onTap: () => open(
-                  ProjectsPage(
-                    api: api,
-                    canManage: canManageProjects,
-                    canFinance: canFinance,
-                  ),
-                ),
-              ),
-            if (canTeam)
-              ListTile(
-                leading: const Icon(Icons.group_outlined),
-                title: Text(l10n(context).m5Team),
-                onTap: () => open(
-                  TeamPage(api: api, owner: owner, canAssign: canAssignDrivers),
-                ),
-              ),
-            if (canReview)
-              ListTile(
-                leading: const Icon(Icons.fact_check_outlined),
-                title: Text(l10n(context).m5ReviewQueue),
-                onTap: () => open(ReviewQueuePage(api: api)),
-              ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: Text(l10n(context).settings),
-              onTap: onSettings,
-            ),
-          ],
+                rows[i],
+              ],
+            ],
+          ),
         ),
       ],
     );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'api.dart';
+import 'compact_workspace_layout.dart';
 import 'design_system/equipment_a.dart';
 import 'localization.dart';
 import 'main.dart' show EntryDetail, LedgerPage, HistoryEquipmentPicker;
@@ -128,7 +129,7 @@ class _DashboardSectionState extends State<DashboardSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            EquipmentHeading(
+            CompactSectionHeading(
               loc.m7RecentEntries,
               action: TextButton(
                 key: const Key('homeViewJournal'),
@@ -166,33 +167,7 @@ class _DashboardSectionState extends State<DashboardSection> {
           ),
         if (error != null)
           EquipmentError(message: loc.m7LoadFailed, retry: load),
-        if (widget.canEquipment &&
-            data?.containsKey('activeEquipmentCount') == true)
-          Card(
-            key: const Key('homeCurrentEquipment'),
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.local_shipping_outlined,
-                    size: 22,
-                    color: EquipmentA.accent,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(loc.homeCurrentEquipment)),
-                  const SizedBox(width: 10),
-                  Text(
-                    '${data!['activeEquipmentCount']}',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-              ),
-            ),
-          ),
         if (finance) ...[
-          const SizedBox(height: 8),
           Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -269,6 +244,33 @@ class _DashboardSectionState extends State<DashboardSection> {
             },
           ),
         ],
+        if (widget.canEquipment &&
+            data?.containsKey('activeEquipmentCount') == true) ...[
+          if (finance) const SizedBox(height: 12),
+          Card(
+            key: const Key('homeCurrentEquipment'),
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.local_shipping_outlined,
+                    size: 22,
+                    color: EquipmentA.accent,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(loc.homeCurrentEquipment)),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${data!['activeEquipmentCount']}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         if (widget.attention != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -277,7 +279,28 @@ class _DashboardSectionState extends State<DashboardSection> {
         if (finance || widget.equipment != null) ...[
           const SizedBox(height: 12),
           if (finance && widget.equipment != null)
-            EquipmentColumns(main: recentCard, secondary: widget.equipment!)
+            LayoutBuilder(
+              builder: (context, box) {
+                if (box.maxWidth < 900 ||
+                    MediaQuery.textScalerOf(context).scale(14) > 21) {
+                  return Column(
+                    children: [
+                      recentCard,
+                      const SizedBox(height: 12),
+                      widget.equipment!,
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 5, child: recentCard),
+                    const SizedBox(width: 12),
+                    Expanded(flex: 4, child: widget.equipment!),
+                  ],
+                );
+              },
+            )
           else if (finance)
             recentCard
           else
@@ -310,25 +333,45 @@ class _DashboardSectionState extends State<DashboardSection> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 12,
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final details = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(income ? loc.income : loc.expense),
                       Text(
-                        localizedMoney(context, row['amount']),
-                        style: Theme.of(context).textTheme.titleMedium,
+                        localizedDate(context, row['operationDate'] as String?),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
-                  ),
-                  Text(
-                    localizedDate(context, row['operationDate'] as String?),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                  );
+                  final amount = Text(
+                    localizedMoney(context, row['amount']),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  );
+                  final painter = TextPainter(
+                    text: TextSpan(text: amount.data, style: amount.style),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                  )..layout();
+                  final stack =
+                      painter.width > box.maxWidth * .55 ||
+                      MediaQuery.textScalerOf(context).scale(14) > 21;
+                  painter.dispose();
+                  if (stack) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [details, amount],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: details),
+                      const SizedBox(width: 8),
+                      amount,
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(width: 4),
