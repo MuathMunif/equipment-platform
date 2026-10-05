@@ -1133,5 +1133,13 @@
   "pilotEquipmentRecord": "مشین کا ریکارڈ",
   "pilotOptionalConnections": "اختیاری روابط",
   "m5AccessRevoked": "رسائی واپس لے لی گئی",
-  "m6NoProjectSelected": "کوئی منصوبہ یا معاہدہ نہیں"
+  "m6NoProjectSelected": "کوئی منصوبہ یا معاہدہ نہیں",
+  "homeGreeting": "السلام علیکم، {name}",
+  "homeWelcome": "السلام علیکم",
+  "homeFinancialSummary": "مالی خلاصہ",
+  "homeCurrentEquipment": "فی الحال فعال آلات",
+  "homeRecordedExpenses": "درج شدہ اخراجات",
+  "homeRecordedIncome": "درج شدہ آمدنی",
+  "homeViewJournal": "ریکارڈ دیکھیں",
+  "homeMyEquipment": "میرے آلات"
 }

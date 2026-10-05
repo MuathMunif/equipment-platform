@@ -1,0 +1,417 @@
+IMPLEMENT THE NEW COMPACT REFERENCE — HOME, EQUIPMENT LIST AND MORE
+KEEP THE EXISTING ALMARAI TYPOGRAPHY UNCHANGED
+
+USER AUTHORIZATION
+
+The user approved the new three-screen visual proposal for layout and density.
+Implement that proposal on the REAL application, limited to Home, the Equipment
+list, and More. This is not a new design exploration or a whole-app rewrite.
+
+The selected visual foundation remains Direction A. The selected typography
+remains F3 Almarai. The user explicitly does NOT authorize changing the font.
+
+The implementation still needs the user's final visual acceptance. Do not merge,
+deploy, declare the UI accepted, or start another milestone.
+
+1. REFERENCE FILES — READ THE IMAGES
+
+Primary layout reference:
+docs/design/ui-refresh/compact-layout-review/reference-home-equipment-more.png
+
+Current application screenshots, for before/after comparison only:
+docs/design/ui-refresh/compact-layout-review/before-home-top.png
+docs/design/ui-refresh/compact-layout-review/before-home-equipment.png
+docs/design/ui-refresh/compact-layout-review/before-equipment-list.png
+docs/design/ui-refresh/compact-layout-review/before-more.png
+
+Actually inspect the images. The primary reference contains three phone mockups:
+Home, Equipment, and More. Captions outside the phones are not application copy.
+
+The image governs composition, visual hierarchy and compactness. The existing
+approved product rules and the explicit constraints below govern behavior.
+The REAL Almarai pilot/current application governs typography, NOT the lettering
+in the generated reference image.
+
+If the primary image is missing, look only for the exact provided local reference
+or attached image. Do not claim you inspected a missing file or invent a new
+reference. Report the missing asset and continue only independent safe inspection.
+
+2. FONT LOCK — NON-NEGOTIABLE
+
+Preserve the current production typography exactly:
+- Almarai is the primary family for Arabic, English, Urdu, and numbers.
+- Body/secondary text uses the existing 400 mapping.
+- Headings/emphasis use the existing 700 mapping where already appropriate.
+- Existing Plex fallback is only for unsupported glyphs, as currently configured.
+- Preserve existing sizes, line-height/letter-spacing tokens, font files, fallback
+  order, and device text scaling. Reuse existing text roles.
+
+Inspect the actual current definitions, including where present:
+app/lib/design_system/equipment_typography.dart
+app/lib/design_system/equipment_a.dart
+app/pubspec.yaml
+and the typography/rollout documentation under docs/design/ui-refresh/.
+
+Do NOT:
+- change font family, introduce another typeface, or restore Noto as the normal font;
+- replace all Urdu text with Plex merely to make layout easier;
+- edit/download/delete/replace font assets or their pubspec declarations;
+- introduce network font fetching or a new font package;
+- synthesize a new weight or make all text bold;
+- shrink text, use FittedBox/auto-size to squeeze labels, clamp text scaling,
+  apply TextScaler.noScaling, or copy the reference image's raster typography;
+- reopen the F1/F2/F3 comparison or add a font/theme chooser to production.
+
+Solve density through layout, padding, grouping and intrinsic sizing.
+If content needs more room, allow wrapping or responsive stacking. Do not solve
+it by silently altering typography or hiding meaningful names/amounts.
+
+Record the existing font definitions/assets before editing and confirm they are
+unchanged afterward. Add focused theme-inheritance assertions where useful.
+System-owned UI, such as the native file picker, is not expected to use Almarai.
+
+3. SAFE BASE AND LIMITED WORKING POLICY
+
+Expected repository:
+/Users/muath/Desktop/equipment-platform
+
+Last reported Home correction:
+branch: fix/home-dashboard-layout
+commit: 8d9917985e23218af6393866bbbbf34ed2a6bafa
+PR: #10, open in the last report.
+
+These are inspection clues, not reset targets. Inspect actual Git status, branch,
+HEAD, existing PR state where access permits, and source contents. Use a baseline
+that includes the full A + Almarai rollout AND the latest Home correction.
+
+If the Home correction branch and PR #10 remain open and suitable, continue this
+focused refinement on that branch/PR and update its description to include the
+Equipment list and More improvements. Do not create a duplicate PR.
+
+If that work has already merged, safely update a clean main using --ff-only and
+create/resume fix/compact-home-equipment-more from the merged baseline.
+
+If current valid unmerged work differs, inspect it and preserve it. Do not jump
+to older main, rewrite history, force-push, automatically stash, reset, clean, or
+discard anything. Stop an unsafe branch transition rather than losing work.
+Expected new files in compact-layout-review are user-provided reference/task
+files, not a reason to delete or overwrite unrelated files.
+
+Continue in the existing user-selected Astra/High UI session. Main agent is the
+only writer. No subagents are needed for this focused three-screen correction.
+Do not change model configuration, credentials, or billing or investigate hidden
+runtime identity again. Do not repeat old milestones or full-device campaigns.
+
+Save a concise checkpoint at:
+docs/design/ui-refresh/compact-layout-review/STATUS.md
+After compaction read it, AGENTS.md and git status; resume this task, not an old
+main-sync or UI-selection instruction.
+
+4. EXPLICIT DIFFERENCES FROM THE GENERATED IMAGE
+
+The reference is illustrative. Implement these exceptions deliberately and list
+them in the delivery report instead of silently treating the image as new scope:
+
+A. Equipment photographs:
+Only show a real existing authorized equipment thumbnail if the current product
+already provides it. Otherwise retain the neutral equipment icon in a compact
+tile. Do not add a photo-upload feature, random vehicle photos, stock-photo
+assignments, external image fetching, or fabricated equipment assets.
+
+B. Equipment states and filters:
+Do not introduce UNDER_MAINTENANCE, INACTIVE, new equipment types, or other new
+states based on the image. Existing active/archived semantics remain. If an
+existing status badge is retained, it must reflect actual authorized data and
+must not imply mechanical health. Do not add the image's type/status filter row
+unless those exact filters already exist as working approved Equipment-list
+capabilities. Do not build placeholder filters.
+
+C. Bottom navigation:
+The generated image has inconsistent labels/icons/order. Keep the current
+correct routes and localized mapping:
+Home / Equipment / Journal / More.
+In Arabic, Home stays at the right end under the existing RTL navigation.
+Preserve existing driver-specific navigation and correct selected-tab state.
+Do not copy duplicate or misspelled navigation labels from the image.
+
+D. Numbers and names:
+Use real scoped API values and user-entered names. Never copy reference amounts,
+vehicle counts, month, model, plate, or workspace name into production.
+No monthly-entry-count card unless an exact authorized existing API value exists.
+Do not derive a monthly total from the three recent rows or change the backend.
+
+E. Development warning and account controls:
+Keep the existing development-environment indicator and current bell/workspace/
+language/account actions. The illustration omits some of these; that is not
+permission to remove them. No auth/security changes or cosmetic hiding of the
+fact that the app uses development services.
+
+5. HOME — MATCH THE NEW COMPACT COMPOSITION
+
+Keep the existing short greeting and actual workspace context. Avoid duplicate
+large titles or a redundant explanatory hero area. Preserve existing account,
+language, notification and workspace controls.
+
+For an owner with finance access and no attention items, follow this order:
+- concise header and existing development indicator;
+- compact month control and recorded-finance context;
+- two adjacent financial cards when width and text scale allow;
+- a slim full-width active-equipment count row;
+- recent financial operations;
+- My Equipment.
+
+Month/financial cards:
+- Use a single compact calendar/month control rather than a tall standalone form.
+- Income and expense cards have matching padding, alignment and hierarchy.
+- Preserve Almarai and the existing exact monetary formatter and signs.
+- Use existing A semantic income/expense colors for restrained emphasis if safe;
+  do not create a new palette or rely on color alone. No growth/trend claims.
+- Retain the important recorded-entry-date explanation, in existing secondary
+  text style. Do not silently change recorded totals into paid/received totals.
+- When text cannot fit, stack gracefully; do not shrink or truncate the amount.
+
+Attention:
+The image shows the no-attention state, not an instruction to delete attention.
+- Confirmed empty: no large empty card.
+- Loading/failure: preserve truthful loading/retry, not a false empty state.
+- Nonempty: a compact actionable section before recent operations, with at most
+  the existing three items, backend ordering and View all.
+- Missing-expiry information remains a separate compact link only when nonzero.
+- Preserve all permissions and the existing review-queue aggregation.
+
+Recent financial operations:
+- One content-height card, not separate tall blocks or expanded rows.
+- Header at start and the existing View journal/View all action at end.
+- Show at most the current three accessible records.
+- In RTL: small semantic icon and type/category/date on the right; amount and a
+  directional detail affordance at the left. Mirror layout appropriately in LTR.
+- Keep dates close to their type/context, readable amounts, and light dividers.
+- Reduce excessive header-to-first-row and row-to-row whitespace. Use natural
+  two-line rows that grow for text scaling; do not force large fixed heights.
+- Each row opens the same original entry. No invented metadata, new queries for
+  unauthorized fields, or changes to journal/date/filter semantics.
+
+My Equipment:
+- One compact card with title and View all.
+- Up to the existing three authorized equipment items.
+- Icon/real existing thumbnail at start; name and internal reference next to it;
+  existing model only where already available; chevron at end.
+- Keep reference with its equipment text, not visually detached in another column.
+- Preserve an Add equipment action only for authorized users.
+- No extra search form in Home. Detailed search remains on Equipment.
+
+Do not force the complete Home page into one viewport. Compact means reduced
+unnecessary whitespace, not deleting useful information or disabling scrolling.
+Driver home must retain its existing simplified flow and must not inherit owner
+financial cards.
+
+6. EQUIPMENT LIST — THE MAIN DENSITY FIX
+
+Replace the current tall vertically centered equipment cards with compact
+horizontal cards based on the middle phone in the reference.
+
+Header:
+- Title at the directional start; Add equipment at the end when it fits.
+- Preserve authorized creation; omit the action for unauthorized users.
+- A short existing subtitle may remain only if useful; do not add another hero.
+- Search immediately below, with ONE understandable search action and keyboard
+  submit. Remove the redundant external circular search action when the same
+  action is available inside the field. Preserve actual query behavior.
+- Do not convert search into uncontrolled requests on every rebuild/keystroke.
+
+Equipment row:
+- Compact icon/available authorized thumbnail around 48–56 logical pixels.
+- Name on the first text row; allow two lines or natural growth for long names.
+- Model and internal reference grouped beneath, in the existing secondary style.
+- Directional chevron at end, using current icon-direction semantics.
+- Whole card is an accessible tap target to existing Equipment Detail.
+- Remove the redundant dedicated 'عرض السجل والعمليات' line when the whole card
+  provides that action with an appropriate semantic label.
+- Do not display an icon, name, model, reference, and button as five separated
+  vertical blocks.
+- Use existing spacing tokens. Aim for roughly 12–16 logical-pixel internal
+  padding and short gaps, not a fixed card height that clips scaled text.
+- No Expanded/Spacer/spaceBetween usage that stretches a card to fill unused
+  viewport height. Inspect the real cause rather than assuming a particular bug.
+- Existing active/archived badge is optional only if already meaningful; no new
+  operational statuses or fake vehicle photos.
+
+Keep server-side search, pagination, scope, item order, empty/retry behavior and
+all current actions. Small datasets stay short; large lists scroll normally.
+Do not force six vehicles into real data just because six appear in the image.
+
+7. MORE — COMPACT NAVIGATION LIST
+
+Follow the right phone: one naturally sized grouped surface with compact rows.
+
+Preserve existing permitted destinations/order:
+- Reports.
+- Issues and maintenance.
+- Organizations.
+- Projects/contracts.
+- Team.
+- Review requests.
+- Settings.
+
+Render only destinations allowed for the current user; do not reserve tall blank
+spaces for hidden destinations. Keep the current driver-specific restrictions.
+
+Each row:
+- icon at directional start;
+- existing localized label beside it;
+- chevron at directional end;
+- whole row clickable and correctly labelled for accessibility;
+- light inset separator where useful.
+
+Use a natural compact row target (roughly 56–64 logical pixels at default scale
+where content permits), and let it grow for long text or larger accessibility
+text. Preserve at least the project's existing usable touch-target size.
+
+The outer card wraps its CONTENT, not the available screen height. Do not spread
+seven rows vertically with large empty gaps. Use bounded width on desktop rather
+than stretching labels/icons across the entire monitor.
+
+No new menu items, nested administrative modules, theme picker, or navigation
+architecture. Preserve actual routes and back behavior.
+
+8. BEHAVIOR AND CHANGE BOUNDARIES
+
+Allowed: these three screen layouts, small reusable presentation helpers scoped
+to them, relevant UI tests, necessary ARB labels, and concise evidence/docs.
+
+Preserve:
+- all current font assets/tokens and A palette;
+- financial formulas, D-19/D-20, date-only fix and formatted values;
+- workspace/organization/equipment scopes and permission gates;
+- DIRECT/REVIEW routing and idempotent save flows;
+- current bottom navigation and current real API clients;
+- demo/user data and existing local services.
+
+Do not modify backend, API contracts, migrations, auth/session logic, financial
+calculations, production credentials, or platform security configuration.
+Do not restyle Equipment Detail or other completed modules as a side effect.
+Do not remove native safe areas or cover last rows with bottom navigation.
+
+Avoid global theme changes for a local layout task. Verify any shared component
+change cannot unintentionally affect all other application screens.
+
+9. RESPONSIVE / LANGUAGE / STATE VERIFICATION
+
+Use existing Almarai styles, not smaller text, at:
+- Arabic phone approximately 390 logical pixels;
+- representative 320 logical-pixel width;
+- representative 160% text scale and one 200% stress case;
+- desktop around 1280–1440;
+- English LTR and Urdu RTL representative views.
+
+Check mixed-direction names and stable number/reference order. Reuse the existing
+exact decimal formatting and locale-aware dates. Do not force all content into
+RTL text runs or change the signed amount's meaning.
+
+Test populated, empty and failure states and permission-restricted destinations.
+Do not create separate English/Urdu font mappings or claim native Urdu approval.
+
+Native system font in OS-owned controls is not an application font regression.
+
+10. RENDER, COMPARE AND VERIFY — NOT JUST A THEME CHANGE
+
+Use the normal application entry point lib/main.dart for final live evidence.
+Do not use the design/typography preview as a substitute for the real screens.
+
+Reuse the existing safe demo account/workspace. Capture before/after with the
+same data, selected month, locale, text scale and viewport when practical.
+If a multi-item/scaled/error state uses a widget harness, label it as such.
+Do not fabricate screenshots or use the generated reference as implementation
+evidence. No new benchmarks or repeated OTP attempts; no auth bypass.
+
+Render the three corrected screens, inspect them beside the reference, fix
+specific issues, and repeat at most two focused visual passes unless an actual
+blocking defect requires more. Do not stop at flutter analyze alone.
+
+Existing iOS simulator and web are sufficient for this focused task if readily
+available. Check disk space first. No Android SDK/runtime installation, broad
+device campaign, user-file cleanup, or simulator erasure. If tooling is blocked,
+finish independent work and report the actual unverified state.
+
+11. TARGETED TESTS AND FINAL CHECKS
+
+Add/update relevant tests proving:
+- Home zero-attention card hidden only after a successful empty response;
+- nonempty attention remains actionable and ordered; failure shows retry;
+- recent operations keep the same values/source links and three-row limit;
+- Equipment row opens correct detail; search/add remain functional and scoped;
+- no redundant search action or placeholder filters;
+- More destinations and permissions unchanged; correct selected bottom tab;
+- long names, RTL/LTR, text scaling, and scroll reachability;
+- these screens still use the existing Almarai 400/700/fallback configuration.
+
+Preserve financial/security assertions. Update a design-dependent expectation
+only with a concrete explanation, not by weakening behavioral checks.
+
+Run targeted tests during work, then full Flutter tests once on the final code,
+flutter analyze, production web build, and git diff --check. Run an iOS build/
+focused launch only if feasible and needed for the live review. Backend remains
+unchanged; no repeated local backend campaign for this presentation task.
+
+Check diff boundaries and confirm font definitions/assets/declarations and core
+business files were not changed. Report any unintentional change instead of
+hiding it. Existing CI may run backend tests normally.
+
+12. COMMIT / PR / USER REVIEW
+
+Create a focused commit, stage only intended files, push only the selected
+feature/fix branch, and reuse its open PR if appropriate. If the earlier PR merged,
+open a new focused PR for fix/compact-home-equipment-more using existing authorized
+GitHub tooling. If unavailable, provide the real comparison URL; do not alter gh
+credentials or repeatedly retry the known authentication issue.
+
+Verify actual required CI at the final revision when a PR exists. If not, report
+NOT STARTED. Do not create additional commits merely to record CI success.
+No force push, auto-merge, direct main push, or deletion of historical branches.
+
+Save screenshots and a concise index under:
+docs/design/ui-refresh/compact-layout-review/screenshots/
+
+Leave the latest real app available on the existing local web URL and/or iPhone
+simulator for the user's review when the environment permits. Report the exact
+build commit and actual service status. Do not claim an old installed build is
+the new result or promise services remain running when they cannot.
+
+13. FINAL REPORT
+
+Respond in concise Arabic:
+
+COMPACT_LAYOUT_STATUS:
+SOURCE_BASELINE:
+BRANCH_AND_FINAL_HEAD:
+REFERENCE_IMAGES_ACTUALLY_INSPECTED:
+
+FONT_UNCHANGED:
+ALMARAI_FAMILY_WEIGHTS_FALLBACK:
+TYPOGRAPHY_FILES_AND_ASSETS_DIFF_CHECK:
+NO_FONT_SIZE_OR_TEXT_SCALING_REDUCTION:
+
+HOME_CHANGES:
+EQUIPMENT_LIST_CHANGES:
+MORE_CHANGES:
+CAUSE_OF_ORIGINAL_EXCESS_SPACING:
+INTENTIONAL_DIFFERENCES_FROM_REFERENCE:
+REAL_IMAGES_OR_NEUTRAL_ICONS:
+NAVIGATION_AND_PERMISSION_PARITY:
+
+BEFORE_AFTER_SCREENSHOT_PATHS:
+CONNECTED_VS_HARNESS_EVIDENCE:
+AR_EN_UR_AND_TEXT_SCALE_CHECKS:
+TESTS_ACTUALLY_RUN_AND_RESULTS:
+BACKEND_API_MIGRATIONS_UNCHANGED:
+KNOWN_LIMITATIONS:
+
+PR_URL:
+CI_AT_FINAL_HEAD:
+LOCAL_APP_URL_AND_BUILD_COMMIT:
+SIMULATOR_STATUS:
+GIT_STATUS:
+
+USER_VISUAL_ACCEPTANCE: PENDING
+
+Then STOP. Do not merge, close the UI milestone, or choose acceptance for the user.

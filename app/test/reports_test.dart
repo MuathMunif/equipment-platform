@@ -168,7 +168,7 @@ void main(){
     expect(find.byKey(const Key('addEquipment')),findsNothing);
     expect(requested.any((path)=>path.endsWith('/equipment')),false);
   });
-  testWidgets('empty owner sees add equipment before attention',(tester)async{
+  testWidgets('empty owner sees add equipment before summary without empty attention',(tester)async{
     tester.view.physicalSize=const Size(390,2000);tester.view.devicePixelRatio=1;
     addTearDown(tester.view.resetPhysicalSize);addTearDown(tester.view.resetDevicePixelRatio);
     final api=Api(client:MockClient((request)async{
@@ -182,7 +182,8 @@ void main(){
     ]},logout:(){})));
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.byKey(const Key('addEquipment'))).dy,
-      lessThan(tester.getTopLeft(find.text('يحتاج انتباه')).dy));
+      lessThan(tester.getTopLeft(find.byKey(const Key('homeCurrentEquipment'))).dy));
+    expect(find.text('يحتاج انتباه'),findsNothing);
   });
   testWidgets('month choice is month-only and recent empty is explicit',(tester)async{
     tester.view.physicalSize=const Size(800,1200);tester.view.devicePixelRatio=1;

@@ -1626,127 +1626,131 @@ class _HomeDocumentAttentionState extends State<HomeDocumentAttention> {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n(context).uiNeedsAttention,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          if (loading) const LinearProgressIndicator(),
-          if (error != null)
-            TextButton(
-              onPressed: load,
-              child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain),
+  Widget build(BuildContext context) {
+    final loc = l10n(context);
+    if (loading) return const LinearProgressIndicator();
+    if (error != null) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          onPressed: load,
+          icon: const Icon(Icons.refresh, size: 18),
+          label: Text(loc.uiCouldNotLoadDocumentsTryAgain),
+        ),
+      );
+    }
+    if (items.isEmpty && incomplete.isEmpty && incompleteError == null) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (items.isNotEmpty)
+          Card(
+            key: const Key('homeAttentionCard'),
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  EquipmentHeading(
+                    loc.uiNeedsAttention,
+                    action: TextButton(
+                      key: const Key('openAttention'),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AttentionPage(api: widget.api),
+                          ),
+                        );
+                        if (mounted) load();
+                      },
+                      child: Text(loc.viewAll),
+                    ),
+                  ),
+                  for (var i = 0; i < items.take(3).length; i++) ...[
+                    if (i > 0) const Divider(height: 1),
+                    _attentionRow(items[i]),
+                  ],
+                ],
+              ),
             ),
-          if (!loading && error == null) ...[
-            if (items.isEmpty) Text(l10n(context).m4AttentionEmpty),
-            ...items
-                .take(3)
-                .map(
-                  (d) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: d['entityType'] == 'FINANCIAL_REVIEW'
-                        ? const Icon(Icons.fact_check_outlined)
-                        : d['entityType'] == 'ISSUE'
-                        ? Icon(
-                            Icons.report_outlined,
-                            color: d['equipmentStopped'] == true
-                                ? Theme.of(context).colorScheme.error
-                                : EquipmentA.muted,
-                          )
-                        : null,
-                    title: Text(
-                      d['entityType'] == 'FINANCIAL_REVIEW'
-                          ? l10n(
-                              context,
-                            ).m5PendingReviewsCount('${d['pendingCount'] ?? 0}')
-                          : d['entityType'] == 'ISSUE'
-                          ? (d['equipmentStopped'] == true
-                                ? l10n(context).m4StoppedBadge
-                                : l10n(context).m4AttentionOpenIssue)
-                          : localizedDocumentName(context, d),
-                    ),
-                    subtitle: Text(
-                      d['entityType'] == 'FINANCIAL_REVIEW'
-                          ? ''
-                          : d['entityType'] == 'ISSUE'
-                          ? '${d['equipmentName']} • ${d['description']}'
-                          : localizedAttentionBody(context, d),
-                    ),
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => d['entityType'] == 'FINANCIAL_REVIEW'
-                              ? ReviewQueuePage(api: widget.api)
-                              : d['entityType'] == 'ISSUE'
-                              ? IssueDetailPage(
-                                  api: widget.api,
-                                  id: d['issueId'] as String,
-                                )
-                              : DocumentDetailPage(
-                                  api: widget.api,
-                                  id: d['documentId'] as String,
-                                ),
-                        ),
-                      );
-                      if (mounted) load();
-                    },
-                  ),
+          ),
+        if (widget.showIncomplete && incompleteError != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: load,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: Text(loc.uiCouldNotLoadDocumentsTryAgain),
+            ),
+          ),
+        if (widget.showIncomplete && incomplete.isNotEmpty)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const Key('openIncompleteDocuments'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => IncompleteDocumentsPage(api: widget.api),
                 ),
-            if (items.isNotEmpty)
-              TextButton(
-                key: const Key('openAttention'),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AttentionPage(api: widget.api),
-                    ),
-                  );
-                  if (mounted) load();
-                },
-                child: Text(l10n(context).viewAll),
               ),
-            if (widget.showIncomplete) ...[
-              const Divider(),
-              Text(
-                l10n(context).uiDetailsToComplete,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (incompleteError != null)
-                TextButton(
-                  onPressed: load,
-                  child: Text(l10n(context).uiCouldNotLoadDocumentsTryAgain),
-                )
-              else
-                Text(
-                  incomplete.isEmpty
-                      ? l10n(context).uiNoDocumentsHaveMissingInformation
-                      : l10n(context)
-                            .missingDocumentsCount('${incomplete.length}'),
-                ),
-              if (incompleteError == null && incomplete.isNotEmpty)
-                TextButton(
-                  key: const Key('openIncompleteDocuments'),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IncompleteDocumentsPage(api: widget.api),
-                    ),
-                  ),
-                  child: Text(l10n(context).uiViewDocuments),
-                ),
-            ],
-          ],
-        ],
-      ),
+              icon: const Icon(Icons.edit_note_outlined, size: 20),
+              label: Text(loc.missingDocumentsCount('${incomplete.length}')),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _attentionRow(Map<String, dynamic> d) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+    minVerticalPadding: 6,
+    leading: d['entityType'] == 'FINANCIAL_REVIEW'
+        ? const Icon(Icons.fact_check_outlined)
+        : d['entityType'] == 'ISSUE'
+        ? Icon(
+            Icons.report_outlined,
+            color: d['equipmentStopped'] == true
+                ? Theme.of(context).colorScheme.error
+                : EquipmentA.muted,
+          )
+        : null,
+    title: Text(
+      d['entityType'] == 'FINANCIAL_REVIEW'
+          ? l10n(context).m5PendingReviewsCount('${d['pendingCount'] ?? 0}')
+          : d['entityType'] == 'ISSUE'
+          ? (d['equipmentStopped'] == true
+                ? l10n(context).m4StoppedBadge
+                : l10n(context).m4AttentionOpenIssue)
+          : localizedDocumentName(context, d),
     ),
+    subtitle: d['entityType'] == 'FINANCIAL_REVIEW'
+        ? null
+        : Text(
+            d['entityType'] == 'ISSUE'
+                ? '${d['equipmentName']} • ${d['description']}'
+                : localizedAttentionBody(context, d),
+          ),
+    onTap: () async {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => d['entityType'] == 'FINANCIAL_REVIEW'
+              ? ReviewQueuePage(api: widget.api)
+              : d['entityType'] == 'ISSUE'
+              ? IssueDetailPage(api: widget.api, id: d['issueId'] as String)
+              : DocumentDetailPage(
+                  api: widget.api,
+                  id: d['documentId'] as String,
+                ),
+        ),
+      );
+      if (mounted) load();
+    },
   );
 }
 

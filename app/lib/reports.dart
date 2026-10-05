@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'api.dart';
+import 'compact_workspace_layout.dart';
 import 'design_system/equipment_a.dart';
 import 'localization.dart';
 import 'main.dart' show EntryDetail, LedgerPage, HistoryEquipmentPicker;
@@ -21,6 +22,7 @@ String _todayMonth() => _month(todayRiyadh());
 class DashboardSection extends StatefulWidget {
   final Api api;
   final bool canFinance, canEquipment, canManage, canSubmitReview;
+  final Widget? attention, equipment;
   const DashboardSection({
     super.key,
     required this.api,
@@ -28,6 +30,8 @@ class DashboardSection extends StatefulWidget {
     this.canEquipment = true,
     required this.canManage,
     required this.canSubmitReview,
+    this.attention,
+    this.equipment,
   });
   @override
   State<DashboardSection> createState() => _DashboardSectionState();
@@ -114,103 +118,267 @@ class _DashboardSectionState extends State<DashboardSection> {
   @override
   Widget build(BuildContext context) {
     final loc = l10n(context);
-    if (loading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    if (error != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(loc.m7LoadFailed),
-              Text(error!),
-              TextButton(onPressed: load, child: Text(loc.retry)),
-            ],
-          ),
-        ),
-      );
-    }
     final summary = data?['summary'] as Map<String, dynamic>?;
     final recent = data?['recentEntries'] as List<dynamic>? ?? [];
+    final finance = widget.canFinance && summary != null;
+    final recentCard = Card(
+      key: const Key('homeRecentEntries'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CompactSectionHeading(
+              loc.m7RecentEntries,
+              action: TextButton(
+                key: const Key('homeViewJournal'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LedgerPage(
+                      api: widget.api,
+                      canManage: widget.canManage,
+                      canSubmitReview: widget.canSubmitReview,
+                    ),
+                  ),
+                ),
+                child: Text(loc.homeViewJournal),
+              ),
+            ),
+            if (recent.isEmpty) Text(loc.m7NoRecentEntries),
+            // Backend order is newest creation first, across all dates.
+            // This list is not a selected-month count or month-filtered journal.
+            for (var i = 0; i < recent.take(3).length; i++) ...[
+              if (i > 0) const Divider(height: 1),
+              _recentRow(context, recent[i] as Map<String, dynamic>),
+            ],
+          ],
+        ),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.canEquipment &&
-            data?.containsKey('activeEquipmentCount') == true)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.local_shipping_outlined),
-              title: Text(loc.m7ActiveEquipment),
-              trailing: Text(
-                '${data!['activeEquipmentCount']}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
+        if (loading)
+          const Padding(
+            padding: EdgeInsets.all(12),
+            child: LinearProgressIndicator(),
           ),
-        if (widget.canFinance && summary != null) ...[
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const Key('dashboardMonth'),
-            onPressed: chooseMonth,
-            icon: const Icon(Icons.calendar_month_outlined),
-            label: Text(
-              '${loc.m7ChooseMonth}: ${_localizedMonth(context, month)}',
-            ),
+        if (error != null)
+          EquipmentError(message: loc.m7LoadFailed, retry: load),
+        if (finance) ...[
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            children: [
+              Text(
+                loc.homeFinancialSummary,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              TextButton.icon(
+                key: const Key('dashboardMonth'),
+                onPressed: chooseMonth,
+                icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                label: Text(_localizedMonth(context, month)),
+              ),
+            ],
           ),
           Text(
             loc.m7EntryDateBasis,
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 16),
-          EquipmentFieldRow(
-            first: _card(
-              context,
-              const Key('recordedExpenseCard'),
-              loc.m7RecordedExpensesMonth,
-              summary['recordedExpenses'],
-              () => openLedger('EXPENSE'),
-            ),
-            second: _card(
-              context,
-              const Key('recordedIncomeCard'),
-              loc.m7RecordedIncomeMonth,
-              summary['recordedIncome'],
-              () => openLedger('INCOME'),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            loc.m7RecentEntries,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          if (recent.isEmpty) Text(loc.m7NoRecentEntries),
-          for (final row in recent)
-            ListTile(
-              title: Text(
-                '${row['entryType'] == 'INCOME' ? loc.income : loc.expense} • ${localizedMoney(context, row['amount'])}',
-              ),
-              subtitle: Text(
-                localizedDate(context, row['operationDate'] as String?),
-              ),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EntryDetail(
-                    api: widget.api,
-                    id: row['entryId'] as String,
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, box) {
+              final amountStyle = Theme.of(context).textTheme.titleLarge!;
+              final tileWidth = (box.maxWidth - 12) / 2;
+              bool fits(Object? value) {
+                final painter = TextPainter(
+                  text: TextSpan(
+                    text: localizedMoney(context, value),
+                    style: amountStyle,
                   ),
-                ),
+                  textDirection: Directionality.of(context),
+                  textScaler: MediaQuery.textScalerOf(context),
+                )..layout();
+                final result = painter.width <= tileWidth - 24;
+                painter.dispose();
+                return result;
+              }
+
+              final columns =
+                  box.maxWidth >= 340 &&
+                  MediaQuery.textScalerOf(context).scale(14) <= 18 &&
+                  fits(summary['recordedExpenses']) &&
+                  fits(summary['recordedIncome']);
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: columns ? tileWidth : box.maxWidth,
+                    child: _card(
+                      context,
+                      const Key('recordedExpenseCard'),
+                      loc.homeRecordedExpenses,
+                      loc.m7RecordedExpensesMonth,
+                      summary['recordedExpenses'],
+                      () => openLedger('EXPENSE'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: columns ? tileWidth : box.maxWidth,
+                    child: _card(
+                      context,
+                      const Key('recordedIncomeCard'),
+                      loc.homeRecordedIncome,
+                      loc.m7RecordedIncomeMonth,
+                      summary['recordedIncome'],
+                      () => openLedger('INCOME'),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+        if (widget.canEquipment &&
+            data?.containsKey('activeEquipmentCount') == true) ...[
+          if (finance) const SizedBox(height: 12),
+          Card(
+            key: const Key('homeCurrentEquipment'),
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.local_shipping_outlined,
+                    size: 22,
+                    color: EquipmentA.accent,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(loc.homeCurrentEquipment)),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${data!['activeEquipmentCount']}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
               ),
             ),
+          ),
+        ],
+        if (widget.attention != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: widget.attention,
+          ),
+        if (finance || widget.equipment != null) ...[
+          const SizedBox(height: 12),
+          if (finance && widget.equipment != null)
+            LayoutBuilder(
+              builder: (context, box) {
+                if (box.maxWidth < 900 ||
+                    MediaQuery.textScalerOf(context).scale(14) > 21) {
+                  return Column(
+                    children: [
+                      recentCard,
+                      const SizedBox(height: 12),
+                      widget.equipment!,
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 5, child: recentCard),
+                    const SizedBox(width: 12),
+                    Expanded(flex: 4, child: widget.equipment!),
+                  ],
+                );
+              },
+            )
+          else if (finance)
+            recentCard
+          else
+            widget.equipment!,
         ],
       ],
+    );
+  }
+
+  Widget _recentRow(BuildContext context, Map<String, dynamic> row) {
+    final income = row['entryType'] == 'INCOME';
+    final loc = l10n(context);
+    return InkWell(
+      key: ValueKey('homeRecent-${row['entryId']}'),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              EntryDetail(api: widget.api, id: row['entryId'] as String),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          children: [
+            Icon(
+              income ? Icons.south_west : Icons.north_east,
+              size: 20,
+              color: income ? EquipmentA.success : EquipmentA.accent,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final details = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(income ? loc.income : loc.expense),
+                      Text(
+                        localizedDate(context, row['operationDate'] as String?),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  );
+                  final amount = Text(
+                    localizedMoney(context, row['amount']),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  );
+                  final painter = TextPainter(
+                    text: TextSpan(text: amount.data, style: amount.style),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                  )..layout();
+                  final stack =
+                      painter.width > box.maxWidth * .55 ||
+                      MediaQuery.textScalerOf(context).scale(14) > 21;
+                  painter.dispose();
+                  if (stack) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [details, amount],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: details),
+                      const SizedBox(width: 8),
+                      amount,
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, size: 18),
+          ],
+        ),
+      ),
     );
   }
 
@@ -218,24 +386,30 @@ class _DashboardSectionState extends State<DashboardSection> {
     BuildContext context,
     Key key,
     String title,
+    String semanticTitle,
     Object? amount,
     VoidCallback open,
   ) => Card(
-    child: InkWell(
-      key: key,
-      onTap: open,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title),
-            const SizedBox(height: 8),
-            Text(
-              localizedMoney(context, amount),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ],
+    margin: EdgeInsets.zero,
+    child: Semantics(
+      label: '$semanticTitle • ${_localizedMonth(context, month)}',
+      child: InkWell(
+        key: key,
+        onTap: open,
+        borderRadius: BorderRadius.circular(EquipmentA.radius),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ExcludeSemantics(child: Text(title)),
+              const SizedBox(height: 6),
+              Text(
+                localizedMoney(context, amount),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
         ),
       ),
     ),
